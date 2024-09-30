@@ -22,3 +22,8 @@ SELECT        Customers.CustomerID, Orders.OrderDate, Orders.CustomerID AS Expr1
 FROM            Customers INNER JOIN
                          Orders ON Customers.CustomerID = Orders.CustomerID
 
+--github purposes
+select sum(OrderTotal)
+from Orders
+where OrderDate >= DATEADD(month,-31,getdate())
+group by CustomerID;
