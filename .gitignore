@@ -1,1 +1,5 @@
 *.txt
+*/*.MDF
+*/*.lDF
+*/*.bak
+blacklist_test_db.sql
