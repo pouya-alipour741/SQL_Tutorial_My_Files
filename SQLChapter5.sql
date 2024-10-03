@@ -92,3 +92,70 @@ select sum(sale) as total from sum_cal;
  on o.employeeid=e.employeeid
  group by e.lastname
  order by e.lastname
+
+
+ select *
+ from region r join territories t
+ on t.regionid=r.regionid
+
+
+ --- مثال: در مقابل نام هر کارمند تعداد سفارشاتش و درصد آن از کل سفارشات شرکت را بنویسید
+ select e.EmployeeID, e.LastName, count(o.orderid) as order_count,(select count(orderid) from orders) as total_orders,
+ convert(decimal(4,1),100.0*count(o.orderid)/(select count(orderid) from orders)) as [% of total_order]
+ from employees e right join orders o
+ on e.employeeid=o.employeeid
+ group by e.EmployeeID, e.LastName
+
+  ---مثال: در مقابل نام هر گروه کالا، شماره، نام و قیمت گرانترین کالای آن گروه را نمایش دهید
+  select categoryname,(select top 1 convert(nvarchar(10),productid)+ ' '+ productname+' '+convert(nvarchar(10),unitprice) as [highest product] from products
+  where categoryid=c.categoryid
+  order by unitprice desc) 
+  from categories c
+
+   select categoryname,(select top 1 productid from products
+  where categoryid=c.categoryid
+  order by unitprice desc) as highest_id
+  ,(select top 1 productname from products
+  where categoryid=c.categoryid
+  order by unitprice desc) as highest_produce,
+  (select top 1 unitprice from products
+ where CategoryID=c.CategoryID 
+ order by UnitPrice desc) as price
+  from categories c
+
+
+ --cross tab query
+ --مثال: در مقابل نام هر کارمند تعداد سفارشات او در سه سال 1996 و 1997 و 1998 و جمع این سه سال در یک ستون بیاید
+
+select employeeid, lastname,
+(select count(orderid) from orders
+where year(orderdate)=1996 and e.employeeid=employeeid) as '1996',
+(select count(orderid) from orders
+where year(orderdate)=1997 and e.employeeid=employeeid) as '1997',
+(select count(orderid) from orders
+where year(orderdate)=1998 and e.employeeid=employeeid) as '1998',
+(select count(orderid) from orders
+where year(orderdate)in (1996,1997,1998) and e.employeeid=employeeid) as 'total'
+from employees e
+
+
+ 
+  ---مثال: گرانترین کالای شرکت کدام است
+  select * from products
+  where unitprice=(select max(unitprice) from products)
+
+  
+  ---کالاهایی را لیست کنید که از متوسط بهای کالاهای هم نوع خود گرانتر هستند
+  select productid,productname,unitprice,(select avg(unitprice) from products  where categoryid=p.categoryid) as average_price
+  from products p where unitprice>(select avg(unitprice) from products where categoryid=p.categoryid)
+
+
+  select productid,productname,unitprice,(select avg(unitprice) from products  where categoryid=p.categoryid) as average_price,
+  (select categoryname from categories where categoryid=p.categoryid) as category
+  from products p where unitprice>(select avg(unitprice) from products where categoryid=p.categoryid)
+
+  --above with join
+   select p.productname,s.productname,s.unitprice--,avg(s.unitprice) as average_price
+  from products p join products s
+  on p.categoryid=s.categoryid
+  group by s.productname,s.unitprice
