@@ -154,8 +154,15 @@ from employees e
   (select categoryname from categories where categoryid=p.categoryid) as category
   from products p where unitprice>(select avg(unitprice) from products where categoryid=p.categoryid)
 
-  --above with join
-   select p.productname,s.productname,s.unitprice--,avg(s.unitprice) as average_price
+  --above with self join
+   select s.productname,s.unitprice,avg(p.unitprice) as average_price
   from products p join products s
   on p.categoryid=s.categoryid
   group by s.productname,s.unitprice
+  having s.unitprice>avg(p.unitprice)
+
+
+  --- کدام کالای شرکت گرانتر از متوسط بهای شرکت هست
+select * from products
+where unitprice> (select avg(unitprice) from products)
+
