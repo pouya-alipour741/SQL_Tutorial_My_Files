@@ -1,4 +1,8 @@
-﻿select customerid,Country,city,companyname
+﻿/*
+did not run most of the code in this chapter to preserve database
+*/
+
+select customerid,Country,city,companyname
 into germany_customers
 from Customers
 where Country='germany'
@@ -74,3 +78,88 @@ set UnitPrice-=7
 --where UnitPrice=18.0 and ProductName='chai'
 
 select * from Products
+
+
+---مثال: کالای گروه کالای 1 ، 10 درصد گران شود و گروه کالای 2 ، 20 درصد گران شود
+update Products
+set unitprice=case
+when CategoryID=1
+then UnitPrice*1.1
+when CategoryID=2
+then UnitPrice*1.2
+end
+
+/*
+مثال: دستوری بنویسید که ستون جدیدی  از جنس پولی به جدول کارمندان
+اضافه کندو سپس دستوری بنویسید که یک درصد از فروش خالص هر کارمند
+را در سال 1997 به عنوان پاداش در این ستون ذخیره کند
+*/
+
+
+alter table Employees
+add bonus money not null default 0
+
+
+update Employees
+set bonus=0.01*(select sum(od.UnitPrice*od.Quantity-od.UnitPrice*od.Quantity*od.Discount) from [Order Details] od
+			join orders o on o.OrderID=od.OrderID
+			where year(o.OrderDate)=1997 and
+			employees.EmployeeID=o.EmployeeID)
+
+--WIP
+with new_t
+as
+(select e.EmployeeID,sum(od.UnitPrice*od.Quantity-od.UnitPrice*od.Quantity*od.Discount) as sum_price from [Order Details] od
+			join orders o on o.OrderID=od.OrderID join Employees e on e.EmployeeID=o.EmployeeID
+			where year(o.OrderDate)=1997
+			group by e.EmployeeID)
+select sum_price from new_t
+
+select sum(od.UnitPrice*od.Quantity-od.UnitPrice*od.Quantity*od.Discount) from [Order Details] od
+
+/*
+مثال: به جدول کارمندان ستونی اضافه کنید از جنس 
+int
+ و سپس دستوری بنویسید که تعداد سفارشات هر کارمند را در این ستون وارد کند
+
+*/
+
+alter table employees
+add order_count int default 0
+
+update Employees
+set order_count=(select count(orderid) from Orders o
+				where Employees.EmployeeID=o.EmployeeID)
+
+---تمرین : پاداش فقط به کارمندانی تعلق بگیرد که در سال 1997
+--- بیش از 40 فاکتور فروش داشتند
+--create new tables to preserve base tables
+--work in progress,need to set foreign key on the new tables later
+select * into my_employees from employees
+select * into my_orders from orders
+select * into my_order_details from [Order Details]
+
+
+select * from my_employees
+
+
+alter table my_employees
+add bonus money not null default 0
+select * from my_employees
+
+--if it was in addition to example above
+update my_employees 
+set bonus=0.01*(select sum(od.UnitPrice*od.Quantity-od.UnitPrice*od.Quantity*od.Discount) from my_order_details od
+				join my_orders o on od.OrderID=o.OrderID
+				where my_employees.EmployeeID=o.EmployeeID
+				and year(o.orderdate)=1997
+				having count(o.OrderID)>40)
+
+--solution
+update my_employees 
+set bonus= isnull((select  count(orderid) 
+                 from  my_Orders o
+				 where my_employees.EmployeeID=o.EmployeeID
+				 and YEAR(o.OrderDate)='1997'
+				 having count (orderid)>40
+				 ),0)

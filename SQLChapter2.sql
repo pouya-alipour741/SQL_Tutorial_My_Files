@@ -109,5 +109,5 @@ select DATEDIFF(year, max(PlanEndDate), min(PlanEndDate))
 from dbo.Tbl_Cu_Plan
 ;
 select max(PlanEndDate) from dbo.Tbl_Cu_Plan
-select min(PlanEndDate) from dbo.Tbl_Cu_Plan where PlanEndDate is empty  --won't run. what to use for empty date value?
+select min(PlanEndDate) from dbo.Tbl_Cu_Plan where PlanEndDate=''
 

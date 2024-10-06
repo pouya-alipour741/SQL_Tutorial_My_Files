@@ -86,7 +86,7 @@ select sum(sale) as total from sum_cal;
  (select count(orderid) from orders o)
  from employees e
 
- --join instead of sub query for same result
+ --using join
  select e.lastname, count(o.orderid)
  from orders o right join employees e
  on o.employeeid=e.employeeid
