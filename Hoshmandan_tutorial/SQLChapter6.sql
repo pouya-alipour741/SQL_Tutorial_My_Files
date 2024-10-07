@@ -103,3 +103,4 @@ select distinct CustomerID, e.LastName from orders o1 join Employees e on o1.Emp
 where CustomerID in (select CustomerID from orders o2
 					where datediff(day,o1.OrderDate,o2.orderdate)=1 )
 
+
