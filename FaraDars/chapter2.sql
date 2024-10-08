@@ -106,3 +106,16 @@ end
 delete from sale
 where product_id=3 and customer_id=1
 
+create trigger update_product on sale after update
+as
+begin
+update products
+set UnitsInStock-=(select quantity from inserted) where product_id in(select product_id from inserted)
+update products
+set UnitsInStock+=(select quantity from deleted)  where product_id in(select product_id from deleted)
+end
+
+update sale
+set quantity=10
+where quantity=2
+
