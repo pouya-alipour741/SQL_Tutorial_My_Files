@@ -119,3 +119,21 @@ update sale
 set quantity=10
 where quantity=2
 
+
+alter trigger delete_emp_on_ins on customers after insert
+as
+begin
+delete from customers
+where company_name='intel'
+--if 'intel' in(select company_name from deleted) then
+--print 'company name with the name of intel can not be inserted'
+--end if
+end
+
+insert into customers values ('intel','usa')
+
+disable trigger delete_emp_on_ins on customers
+enable trigger delete_emp_on_ins on customers
+
+insert into customers values ('intel','usa')
+
