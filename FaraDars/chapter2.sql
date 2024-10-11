@@ -56,8 +56,8 @@ primary key(id)
 
 insert into customers
 values
-('tom','germany'),
-('dariush','iran')
+('simens','germany'),
+('dariushCO','iran')
 
 
 exec sp_rename 'customers.id' , 'customer_id', 'column'
@@ -124,10 +124,12 @@ alter trigger delete_emp_on_ins on customers after insert
 as
 begin
 delete from customers
+--output deleted.*
 where company_name='intel'
---if 'intel' in(select company_name from deleted) then
---print 'company name with the name of intel can not be inserted'
---end if
+if 'intel' in(select company_name from inserted)
+begin
+print 'company name with the name of intel can not be inserted'
+end
 end
 
 insert into customers values ('intel','usa')
@@ -136,4 +138,6 @@ disable trigger delete_emp_on_ins on customers
 enable trigger delete_emp_on_ins on customers
 
 insert into customers values ('intel','usa')
+
+backup database faradars to disk='D:\work\Pouya\my files\FaraDars\faradars.bak'
 

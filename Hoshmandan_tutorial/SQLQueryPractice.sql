@@ -141,3 +141,68 @@ where exists(select * from orders
 				where EmployeeID=Employees.EmployeeID
 				and ShipCountry='denmark')
 
+
+  ---کالاهایی را لیست کنید که از متوسط بهای کالاهای هم نوع خود گرانتر هستند
+  select * from Products p
+  where UnitPrice>(select avg(UnitPrice) from Products
+					where CategoryID=p.CategoryID)
+
+
+--average number of orders per customer per country
+select ShipCountry, avg(order_count) as avg_ord_count from 
+(select customerid,shipcountry,count(orderid) as order_count from Orders
+group by customerid,shipcountry) as su
+group by ShipCountry
+
+use Northwind
+
+--compare partition vs order in over() command
+select ProductName,UnitPrice, CategoryID, sum(UnitPrice) over(partition by ProductName) as all_total_price, sum(UnitPrice) over() as s_t from Products
+
+select ProductName,UnitPrice, CategoryID, sum(UnitPrice) over(order by ProductName) as all_total_price, sum(UnitPrice) over() as s_t from Products
+
+
+--how to include a select without including it in group by? wip
+
+select e.EmployeeID, o.ShipName, o.freight
+from Employees e join orders o
+on e.EmployeeID=o.EmployeeID
+where (o.ShipName,o.freight)
+in (select o.ShipName,max(o.freight)
+from Employees e join orders o
+on e.EmployeeID=o.EmployeeID
+group by o.ShipName)
+
+
+select OrderID,OrderDate,Freight
+from Orders
+where (OrderDate,Freight) in
+(select OrderDate,max(freight)
+from Orders
+group by OrderDate
+)
+
+--Select latest Order for each Customer
+select max(orderdate) from Orders
+
+with nn
+as
+(select c.customerid, companyname,max(o.orderdate) as latest_order
+from Customers c join orders o
+on c.CustomerID=o.CustomerID
+group by c.customerid, companyname)
+--select customerid, companyname,latest_order from nn
+select customerid, companyname,substring(convert(nvarchar,latest_order),1,12) as latest_order_date 
+into #temp
+from nn
+
+select * from #temp
+select customerid, companyname, count(companyname) over (partition by companyname) from #temp
+select customerid, companyname, count(companyname)  from #temp group by customerid, companyname
+
+select c.customerid, companyname,o.orderdate
+from Customers c join orders o
+on c.CustomerID=o.CustomerID
+where c.CustomerID='alfki'
+
+
