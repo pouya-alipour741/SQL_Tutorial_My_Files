@@ -206,3 +206,66 @@ on c.CustomerID=o.CustomerID
 where c.CustomerID='alfki'
 
 
+--re create the trigger for sale
+create trigger sale_prod_ins on sale after insert
+as
+begin
+update products
+set UnitsInStock-=(select quantity from inserted)
+where product_id in(select product_id from inserted)
+end
+
+
+--reset seed for identity
+declare @n int
+set @n=(select count(*) from products)
+
+dbcc checkident('products',reseed,@n)
+
+set identity_insert products on
+
+insert into products(product_id,name,UnitsInStock)
+values (3,'S3',4500)
+
+update products
+set UnitsInStock=45
+where product_id=3
+
+use faradars
+select ROW_NUMBER() over(order by product_id),* from View_ProdSale
+
+select * from products
+where product_id not in(select product_id from sale)
+
+
+CREATE FUNCTION [dbo].[FunctionName]
+(
+    @param1 int,
+    @param2 char(5)
+)
+RETURNS @returntable TABLE 
+(
+	[c1] int,
+	[c2] char(5)
+)
+AS
+BEGIN
+    INSERT @returntable
+    SELECT @param1, @param2
+    RETURN 
+END
+
+
+select *,
+		hostname,
+		loginame,
+		nt_domain,
+		Net_address
+from sys.sysprocesses
+
+select @@Spid
+
+if exists(select * from Customers where len(CompanyName)>4)
+print 'name too long'
+else
+print 'success'
