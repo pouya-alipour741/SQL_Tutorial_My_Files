@@ -1,4 +1,4 @@
-﻿select * from Customers
+select * from Customers
 
 /*
 در مقابل هر شرکت تعداد مخاطب ها در 4 کشور زیر
