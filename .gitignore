@@ -1,6 +1,6 @@
 *.txt
 sample_database_backup/*.MDF
 sample_database_backup/*.lDF
-sample_database_backup/*.bak
+sample_database_backup/KCC Sample Database.bak
 blacklist_test_db.sql
 
