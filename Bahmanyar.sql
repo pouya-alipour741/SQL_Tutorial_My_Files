@@ -79,3 +79,43 @@ SELECT * FROM sys.objects
 sp_detach_db northwind 
 
 select OBJECT_ID('customers')
+
+
+--function to return total days of rent of a given car
+alter function udf_GetTotalRent(
+@car varchar(20)
+)
+returns varchar(50)
+as
+begin
+	declare @total_rent varchar(50)
+	if (@car in(select Make from Cars))
+		begin
+		set @total_rent = convert(varchar(50),(select sum(isnull(ro.Days,1)) as total_rent from RentalOrders ro right join Cars c
+			on c.CarID=ro.CarID
+			where c.make=@car)
+			)
+		end
+	else
+		begin
+			set @total_rent = 'car not valid'
+		end
+		return @total_rent
+
+end
+
+
+select dbo.udf_GetTotalRent('opel')
+
+select isnull(ro.Days,1) as total_rent from RentalOrders ro right join Cars c
+			on c.CarID=ro.CarID
+			where c.make='opel'
+
+select DB_ID('SofiaCarRental_v2.2')
+select object_ID(N'SofiaCarRental_v2.2.dbo.cars')
+select object_ID(N'cars')
+
+
+
+SET STATISTICS IO ON
+SET STATISTICS TIME ON
