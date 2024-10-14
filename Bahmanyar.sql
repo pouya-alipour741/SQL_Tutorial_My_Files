@@ -269,30 +269,50 @@ SP_SPACEUSED customers
 use Northwind
 
 --کارمندانی که در پایین ترین سطح قرار گرفته اند
-;WITH CTE_Recursive AS
-(
-	--استخراج ریشه
-	SELECT 
-		EmployeeID,FirstName,
-		LastName,ReportsTo,1 AS EmployeeLevel
-	FROM Employees
-	WHERE ReportsTo IS NULL
+with cte_recursive
+as
+(select EmployeeID,FirstName,LastName,reportsto,1 as employee_level
+from Employees
+where ReportsTo is null
+union all
+select e.EmployeeID,e.FirstName,e.LastName,e.reportsto,cte_recursive.employee_level+1
+from Employees e
+join cte_recursive
+on cte_recursive.EmployeeID = e.reportsto
+) , cte2 as
+(select dense_rank() over(order by employee_level desc) as rk,*
+from cte_recursive)
+select * from cte2 where rk=1
 
-	UNION ALL
-	--استخراج کارمندان زیر دست هر کارمند قبلی
-	SELECT 
-		E.EmployeeID,E.FirstName,
-		E.LastName,E.ReportsTo,
-		CTE_Recursive.EmployeeLevel + 1 
-	FROM Employees E
-	INNER JOIN CTE_Recursive
-	ON E.ReportsTo =CTE_Recursive.EmployeeID
-)
-,CTE2 AS(
-	SELECT 
-		* ,
-		DENSE_RANK() OVER(ORDER BY EmployeeLevel DESC) AS Rk
-	FROM CTE_Recursive
-)
-SELECT * FROM CTE2
-	WHERE RK=1
+select * from employees
+
+--مدیر هر کارمند نوشته شود.
+with cte_hiararchy
+as
+(select EmployeeID,LastName,ReportsTo,1 as lvl
+from Employees
+where ReportsTo is null
+union all
+select e.EmployeeID,e.LastName,e.ReportsTo,h.lvl+1
+from Employees e
+join cte_hiararchy h on h.employeeid=e.ReportsTo)
+select h.employeeid,h.lastname as emp_lasname,e.LastName as mng_lastname
+from cte_hiararchy h join Employees e
+on h.reportsto=e.EmployeeID
+
+
+--کارمندانی که دارای زیر مجموعه نیستند
+select * from Employees e
+where e.EmployeeID not in(select ReportsTo from Employees
+						where ReportsTo=e.EmployeeID)
+
+
+
+
+
+
+
+
+
+
+
