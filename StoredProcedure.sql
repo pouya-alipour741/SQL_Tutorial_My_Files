@@ -1,4 +1,5 @@
 
+use Northwind
 --output procedure
 create procedure ordercount_by_customer
 @customer nvarchar(20),
@@ -18,8 +19,8 @@ print '@employeetotal is null' --if we remove output @employeetotal will be init
 else
 print '@employeetotal is not null'
 */
+select @employeetotal
 print @employeetotal
-
 
 select count(orderid) from orders o
 join customers c on o.CustomerID=c.CustomerID
