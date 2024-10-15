@@ -144,4 +144,7 @@ with top_part as
 (select NTILE(2) over(order by employeeid) nt,* from EmployeeTerritories)
 select * from top_part where nt=1
 
+select top ((select count(*) as cnt from orders)/2) * from orders
+select * from orders
+
 --29. Write an SQL query to fetch the MAJOR subject that have less than 4 people in it.
