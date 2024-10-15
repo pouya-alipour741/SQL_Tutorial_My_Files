@@ -147,4 +147,113 @@ select * from top_part where nt=1
 select top ((select count(*) as cnt from orders)/2) * from orders
 select * from orders
 
+
+use Northwind
+exec sp_changedbowner sa
 --29. Write an SQL query to fetch the MAJOR subject that have less than 4 people in it.
+--customers that have less than 6 orders
+select o.CustomerID, count(o.OrderID) as ord_cnt from customers c join orders o on o.CustomerID=c.CustomerID
+group by o.CustomerID
+having count(o.OrderID)<6
+
+--30. Write an SQL query to show all MAJOR subject along with the number of people in there.
+--show all ship country along with how many orders
+select isnull(ShipCountry,'??'),count(OrderID),count(ShipCountry) as cnt from orders
+group by ShipCountry
+
+--31. Write an SQL query to show the last record from a table.
+select * from orders
+where OrderID=(select max(OrderID) from orders)
+
+
+--select 10th to last row
+with cte as
+(select row_number() over(order by orderid) rw,* from orders)
+select * from cte
+where rw=(select max(rw)-10 from cte)
+
+--32. Write an SQL query to fetch the first row of a table.
+select * from orders
+where OrderID=(select min(OrderID) from orders)
+
+--11th row
+with cte as
+(select row_number() over(order by orderid) rw,* from orders)
+select * from cte
+where rw=(select min(rw)+10 from cte)
+
+
+--33. Write an SQL query to fetch the last five records from a table.
+select * from
+(select top 5 * from orders
+order by OrderID desc
+) sub
+order by OrderID
+
+
+--between don't work
+with cte as
+(select ROW_NUMBER() over(order by orderid) rw,* from Orders)
+select * from cte
+where rw>(select max(rw)-5 from cte) and rw<=(select max(rw) from cte)
+--where rw between 832 and 828
+--where rw between (select max(rw) from cte) and (select max(rw)-5 from cte)
+
+--34. Write an SQL query to fetch three max GPA from a table using co-related subquery.
+--3 max freight
+select distinct freight from orders o1
+where 3>(select count(distinct freight) from orders o2
+		where o2.freight>o1.freight)
+order by o1.Freight desc
+
+select * from
+(select rank() over(order by freight desc) rw,* from orders) sub
+where rw<=3
+order by freight desc
+
+--35. Write an SQL query to fetch four min GPA from a table using co-related subquery.
+select distinct freight from orders o1
+where 4>(select count(distinct freight) from orders o2
+		where o2.Freight<o1.Freight)
+
+select * from
+(select rank() over(order by freight) rw,* from orders) sub
+where rw<=3
+
+--36. Write an SQL query to fetch nth max GPA from a table.
+create proc sp_nth @n int
+as
+begin
+select top 1 * from
+(select top @n freight from orders order by freight desc) sub
+order by freight
+end
+
+
+select distinct top 1 freight from orders o1
+where 5>(select count(distinct freight) from orders o2
+		where o2.freight>o1.freight)
+order by freight
+
+--37. Write an SQL query to fetch MAJOR subjects along with the max GPA in each of these MAJOR subjects.
+select CategoryID,max(UnitPrice) max_p from Products
+group by CategoryID
+
+--38. Write an SQL query to fetch the names of Students who has highest GPA.
+--product with highest price
+select ProductName,UnitPrice from Products
+where UnitPrice=(select max(UnitPrice) from Products)
+
+--39. Write an SQL query to show the current date and time.
+select getdate()[dbo].[Products]
+
+--40. Write a query to create a new table which consists of data and structure copied from the other table (say Student) or clone the table named Student.
+select * into orders_new 
+from Orders
+where 1=2
+
+--45. Write an SQL query to find the students who have the same GPA as ‘Shivansh Mahajan’. 
+--products who have same price as chai 
+select ProductName from Products
+where UnitPrice=(select UnitPrice from Products
+				where ProductName='Steeleye Stout')
