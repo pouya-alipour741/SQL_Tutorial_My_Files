@@ -307,10 +307,80 @@ where e.EmployeeID not in(select ReportsTo from Employees
 						where ReportsTo=e.EmployeeID)
 
 
+--استخراج زیر دستان کارمند شماره 5
+with cte_recursive
+as
+(select EmployeeID,FirstName,LastName,ReportsTo,1 as lvl from Employees
+where EmployeeID=5
+union all
+select e.EmployeeID,e.FirstName,e.LastName,e.ReportsTo,cr.lvl+1 from Employees e
+join cte_recursive cr on cr.EmployeeID=e.ReportsTo),
+cte2 as
+(select DENSE_RANK() over(order by lvl) dr,* from cte_recursive)
+select * from cte2
+where dr=2
+
+with cte_recursive
+as
+(select EmployeeID,FirstName,LastName,ReportsTo,1 as lvl from Employees
+where EmployeeID=5
+union all
+select e.EmployeeID,e.FirstName,e.LastName,e.ReportsTo,cr.lvl+1 from Employees e
+join cte_recursive cr on cr.EmployeeID=e.ReportsTo)
+select * from cte_recursive
+
+select @@FETCH_STATUS
+
+--cursor to update a column with conditional
+select * 
+into temp_employees
+from Employees
+
+select * from temp_employees
+
+
+create proc sp_update_title
+as
+begin
+
+	declare x cursor for select Title from temp_employees
+	open x
+
+	declare @title varchar(50)
+	while @@FETCH_STATUS=0
+	begin
+		print @@fetch_status
+		fetch next from x into @title
+		if @Title like N'vice%'
+			begin
+			update temp_employees
+			set title='test'+' '+@title where Title=@title
+			end
+		if @Title like N'inside%'
+			begin
+			update temp_employees
+			set title='test'+' '+@title where Title=@title
+			end
+	end	
+
+end
+
+exec sp_update_title 
+close x
+deallocate x
 
 
 
+SELECT CHARINDEX('t', 'Customer') AS MatchPosition;
 
+
+SELECT SUBSTRING(Address, 1, CHARINDEX('4',Address)) FROM Employees
+
+select * from Customers
+where ContactTitle in('owner','marketing manager')
+
+select EmployeeID from Employees
+where EmployeeID%2 !=0
 
 
 
