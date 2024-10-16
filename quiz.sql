@@ -149,8 +149,15 @@ with top_part as
 select * from top_part where nt=1
 
 select top ((select count(*) as cnt from orders)/2) * from orders
-select * from orders
 
+
+create proc sp_cnt_divided @n int
+as
+begin
+select top ((select count(*) as cnt from orders)/@n) * from orders
+end
+
+exec sp_cnt_divided 3
 
 use Northwind
 exec sp_changedbowner sa
