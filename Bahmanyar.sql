@@ -372,7 +372,7 @@ deallocate x
 
 
 SELECT CHARINDEX('t', 'Customer') AS MatchPosition;
-
+SELECT CHARINDEX('t', 'Customer',2) AS MatchPosition; --last arg relate to at which index to start the search
 
 SELECT SUBSTRING(Address, 1, CHARINDEX('4',Address)) FROM Employees
 
@@ -383,6 +383,15 @@ select EmployeeID from Employees
 where EmployeeID%2 !=0
 
 
+update temp_employees
+set title='321'+' '+title where Title like N'1test%'
+
+update temp_employees
+set title=SUBSTRING(title,6,len(title)-6) where Title like N'test%'
 
 
 
+alter table temp_employees
+alter column title varchar(50)
+
+drop table if exists temp_dup_emp

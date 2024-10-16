@@ -1,3 +1,7 @@
+--7. Write a SQL query to print the FIRST_NAME and LAST_NAME from Student table into single column COMPLETE_NAME.
+select concat(ProductName,' ',UnitPrice) as concatanated from Products 
+
+
 /*
 20. List all students and their scholarship amounts if they have received any.
 If a student has not received a scholarship, display NULL for the scholarship details.
@@ -257,3 +261,153 @@ where 1=2
 select ProductName from Products
 where UnitPrice=(select UnitPrice from Products
 				where ProductName='Steeleye Stout')
+
+
+				--windowfunction
+select ProductName,
+UnitPrice,
+categoryid,
+avg(UnitPrice) over(partition by categoryid order by unitprice) as avg_category from Products
+
+
+select ProductName,
+UnitPrice,
+categoryid,
+avg(UnitPrice)
+as avg_category
+from Products
+group by ProductName,
+UnitPrice,
+categoryid
+
+--advanced lvl
+--7. How would you identify and remove duplicate rows in a table? 
+WITH CTE AS (
+    SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY Column1, Column2 ORDER BY (SELECT NULL)) AS RowNum
+    FROM TableName
+)
+DELETE FROM CTE
+WHERE RowNum > 1;
+
+
+--add duplicates
+
+with cte as
+(select * from temp_employees
+union all
+select * from temp_employees
+)
+select * 
+into temp_dup_emp
+from cte
+order by EmployeeID
+
+
+select EmployeeID,LastName from temp_dup_emp
+
+--this one orders correctly
+with cte as
+(select * from temp_employees cross join
+(select 1 as o union all select 2) o
+)
+select * 
+into temp_dup_emp
+from cte 
+
+select datepart(dayofyear from '2023-10-03')
+select datepart(quarter from '2023-10-03')
+select datepart(hour from '2023-10-03')
+
+--Q23. Retrieve the details of the course with the maximum credits
+select * from orders
+where freight=(select max(freight) from orders)
+
+with cte as
+(select rank() over(order by freight desc) ra,* from orders)
+select * from cte
+where ra=1
+
+--test
+select * from products p1
+where 4=(select count(UnitPrice) from products p2 where p2.UnitPrice>p1.UnitPrice)
+
+select * from Products order by UnitPrice desc
+
+
+--Q25. Find the courses that do not have any enrollments.
+select * from Customers c left join orders o on o.CustomerID=c.CustomerID
+where o.OrderID is null
+
+select * from customers
+where not exists(select * from orders
+				where CustomerID=Customers.CustomerID)
+
+--Q26. Retrieve the names of students who are enrolled in more than one course.
+select ProductName from Products
+group by ProductID
+having count(unitprice)>1
+
+
+--Q32. Find the students enrolled in 'Machine Learning' but not in 'Artificial Intelligence'.
+
+
+--Q36. Find the students who have enrolled in the maximum number of courses.
+--find the customers with max orders
+
+select c.CustomerID,CompanyName,count(o.OrderID) ord_cnt from Customers c
+join orders o on o.CustomerID=c.CustomerID
+group by c.CustomerID,CompanyName
+having count(o.OrderID) =(
+	select max(ord_count) from (
+		select c.CustomerID,CompanyName,count(orderid) ord_count from orders o join Customers c on o.CustomerID=c.CustomerID
+		group by c.CustomerID,CompanyName
+		) as sub
+		)
+
+
+--Q37. Retrieve the course with the highest and lowest number of students enrolled
+--suppliers with highest and lowest product
+select top 1 s.SupplierID,count(p.ProductName) product_count 
+into #temp
+from suppliers s join Products p
+on s.SupplierID=p.SupplierID
+group by s.SupplierID
+order by  product_count desc
+
+select distinct top 1 s.SupplierID,count(p.ProductName) product_count
+into #temp2
+from suppliers s join Products p
+on s.SupplierID=p.SupplierID
+group by s.SupplierID
+order by  product_count
+
+select * from #temp
+union all
+select * from #temp2
+
+
+select s.SupplierID,count(p.ProductName) product_count 
+from suppliers s join Products p
+on s.SupplierID=p.SupplierID
+group by s.SupplierID
+having count(p.ProductName)= (select max(product_cnt) from(
+select s.SupplierID,count(p.ProductName) product_cnt 
+from suppliers s join Products p
+on s.SupplierID=p.SupplierID
+group by s.SupplierID
+) as sub
+)
+union all
+select s.SupplierID,count(p.ProductName) product_count 
+from suppliers s join Products p
+on s.SupplierID=p.SupplierID
+group by s.SupplierID
+having count(p.ProductName)= (select min(product_cnt) from(
+select s.SupplierID,count(p.ProductName) product_cnt 
+from suppliers s join Products p
+on s.SupplierID=p.SupplierID
+group by s.SupplierID
+) as sub
+)
+
