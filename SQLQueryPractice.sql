@@ -22,23 +22,23 @@ SELECT *
 FROM job_postings_fact
 
 --top paying jobs for my role
-select j.job_id,j.job_title_short,j.salary_year_avg
-from job_postings_fact
+select top 10 j.job_id,j.job_title_short,j.salary_year_avg
+from job_postings_fact j
 where job_title_short='Machine Learning Engineer'
 order by salary_year_avg desc
-limit 10
+
 
 
 
 --skills required for these top paying roles
-select j.job_id,j.job_title_short,j.salary_year_avg,sd.skills
+select top 10 j.job_id,j.job_title_short,j.salary_year_avg,sd.skills
 from job_postings_fact j
 join skills_job_dim sj
 on sj.job_id=j.job_id
 join skills_dim sd
 on sd.skill_id=sj.skill_id
 order by salary_year_avg desc
-limit 10
+
 
 --most in demand skills for my role
 select sd.skills,count(sd.skills) as skill_demand
@@ -237,4 +237,30 @@ select ROW_NUMBER() over(order by product_id),* from View_ProdSale
 select * from products
 where product_id not in(select product_id from sale)
 
+
+select * from products
+
+select count(UnitPrice),SupplierID,CategoryID from Products
+group by SupplierID,CategoryID
+
+
+select *,lead(UnitPrice,2,2) over(order by unitprice) ld from Products
+
+
+with cte as(
+	select CustomerID,count(country) as country_cnt
+	from Customers
+	group by CustomerID
+	)
+select cte.CustomerID,contactTitle,country_cnt,address
+from cte join Customers c on c.CustomerID=cte.customerid
+
+
+select ContactTitle,count(country) as country_cnt
+	from Customers
+	group by ContactTitle
+
+
+select *,count(country) over(partition by ContactTitle,city) as country_cnt
+	from Customers
 
