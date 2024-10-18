@@ -41,6 +41,7 @@ from Region
 select*,lead(UnitPrice) over(partition by categoryid order by unitprice desc) as next_price
 from Products
 
-select*,case
-lag(UnitPrice) over(partition by categoryid order by unitprice desc) as next_price
-from Products
+select *,
+lag(UnitPrice,1,0) over(partition by categoryid order by unitprice desc) as prev_price
+from Products 
+

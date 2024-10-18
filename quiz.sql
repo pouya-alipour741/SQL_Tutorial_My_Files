@@ -236,10 +236,11 @@ create proc sp_nth @n int
 as
 begin
 select top 1 * from
-(select top @n freight from orders order by freight desc) sub
+(select top (@n) freight from orders order by freight desc) sub
 order by freight
 end
 
+exec sp_nth 5
 
 select distinct top 1 freight from orders o1
 where 5>(select count(distinct freight) from orders o2
@@ -270,7 +271,7 @@ where UnitPrice=(select UnitPrice from Products
 				where ProductName='Steeleye Stout')
 
 
-				--windowfunction
+--windowfunction
 select ProductName,
 UnitPrice,
 categoryid,
@@ -367,10 +368,11 @@ join orders o on o.CustomerID=c.CustomerID
 group by c.CustomerID,CompanyName
 having count(o.OrderID) =(
 	select max(ord_count) from (
-		select c.CustomerID,CompanyName,count(orderid) ord_count from orders o join Customers c on o.CustomerID=c.CustomerID
-		group by c.CustomerID,CompanyName
+		select count(orderid) ord_count from orders o join Customers c on o.CustomerID=c.CustomerID
+		group by c.CustomerID
 		) as sub
 		)
+
 
 
 --Q37. Retrieve the course with the highest and lowest number of students enrolled
@@ -388,7 +390,7 @@ from suppliers s join Products p
 on s.SupplierID=p.SupplierID
 group by s.SupplierID
 order by  product_count
-
+ 
 select * from #temp
 union all
 select * from #temp2
@@ -417,4 +419,110 @@ on s.SupplierID=p.SupplierID
 group by s.SupplierID
 ) as sub
 )
+
+
+
+
+
+--How would you identify and remove duplicate rows in a table?
+
+--create duplicate table
+drop table if exists tempdb..#temp
+with cte as
+(select * from Employees
+cross join
+(select 1 as n union select 2) n)
+select * into temp_table
+from cte
+order by employeeid
+
+select * from temp_table
+
+
+--remove duplicates for this anomoly with repeated primary keys
+select * into temp_table2 from(
+select ROW_NUMBER() over(partition by employeeid order by (select null)) rn,* from temp_table
+) sub
+select * from temp_table2
+
+delete from temp_table2
+where rn in(select rn from temp_table2
+where rn=2
+) 
+
+alter table temp_table2
+drop column rn
+
+select * from temp_table2
+
+--remove duplicates  in general
+--add duplicate
+insert into temp_table2([LastName], [FirstName],n)
+select [LastName], [FirstName],n from temp_table2
+
+select * from temp_table2
+
+--method 1
+delete from temp_table
+where EmployeeID not in(select LastName,FirstName,min(EmployeeID) from temp_table
+					group by LastName,FirstName)
+
+--method 2
+delete from temp_table2
+where EmployeeID in(select max(EmployeeID) emp_id from temp_table2
+						group by LastName,FirstName
+						having count(EmployeeID)>1
+						)
+
+--method 3
+delete from temp_table2
+where EmployeeID in(select EmployeeID emp_id from 
+					(select ROW_NUMBER() over(partition by LastName,FirstName order by(EmployeeID)) rn,* from temp_table2
+					) x
+					where rn>1
+					)
+--method 4
+with cte as
+(select ROW_NUMBER() over(partition by LastName,FirstName order by(select null)) rn,* from temp_table2
+					)
+delete from cte
+where rn>1
+					
+
+
+--display most expensive product for each category
+select *,
+FIRST_VALUE(ProductName) over (partition by categoryid order by unitprice desc) max_price_prod,
+last_VALUE(ProductName) over (partition by categoryid order by unitprice desc
+--range between unbounded preceding and current row) min_price_prod
+range between unbounded preceding and unbounded following) min_price_prod
+from Products
+ 
+
+--most expensive product for each category
+select CategoryID,max(UnitPrice) max_price from Products
+group by CategoryID
+
+--highest expensive product in all categories
+select CategoryID,max(UnitPrice) max_price from Products
+group by CategoryID
+having max(unitprice) = (select max(max_price) from
+						(select CategoryID,max(UnitPrice) max_price from Products
+						group by CategoryID) sub
+						)
+
+
+select * from Products
+
+
+select *,max(unitprice) over (partition by CategoryID) max_price from Products
+
+where CategoryID in(select CategoryID  from Categories
+					where CategoryID=Products.CategoryID
+					and CategoryName='beverages' or CategoryName='condiments')
+
+--difference between two consecutive price
+select *,
+unitprice -lag(UnitPrice,1,0) over(partition by categoryid order by unitprice asc) as lag_price
+from Products
 

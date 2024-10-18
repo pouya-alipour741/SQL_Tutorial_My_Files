@@ -4,7 +4,7 @@ on c.CustomerID = o.CustomerID
 
 
 --summarizing what I learned till now
-/*for each column value define workflow instance name and number of instances, days taken. highest priority only and no empty column value.
+/*for each column value define workflow instance name and number of instances, days taken. highest priority only and no empty value.
 if less than a day taken we pretend it took a day*/
 use TBSSimNew
 
