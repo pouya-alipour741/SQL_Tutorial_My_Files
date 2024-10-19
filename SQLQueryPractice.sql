@@ -264,3 +264,40 @@ select ContactTitle,count(country) as country_cnt
 select *,count(country) over(partition by ContactTitle,city) as country_cnt
 	from Customers
 
+
+alter proc sp_insert @productname varchar(50)
+as
+begin
+	insert into price_history(productname)
+	select @productname
+	from Products
+end
+
+exec sp_insert ProductName
+
+delete from price_history
+where productid is null
+
+insert into price_history(productname)
+select productname
+from Products
+
+
+create function price_thresh(@unitprice_thresh int)
+returns table
+as RETURN(select * from Products
+		where UnitPrice>@unitprice_thresh)
+
+
+select * from price_thresh(50) p join [Order Details] od on od.ProductID=p.ProductID
+
+--can't join this with other tables unlike function above
+create proc sp_price_thresh(@unitprice_thresh int)
+as
+begin
+	select * from Products
+	where UnitPrice>@unitprice_thresh
+end
+
+exec sp_price_thresh 50
+

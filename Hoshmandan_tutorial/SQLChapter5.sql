@@ -144,7 +144,21 @@ from employees e
   select * from products
   where unitprice=(select max(unitprice) from products)
 
-  
+  --alt
+  select * from products p1
+  where 0=(select count(*) from products p2
+			where p2.UnitPrice>p1.UnitPrice)
+
+--alt 2
+with cte as(
+select rank() over(order by unitprice desc) rk,* from products
+)
+select [ProductID], [ProductName], [SupplierID], [CategoryID], [QuantityPerUnit], [UnitPrice], [UnitsInStock], [UnitsOnOrder], [ReorderLevel], [Discontinued]
+from cte
+where rk=1
+
+
+
   ---کالاهایی را لیست کنید که از متوسط بهای کالاهای هم نوع خود گرانتر هستند
   select productid,productname,unitprice,(select avg(unitprice) from products  where categoryid=p.categoryid) as average_price
   from products p where unitprice>(select avg(unitprice) from products where categoryid=p.categoryid)

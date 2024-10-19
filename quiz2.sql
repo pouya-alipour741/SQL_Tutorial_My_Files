@@ -1,4 +1,4 @@
---link to DB: https://sqliteviz.com/app/#/workspace?hide_schema=1 uses mysql dbms
+﻿--link to DB: https://sqliteviz.com/app/#/workspace?hide_schema=1 uses mysql dbms
 --find the count of number of remote job posting per skill
 
 select  sd.skill_id,sd.skills,count(*) as skill_count
@@ -73,4 +73,53 @@ select * from orders o1
 where 4>(select count(freight) from orders o2
 		where o2.Freight<o1.Freight)
 
+
+ ---مثال: در مقابل نام هر گروه کالا، شماره، نام و قیمت گرانترین کالای آن گروه را نمایش دهید
+ select 
+	Categoryname,
+	(select top 1 ProductID from Products
+	where CategoryID=c.CategoryID
+	order by UnitPrice desc) as highest_id,
+	(select top 1 productname from products
+	where CategoryID=c.CategoryID
+	order by UnitPrice desc) as highest_product_name,
+	(select top 1 UnitPrice from products
+	where CategoryID=c.CategoryID
+	order by UnitPrice desc) as highest_product_price
+ from 
+	Categories c
+
+--alt
+ select 
+	distinct Categoryname,
+	(select top 1 ProductID from Products
+	where CategoryID=c.CategoryID
+	order by UnitPrice desc) highest_id,
+	(select top 1 productname from products
+	where CategoryID=c.CategoryID
+	order by UnitPrice desc) as highest_product_name,
+	max(unitprice) over(partition by Categoryname) max_cat_price
+
+from categories c join Products p on c.CategoryID=p.CategoryID
+
+--مثال: در مقابل نام هر کارمند تعداد سفارشات او در سه سال 1996 و 1997 و 1998 و جمع این سه سال در یک ستون بیاید
+--pivot
+
+select lastname,[1996],[1997],[1998] from(
+	select
+		e.employeeid,lastname,year(OrderDate) ord_date,orderid
+		from Employees e join Orders o on e.EmployeeID=o.EmployeeID
+		) x
+pivot(
+	count(orderid) for ord_date in([1996],[1997],[1998])
+	) pvt
+
+
+select 
+	e.employeeid,lastname,
+	(select count(orderid) [1996] from orders
+	where year(orderdate)=1996
+	and e.employeeid=employeeid)
+
+from Employees e
 
