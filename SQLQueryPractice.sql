@@ -265,6 +265,17 @@ select *,count(country) over(partition by ContactTitle,city) as country_cnt
 	from Customers
 
 
+--second highest
+select * 
+from products
+order by UnitPrice desc
+offset 1 rows fetch next 1 rows only;
+
+select * 
+from products p1
+where 1=(select count(ProductID) from Products p2
+		where p2.UnitPrice>p1.UnitPrice)
+
 alter proc sp_insert @productname varchar(50)
 as
 begin
