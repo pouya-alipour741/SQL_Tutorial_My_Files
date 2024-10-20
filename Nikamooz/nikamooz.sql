@@ -1,1 +1,0 @@
-select  [CategoryID], [CategoryName], [Description], [Picture] from Categories

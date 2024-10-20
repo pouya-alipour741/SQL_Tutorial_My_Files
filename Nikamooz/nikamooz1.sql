@@ -152,36 +152,3 @@ select dateadd(day,1,OrderDate)
 from orders
 
 
---rollup
-select c.CustomerID,CompanyName,count(OrderID) ord_cnt from customers c join orders o
-on o.CustomerID=c.CustomerID
-group by c.CustomerID,CompanyName
-
-select c.CustomerID,country,ShipName,count(OrderID) ord_cnt from customers c join orders o
-on o.CustomerID=c.CustomerID
-group by rollup (c.CustomerID,country,ShipName)
-
-
-SELECT
-	EmployeeID,
-	YEAR(OrderDate) AS OrderYear,
-	MONTH(OrderDate) AS OrderMonth,
-	COUNT(OrderID) AS Num
-FROM Orders
-	WHERE EmployeeID  IN (1,2)
-GROUP BY ROLLUP(EmployeeID, YEAR(OrderDate), MONTH(OrderDate));
-
-
---grouping
-SELECT
-	EmployeeID,
-	YEAR(OrderDate) AS OrderYear,
-	MONTH(OrderDate) AS OrderMonth,
-	COUNT(OrderID) AS Num,
-	grouping (EmployeeID) as GROUPING_EmployeeID,
-	grouping (month(OrderDate)) as grouping_month,
-	grouping (YEAR(OrderDate)) as grouping_year
-FROM Orders
-	--WHERE EmployeeID  IN (1,2)
-GROUP BY ROLLUP(EmployeeID, YEAR(OrderDate), MONTH(OrderDate))
-

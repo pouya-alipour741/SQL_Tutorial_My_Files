@@ -76,6 +76,26 @@ order by skill_demand desc) as tt
 where tt.top_n_percent_salary=1
 
 
+--average salary and number of job postings per skill
+--and percent of jobs to total
+with cte as(
+SELECT skills,avg(salary_year_avg) avg_salary,count(job_title) job_count
+FROM job_postings_fact jp join skills_job_dim sj on sj.job_id=jp.job_id
+join skills_dim sd on sd.skill_id=sj.skill_id
+group by skills
+),
+cte2 as(
+select *,sum(job_count) over() total_jobs from cte
+ )
+ select *,100.0*job_count/total_jobs from cte2
+
+
+--how many job posting mention each skill
+SELECT sd.skill_id ,count(job_title) 
+FROM skills_job_dim sd join job_postings_fact jp on jp.job_id=sd.job_id
+group by sd.skill_id
+
+
 --To list order items and number of it's orders for products low in stock, type:
 --best soution with join method
 with tt
@@ -312,3 +332,45 @@ end
 
 exec sp_price_thresh 50
 
+
+--
+with cte as(
+select o.OrderID,CustomerID
+from Orders o
+where 0.2<=all(select Discount from [Order Details] od
+		where od.OrderID=o.OrderID)
+),
+cte2 as(
+select Country,ContactTitle,count(Country) country_cnt from  Customers c join cte on cte.CustomerID=c.CustomerID
+group by Country,ContactTitle
+)
+select * from cte2
+order by country
+
+
+--customers that had orders within a week
+select customerid,o1.OrderID,OrderDate from orders o1
+where customerid in(select customerid from orders o2
+		where datediff(day,o1.OrderDate,o2.orderdate) in(1,2,3,4,5,6,7)
+)
+
+
+select * from orders
+where CustomerID='HANAR'
+
+
+select customerid,o1.OrderID,OrderDate from orders o1
+where customerid in(select customerid from orders o2
+		where datediff(day,o1.OrderDate,o2.orderdate)=7)
+order by 1;
+
+
+with cte as(
+select customerid,OrderID,OrderDate,lag(OrderDate) over(partition by customerid order by orderdate) previous_ord from orders
+)
+select * from cte
+where OrderDate= (select dateadd(day,7,previous_ord))
+order by 1;
+
+
+select dateadd(day,1,'1998-05-06 00:00:00.000')

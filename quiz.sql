@@ -371,9 +371,16 @@ having count(o.OrderID) =(
 		select count(orderid) ord_count from orders o join Customers c on o.CustomerID=c.CustomerID
 		group by c.CustomerID
 		) as sub
-		)
+		);
 
-
+--cte with same resource
+with cte as(
+select c.CustomerID,CompanyName,count(o.OrderID) ord_cnt from Customers c
+join orders o on o.CustomerID=c.CustomerID
+group by c.CustomerID,CompanyName
+)
+select * from cte
+where ord_cnt= (select max(ord_cnt) from cte);
 
 --Q37. Retrieve the course with the highest and lowest number of students enrolled
 --suppliers with highest and lowest product
