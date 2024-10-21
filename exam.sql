@@ -28,11 +28,11 @@ having count(TaskID)>100
 create proc sp_workflow @year datetime,@year2 datetime
 as
 begin
-	select top 100 CreateDate,IsActive,count(wfi.WorkflowID) wf_count from Task.TblWorkflowInstance wfi
+	select day(CreateDate),IsActive,count(wfi.WorkflowID) wf_count from Task.TblWorkflowInstance wfi
 	join Workflow. TblWorkflow wf
 	on wfi.WorkflowID=wf.WorkflowId
 	where year(CreateDate) between @year and @year2
-	group by CreateDate,IsActive
+	group by day(CreateDate),IsActive
 end
 
 exec sp_workflow 2008,2009
@@ -51,6 +51,10 @@ select *
 from  INFORMATION_SCHEMA.COLUMNS
 where TABLE_SCHEMA = 'dbo'
 
+select *
+from  INFORMATION_SCHEMA.tables
+where TABLE_SCHEMA = 'dbo'
+
 --Q5
 create table wf_table(
 CreateDate datetime,
@@ -59,3 +63,25 @@ wf_count int)
 
 insert into wf_table
 exec sp_workflow 2008,2009
+
+
+--practice
+create proc sp_test @year int,@year2 int
+as
+begin
+	select ModifiedDate,BusinessEntityID,count(EmailPromotion) wf_count from [AdventureWorks2014].[Person].[Person] p
+	where year(ModifiedDate) between @year and @year2
+	group by ModifiedDate,BusinessEntityID
+end
+
+exec sp_test 2011,2013
+
+
+create table wf_table(
+ModifiedDate datetime,
+BusinessEntityID int,
+wf_count int)
+
+insert into wf_table
+exec sp_test 2008,2009
+
