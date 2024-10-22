@@ -377,3 +377,14 @@ select dateadd(day,1,'1998-05-06 00:00:00.000')
 
 
 --
+use AdventureWorks2014
+--CAST(SaleDate AS DATE) DATENAME(MONTH, SaleDate)  FORMAT(SaleDate, 'HH')  FORMAT(SaleDate, 'dddd') AS DayOfWeek
+
+select * from(
+select p.ProductID,name,cast(StartDate as date) startdate,format(StartDate, 'dddd') dayofweek,ScrappedQty,Class 
+from Production.Product p 
+join Production.WorkOrder wo on p.ProductID=wo.ProductID
+) x
+pivot(count(startdate) for class in([L],[M],[H])) y
+
+--for example, if the sale created on '2009-11-02 06:12:55.000', dateadd(DAY,0, datediff(day,0, created)) return '2009-11-02 00:00:00.000'

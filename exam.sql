@@ -78,7 +78,7 @@ begin
 end
 
 
-select top 1000 dAY(i.CreateDate) status_day,
+select top 1000 cast(i.CreateDate as date) status_day,
 case  when s.TaskStatusName='در حال انجام' then count(WorkflowInstanceID) else 0  end 'در حال انجام',
 case when s.TaskStatusName='انجام شده' then count(WorkflowInstanceID) else 0 end 'انجام شده',
 case when s.TaskStatusName='ابطال شده' then count(WorkflowInstanceID) else 0 end 'ابطال شده'
@@ -88,7 +88,7 @@ join task.TblTask t on t.ResponsibleUserID=u.UserId
 join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
 where i.CreateDate between '2012-01-08' and '2012-01-12'
 and s.TaskStatusName in('در حال انجام','انجام شده','ابطال شده')
-group by day(i.CreateDate),s.TaskStatusName
+group by cast(i.CreateDate as date),s.TaskStatusName
 
 
 --Q4
@@ -98,9 +98,6 @@ select *
 from  INFORMATION_SCHEMA.COLUMNS
 where TABLE_SCHEMA = 'dbo'
 
-select *
-from  INFORMATION_SCHEMA.tables
-where TABLE_SCHEMA = 'dbo'
 
 --Q5
 create table wf_table(
