@@ -30,65 +30,53 @@ where task_count>100
 --having count(TaskID)>100
 
 
-
 --Q3
-create proc sp_workflow @date datetime,@date2 datetime
+
+create proc sp_workflow_pvt @date datetime,@date2 datetime
 as
 begin
-	select * from (
-	(select i.CreateDate,s.TaskStatusName,i.WorkflowInstanceID 
-	from Task.TblWorkflowInstance i
-	join users.TblUsers u on i.StarterUserID=u.UserId
-	join task.TblTask t on t.ResponsibleUserID=u.UserId
-	join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
-	where i.CreateDate between @date and @date2
+	select cast(CreateDate as date) CreateDate,[1] as 'درحال انجام' ,[2] as 'انجام شده' ,[4] as 'ابطال شده'
+	from (
+	select cast(CreateDate as date) CreateDate,WorkflowInstanceID,WorkflowInstanceStatusID
+	from Task.TblWorkflowInstance
+	where cast(CreateDate as date) between @date and @date2
 	) x
-	pivot(count(WorkflowInstanceID ) for TaskStatusName in([در حال انجام],[انجام شده],[ابطال شده])) pvt
+	pivot(count(WorkflowInstanceID ) for WorkflowInstanceStatusID in([1],[2],[4])
+	) pvt
 end
 
-exec sp_workflow '2012-01-08','2012-01-09'
+exec sp_workflow_pvt '2012-01-08','2012-01-12'
 
 
 --pivot
-select * from (
-(select i.CreateDate,s.TaskStatusName,i.WorkflowInstanceID 
-from Task.TblWorkflowInstance i
-join users.TblUsers u on i.StarterUserID=u.UserId
-join task.TblTask t on t.ResponsibleUserID=u.UserId
-join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
-where i.CreateDate between '2012-01-08' and '2012-01-09'
+declare @fromdate nvarchar(20)= '2023-01-08'
+declare @todate nvarchar(20)= getdate()--'2012-01-12'
+
+select cast(CreateDate as date) CreateDate,[1] as 'درحال انجام' ,[2] as 'انجام شده' ,[4] as 'ابطال شده'--,[1]+[2]+[3] total
+from (
+select cast(CreateDate as date) CreateDate,WorkflowInstanceID,WorkflowInstanceStatusID
+from Task.TblWorkflowInstance
+where cast(CreateDate as date) between @fromdate and @todate
 ) x
-pivot(count(WorkflowInstanceID ) for TaskStatusName in([در حال انجام],[انجام شده],[ابطال شده])) pvt
-
---case
-create proc sp_workflow @date datetime,@date2 datetime
-as
-begin
-	select top 1000 dAY(i.CreateDate) status_day,
-	case  when s.TaskStatusName='در حال انجام' then count(WorkflowInstanceID) else 0  end 'در حال انجام',
-	case when s.TaskStatusName='انجام شده' then count(WorkflowInstanceID) else 0 end 'انجام شده',
-	case when s.TaskStatusName='ابطال شده' then count(WorkflowInstanceID) else 0 end 'ابطال شده'
-	from Task.TblWorkflowInstance i
-	join users.TblUsers u on i.StarterUserID=u.UserId
-	join task.TblTask t on t.ResponsibleUserID=u.UserId
-	join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
-	where i.CreateDate between @date and @date2
-	and s.TaskStatusName in('در حال انجام','انجام شده','ابطال شده')
-	group by day(i.CreateDate),s.TaskStatusName
-end
+pivot(count(WorkflowInstanceID ) for WorkflowInstanceStatusID in([1],[2],[4])
+) pvt
+order by CreateDate
 
 
-select top 1000 cast(i.CreateDate as date) status_day,
-case  when s.TaskStatusName='در حال انجام' then count(WorkflowInstanceID) else 0  end 'در حال انجام',
-case when s.TaskStatusName='انجام شده' then count(WorkflowInstanceID) else 0 end 'انجام شده',
-case when s.TaskStatusName='ابطال شده' then count(WorkflowInstanceID) else 0 end 'ابطال شده'
-from Task.TblWorkflowInstance i
-join users.TblUsers u on i.StarterUserID=u.UserId
-join task.TblTask t on t.ResponsibleUserID=u.UserId
-join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
-where i.CreateDate between '2012-01-08' and '2012-01-12'
-and s.TaskStatusName in('در حال انجام','انجام شده','ابطال شده')
-group by cast(i.CreateDate as date),s.TaskStatusName
+--not giving correct results
+--select * from (
+--select cast(i.CreateDate as date) CreateDate,s.TaskStatusName,i.WorkflowInstanceID 
+--from Task.TblWorkflowInstance i
+--join users.TblUsers u on i.StarterUserID=u.UserId
+--join task.TblTask t on t.ResponsibleUserID=u.UserId
+--join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
+--where cast(i.CreateDate as date) between '2012-01-08' and '2012-01-12'
+--) x
+--pivot(count(WorkflowInstanceID ) for TaskStatusName in([در حال انجام],[انجام شده],[ابطال شده])) pvt
+
+
+
+
 
 
 --Q4
@@ -111,44 +99,29 @@ exec sp_workflow '2012-01-08','2012-01-09'
 
 
 --Q6
-EXECUTE sp_executesql   
-N'select * from (
-(select i.CreateDate,s.TaskStatusName,i.WorkflowInstanceID 
-from Task.TblWorkflowInstance i
-join users.TblUsers u on i.StarterUserID=u.UserId
-join task.TblTask t on t.ResponsibleUserID=u.UserId
-join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
-where i.CreateDate between @date and @date2
-) x
-pivot(count(WorkflowInstanceID ) for TaskStatusName in([در حال انجام],[انجام شده],[ابطال شده])) pvt',
-N'@date datetime,@date2 datetime',
-@date='2012-01-08',@date2='2012-01-09'
-
-
---wip 
-create proc sp_workflow @date datetime,@date2 datetime
+create proc sp_dynamic2 @fromdate nvarchar(20),@todate nvarchar(20)
 as
 begin
-	declare @sql varchar(max)
+	declare @sql nvarchar(max)
 
+	set @sql = N'select cast(CreateDate as date) CreateDate,[1] as ''درحال انجام'' ,
+	[2] as ''انجام شده'',
+	[4] as ''ابطال شده''
+	from (
+	select cast(CreateDate as date) CreateDate,WorkflowInstanceID,WorkflowInstanceStatusID
+	from Task.TblWorkflowInstance
+	where cast(CreateDate as date) between '''+@fromdate+''' and '''+@todate+'''
+	) x
+	pivot(count(WorkflowInstanceID ) for WorkflowInstanceStatusID in([1],[2],[4])
+	) pvt
+	order by CreateDate'
 
-	set @sql = '
-	select dAY(i.CreateDate) status_day,
-	case  when s.TaskStatusName='در حال انجام' then count(WorkflowInstanceID) else 0  end 'در حال انجام',
-	case when s.TaskStatusName='انجام شده' then count(WorkflowInstanceID) else 0 end 'انجام شده',
-	case when s.TaskStatusName='ابطال شده' then count(WorkflowInstanceID) else 0 end 'ابطال شده'
-	from Task.TblWorkflowInstance i
-	join users.TblUsers u on i.StarterUserID=u.UserId
-	join task.TblTask t on t.ResponsibleUserID=u.UserId
-	join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
-	where i.CreateDate between @date and @date2
-	and s.TaskStatusName in('در حال انجام','انجام شده','ابطال شده')
-	group by day(i.CreateDate),s.TaskStatusName'
-
-		
-
-
+	exec sp_executesql @sql 
 end
+
+exec sp_dynamic2 '2023-01-08','2024-01-08'
+
+
 
 
 

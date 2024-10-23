@@ -388,3 +388,112 @@ join Production.WorkOrder wo on p.ProductID=wo.ProductID
 pivot(count(startdate) for class in([L],[M],[H])) y
 
 --for example, if the sale created on '2009-11-02 06:12:55.000', dateadd(DAY,0, datediff(day,0, created)) return '2009-11-02 00:00:00.000'
+
+
+
+declare @fromdate as nvarchar(10)= '2012-01-08'
+declare @todate as nvarchar(10) = '2012-01-12'
+
+select distinct cast(i.CreateDate as date) as createdate,
+(select count(*) from Task.TblWorkflowInstance i1 where i1.WorkflowInstanceStatusID = 1
+and cast(i1.CreateDate as date) =cast(i.CreateDate as date) ) as 'در حال انجام',
+(select count(*) from Task.TblWorkflowInstance i2 where i2.WorkflowInstanceStatusID = 2
+and cast(i2.CreateDate as date) =cast(i.CreateDate as date) ) as 'انجام شده',
+(select count(*) from Task.TblWorkflowInstance i3 where i3.WorkflowInstanceStatusID = 3
+and cast(i3.CreateDate as date) =cast(i.CreateDate as date) ) as 'ابطال شده'
+from Task.TblWorkflowInstance i 
+
+where cast(i.CreateDate as date) between @fromdate and @todate
+--group by cast(i.CreateDate as date),WorkflowInstanceID,WorkflowInstanceStatusID
+
+
+select * from sys.procedures
+
+select distinct * from INFORMATION_SCHEMA.COLUMNS
+where TABLE_SCHEMA='users'
+
+select distinct TABLE_NAME from INFORMATION_SCHEMA.COLUMNS
+where TABLE_SCHEMA='users'
+
+SELECT QUOTENAME('abcdef');
+
+
+--جدولی از تسک های کاربران که تعداد ان ها بیشتر از 100 باشد در بازه تاریخی معین
+select top 1000 * from task.tbltaskstatus
+select top 1000 * from task.TblTask
+
+select * from INFORMATION_SCHEMA.COLUMNS
+where TABLE_SCHEMA='task'
+and TABLE_NAME='tbltaskstatus'
+
+
+--Q2 practice
+--window
+declare @date1 nvarchar(20)='2009-01-08'
+declare @date2 nvarchar(20) = '2022-01-12';
+
+with cte as(
+select t.UserId,FullName,createdate,TaskStatusName,count(taskid) over(partition by t.userid) task_count
+from task.TblTask t
+join users.tblusers u on u.UserId=t.UserID
+join users.TblProfiles p on p.UserId=u.UserId
+join task.TblTaskStatus s on s.taskstatusid= t.TaskStatusID
+where CreateDate between @date1 and @date2
+and TaskStatusName = 'در حال انجام'
+)
+select * from cte 
+where task_count>100
+
+
+--group by
+declare @date1 nvarchar(20)='2009-01-08'
+declare @date2 nvarchar(20) = '2022-01-12';
+
+select t.UserID,count(TaskID) task_count
+from task.TblTask t
+join users.TblUsers u on t.UserID=u.UserId
+join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
+where TaskStatusName = 'در حال انجام' 
+and CreateDate between @date1 and @date2
+group by t.UserID
+having count(TaskID)>100
+
+
+declare @date1 nvarchar(20)='2009-01-08'
+declare @date2 nvarchar(20) = '2022-01-12';
+with cte as(
+select t.UserID,count(TaskID) task_count
+from task.TblTask t
+join users.TblUsers u on t.UserID=u.UserId
+join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
+where CreateDate between @date1 and @date2
+and TaskStatusName = 'در حال انجام'
+group by t.UserID
+having count(TaskID)>100
+)
+select *,
+(select FullName from users.TblProfiles where userid=cte.UserID) FamilyName
+--,(select CreateDate from task.TblTask where UserID=cte.UserID) UserID
+from cte
+
+
+join users.TblProfiles p on p.UserId=cte.UserId
+join task.TblTask t on t.UserID=cte.UserID
+
+
+--Q3 practice
+declare @fromdate varchar(20)='2009-01-08'
+,@todate varchar(20)='2022-01-12'
+
+select CreateDate,[1] as 'در حال انجام',[2] as 'انجام شده', [4] as 'ابطال شده'
+from(
+select cast(CreateDate as date) CreateDate,WorkflowInstanceID,WorkflowInstanceStatusID
+from task.TblWorkflowInstance
+where cast(CreateDate as date) between @fromdate and @todate
+) x
+pivot(count(WorkflowInstanceID) for WorkflowInstanceStatusID in([1],[2],[4])) pvt
+order by CreateDate
+
+
+select * from task.TblTaskStatus
+
