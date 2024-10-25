@@ -7,11 +7,13 @@ select top 100 * from  Workflow. TblWorkflow
 
 
 --Q1
+declare @ndays int=720
+
 select t.TaskStatusID,TaskID,TaskName,CreateDate,ts.TaskStatusName from Task.TblTask t
 join Task.TblTaskStatus ts
 on t.TaskStatusID=ts.TaskStatusID
 --where CreateDate < GETDATE()
-where CreateDate between dateadd(day,-720,GETDATE()) and GETDATE()
+where CreateDate between dateadd(day,-@ndays,GETDATE()) and GETDATE()
 
 
 --Q2
@@ -26,12 +28,10 @@ and year(CreateDate) between '2009' and '2022'
 )
 select  * from cte
 where task_count>100
---group by p.FullName,t.UserID,CreateDate,TaskStatusName
---having count(TaskID)>100
+
 
 
 --Q3
-
 create proc sp_workflow_pvt @date datetime,@date2 datetime
 as
 begin
@@ -43,39 +43,10 @@ begin
 	) x
 	pivot(count(WorkflowInstanceID ) for WorkflowInstanceStatusID in([1],[2],[4])
 	) pvt
+	order by CreateDate
 end
 
 exec sp_workflow_pvt '2012-01-08','2012-01-12'
-
-
---pivot
-declare @fromdate nvarchar(20)= '2023-01-08'
-declare @todate nvarchar(20)= getdate()--'2012-01-12'
-
-select cast(CreateDate as date) CreateDate,[1] as 'درحال انجام' ,[2] as 'انجام شده' ,[4] as 'ابطال شده'--,[1]+[2]+[3] total
-from (
-select cast(CreateDate as date) CreateDate,WorkflowInstanceID,WorkflowInstanceStatusID
-from Task.TblWorkflowInstance
-where cast(CreateDate as date) between @fromdate and @todate
-) x
-pivot(count(WorkflowInstanceID ) for WorkflowInstanceStatusID in([1],[2],[4])
-) pvt
-order by CreateDate
-
-
---not giving correct results
---select * from (
---select cast(i.CreateDate as date) CreateDate,s.TaskStatusName,i.WorkflowInstanceID 
---from Task.TblWorkflowInstance i
---join users.TblUsers u on i.StarterUserID=u.UserId
---join task.TblTask t on t.ResponsibleUserID=u.UserId
---join task.TblTaskStatus s on s.TaskStatusID=t.TaskStatusID
---where cast(i.CreateDate as date) between '2012-01-08' and '2012-01-12'
---) x
---pivot(count(WorkflowInstanceID ) for TaskStatusName in([در حال انجام],[انجام شده],[ابطال شده])) pvt
-
-
-
 
 
 

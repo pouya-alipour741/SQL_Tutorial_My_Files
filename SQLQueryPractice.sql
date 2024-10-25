@@ -497,3 +497,83 @@ order by CreateDate
 
 select * from task.TblTaskStatus
 
+----
+select * from Production.ProductCategory
+
+--number of products per production startdate
+--pivot
+select * from(
+select cast(SellStartDate as date) SellStartDate,c.Name,ProductID
+from Production.Product p join Production.ProductSubcategory s on p.ProductSubcategoryID=s.ProductSubcategoryID
+join production.ProductCategory c on c.ProductCategoryID=s.ProductCategoryID
+) x
+pivot(count(productid) for name in([Bikes],[Components],[Clothing],[Accessories])) pvt;
+
+
+--subquery with view
+--create view v_product
+--as
+--select SellStartDate,c.Name,ProductID
+--from Production.Product p join Production.pProductSubcategory s on p.ProductSubcategoryID=s.ProductSubcategoryID
+--join production.ProductCategory c on c.ProductCategoryID=s.ProductCategoryID
+
+
+select distinct SellStartDate,
+(select count(*) from v_product v2 where Name='Bikes' and v2.SellStartDate=v1.SellStartDate) bikes,
+(select count(*) from v_product v2 where Name='Components' and v2.SellStartDate=v1.SellStartDate) Components,
+(select count(*) from v_product v2 where Name='Clothing' and v2.SellStartDate=v1.SellStartDate) Clothing,
+(select count(*) from v_product v2 where Name='Accessories' and v2.SellStartDate=v1.SellStartDate) Accessories
+from v_product v1
+
+
+
+--
+select * from production.product
+select * from production.WorkOrder
+select * from production.ProductInventory
+
+select * from INFORMATION_SCHEMA.COLUMNS
+where TABLE_NAME='WorkOrder'
+
+create trigger tr_insert_prod on production.workorder after insert
+as
+	begin
+		update production.ProductInventory
+		set Quantity-=(select orderqty from inserted) where ProductID in (select ProductID from production.ProductInventory)
+	end
+
+drop trigger tr_insert_prod
+
+insert into production.WorkOrder ([ProductID], [OrderQty], [ScrappedQty], [StartDate], [EndDate], [DueDate], [ScrapReasonID], [ModifiedDate])
+values 
+(316,2,2,'2011-06-03 00:00:00.000','2011-06-03 00:00:00.000','2011-06-04 00:00:00.000',NULL,'2011-06-03 00:00:00.000')
+
+select * from production.ProductInventory
+where ProductID=316
+
+select productid from production.WorkOrder
+where ProductID in(select ProductID from production.ProductInventory)
+
+create proc sp_test
+as
+begin
+select * from production.ProductInventory
+end
+
+select *
+into #temp
+from production.ProductInventory
+
+truncate table #temp
+select * from #temp
+
+insert into #temp
+exec sp_test
+select * from #temp
+
+update #temp
+set bin=20
+where ProductID=1
+
+--while in trigger
+create trigger tr_insert_prod on production.WorkOrder 

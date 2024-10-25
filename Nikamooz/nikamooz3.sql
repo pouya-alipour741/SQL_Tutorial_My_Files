@@ -82,4 +82,111 @@ end tile_num
 from nik.price
 
 
+
+/*
+تمرین کلاسی
+
+کوئری‌ای بنویسید که به‌ازای هر کارمند، علاوه بر تاریخ سفارش و تعداد اقلام
+.مشخص کند که آخرین تعداد کل اقلام، قبل از سفارش جاری چه تعداد بوده است
+
+VIEW: Sales.EmpOrders
+
+empid    ordermonth   qty  Prv_Qty
+------  -----------  ----- -------
+  1      2016-07-01   121   NULL
+  1      2016-08-01   247   121
+  1      2016-09-01   255   247
+  ...  			     
+  9      2018-02-01   297   237
+  9      2018-03-01   317   297
+  9      2018-04-01   289   317
+
+(192 rows affected)
+*/
+
+select p.ProductID,p.SellStartDate,StockedQty,sum(StockedQty) over(partition by p.ProductID
+order by p.sellstartdate
+rows between 1 preceding and 1 preceding --only one before
+) last_order
+from Production.Product p join Production.WorkOrder w on p.ProductID=w.ProductID;
+
+
+select p.ProductID,p.SellStartDate,StockedQty,sum(StockedQty) over(partition by p.ProductID
+order by p.sellstartdate
+rows between unbounded preceding and 1 preceding --all before
+) last_order
+from Production.Product p join Production.WorkOrder w on p.ProductID=w.ProductID;
+
+--sub
+with cte as(
+select p.ProductID,p.SellStartDate,StockedQty
+from Production.Product p join Production.WorkOrder w on p.ProductID=w.ProductID
+)
+select ProductID,SellStartDate,StockedQty,
+(select max(StockedQty) from cte c2 where c2.ProductID=c1.ProductID and c2.StockedQty<=c1.StockedQty) max_prev_stocks
+from cte c1
+order by ProductID,SellStartDate;
+
+
 --
+with cte as(
+select p.ProductID,p.SellStartDate,StockedQty
+from Production.Product p join Production.WorkOrder w on p.ProductID=w.ProductID
+)
+select ProductID,SellStartDate,StockedQty,
+(select min(SellStartDate) from cte c2 where c2.ProductID=c1.ProductID and c2.SellStartDate<=c1.SellStartDate) min_sell_prev_date
+from cte c1
+order by ProductID,SellStartDate;
+
+/*
+تمرین کلاسی
+
+کوئری‌ای بنویسید که به‌ازای مشتری 1 یا 2 علاوه بر نمایش تاریخ و تعداد اقلام سفارش
+.در جلو هر سطر قدیمی‌ترین و جدیدترین سفارشی را هم که تاکنون ثبت شده، نمایش دهد
+
+custid    orderdate    qty  Min_OrderDate   Max_OrderDate
+-------  -----------  ---- -------------   -------------- 
+  1       2017-08-25   38    2017-08-25      2017-08-25  
+  1       2017-10-03   20    2017-08-25      2017-10-03  
+  1       2017-10-13   21    2017-08-25      2017-10-13  
+  1       2018-01-15   17    2017-08-25      2018-01-15  
+  1       2018-03-16   18    2017-08-25      2018-03-16  
+  1       2018-04-09   60    2017-08-25      2018-04-09  
+  2       2016-09-18   6     2016-09-18      2016-09-18  
+  2       2017-08-08   18    2016-09-18      2017-08-08  
+  2       2017-11-28   10    2016-09-18      2017-11-28  
+  2       2018-03-04   29    2016-09-18      2018-03-04  
+
+(10 rows affected)
+*/
+
+--duplicate test
+with cte as(
+select Color,name,SellStartDate,ListPrice,ROW_NUMBER() over(partition by Color order by Color) rn
+from Production.Product)
+select * from cte
+where rn>1 and color is not null
+
+
+select Color,name,SellStartDate,ListPrice,
+min(SellStartDate) over(partition by Color order by SellStartDate rows between unbounded preceding and current row) min_SellStartDate,
+max(SellStartDate) over(partition by Color order by SellStartDate rows between unbounded preceding and current row) max_SellStartDate
+from Production.Product
+where Color is not null;
+
+
+
+
+/*
+.بنویسید WF اکنون همین کوئری را بدون استفاده از
+*/
+
+select Color,name,SellStartDate,ListPrice,
+(select min(SellStartDate) from  Production.Product p2 where p1.Color=p2.Color and p2.SellStartDate<=p1.SellStartDate) min_SellStartDate,
+(select max(SellStartDate) from  Production.Product p2 where p1.Color=p2.Color and p2.SellStartDate<=p1.SellStartDate) max_SellStartDate
+from Production.Product p1
+where Color is not null
+order by Color,SellStartDate
+
+
+

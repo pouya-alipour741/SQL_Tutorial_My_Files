@@ -47,7 +47,7 @@ into #temp
 from inserted
 declare @n int
 set @n=1
-while @n<=(select count(*) from inserted)
+while @n<=(select count(*) from inserted) 
 	begin
 	declare @q int
 	declare @pid int
