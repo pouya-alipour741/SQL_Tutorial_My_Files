@@ -1,9 +1,9 @@
-﻿select top 100 * from Task.TblTask
-select top 100 * from  Users.TblUsers
-select top 100 * from  Users.TblProfiles
-select top 100 * from  Task.TblTaskStatus
-select top 100 * from  Task.TblWorkflowInstance
-select top 100 * from  Workflow. TblWorkflow
+﻿select top 1000 * from Task.TblTask
+select top 1000 * from  Users.TblUsers
+select top 1000 * from  Users.TblProfiles
+select top 1000 * from  Task.TblTaskStatus
+select top 1000 * from  Task.TblWorkflowInstance
+select top 1000 * from  Workflow. TblWorkflow
 
 
 --Q1

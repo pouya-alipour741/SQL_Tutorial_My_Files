@@ -397,3 +397,66 @@ dateadd(day,-1,col1) Range_End
 from cte
 where datediff(day,Col1,nxt)>1
 
+
+--filtering
+/*
+:می‌خواهیم به‌ازای کارمند شماره 9 و در سال 2017 کوئری زیر را بنویسیم
+نیم‌سال دوم همان سال qty هرماه نسبت به میانگین qty محاسبه اختلاف
+
+empid   ordermonth   qty     Diff
+-----   ----------  -----   ------
+  9     2017-01-01   74      -13 
+  9     2017-03-01   137      50	 
+  9     2017-04-01   52      -35 
+  9     2017-05-01   8       -79 
+  9     2017-06-01   161      74	 
+  9     2017-07-01   4       -83 
+  9     2017-08-01   98       11	 
+  9     2017-09-01   93       6	 
+  9     2017-10-01   24      -63 
+  9     2017-11-01   222     135 
+  9     2017-12-01   82      -5	 
+
+*/
+
+select top 1000 * from Task.TblTask
+select top 1000 * from  Users.TblUsers
+select top 1000 * from  Users.TblProfiles
+select top 1000 * from  Task.TblTaskStatus
+select top 1000 * from  Task.TblWorkflowInstance
+select top 1000 * from  Workflow. TblWorkflow
+
+
+select *
+from  Workflow. TblWorkflow w
+join Users.TblUsers u on u.UserId=w.WorkflowAdmin
+join task.TblWorkflowInstance i on i.WorkflowId=w.WorkflowId
+
+
+/*
+:می‌خواهیم به‌ازای کارمند شماره 9 و در سال 2017 کوئری زیر را بنویسیم
+نیم‌سال دوم همان سال qty هرماه نسبت به میانگین qty محاسبه اختلاف
+
+empid   ordermonth   qty     Diff
+-----   ----------  -----   ------
+  9     2017-01-01   74      -13 
+  9     2017-03-01   137      50	 
+  9     2017-04-01   52      -35 
+  9     2017-05-01   8       -79 
+  9     2017-06-01   161      74	 
+  9     2017-07-01   4       -83 
+  9     2017-08-01   98       11	 
+  9     2017-09-01   93       6	 
+  9     2017-10-01   24      -63 
+  9     2017-11-01   222     135 
+  9     2017-12-01   82      -5	 
+
+*/
+
+select e.EmployeeID,OrderDate,Quantity
+,case when MONTH(OrderDate)>6 then e.EmployeeID end
+from Employees e
+join Orders o on e.EmployeeID=o.EmployeeID
+join [Order Details] od on od.OrderID=o.OrderID
+where orderdate between '1996' and '1997'
+
