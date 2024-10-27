@@ -12,9 +12,10 @@ GO
 */
 ----with sub
 select *,
-(select sum(OrderQty) from production.WorkOrder w2 where w2.ProductID=w1.ProductID) total
+(select sum(OrderQty) from production.WorkOrder w2 where w2.ProductID=w1.ProductID and w2.ProductID<=w1.ProductID) total
 from production.WorkOrder w1
 order by ProductID desc
+
 
 
 --Query2
