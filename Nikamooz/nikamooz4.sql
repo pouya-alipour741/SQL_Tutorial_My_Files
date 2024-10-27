@@ -453,8 +453,8 @@ empid   ordermonth   qty     Diff
 
 */
 
-select e.EmployeeID,OrderDate,Quantity
-,case when MONTH(OrderDate)>6 then e.EmployeeID end
+select e.EmployeeID,OrderDate,Quantity,
+Quantity - avg(case when MONTH(OrderDate)>6 then Quantity end) over() diff
 from Employees e
 join Orders o on e.EmployeeID=o.EmployeeID
 join [Order Details] od on od.OrderID=o.OrderID
