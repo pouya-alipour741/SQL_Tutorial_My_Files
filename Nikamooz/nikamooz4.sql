@@ -1,4 +1,4 @@
-﻿--Query1
+--Query1
 SELECT
 	*,
 	SUM(OrderQty) OVER( PARTITION BY productid

@@ -72,3 +72,4 @@ select *,datediff(MONTH,f_val,CreateDate) f_wf_diff,
 concat_ws('/',datediff(MONTH,l_val,CreateDate),'m',datediff(day,l_val,CreateDate),'d')  l_wf_dif
 from cte
 
+
