@@ -8,7 +8,7 @@ RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
 select 
 	*,FIRST_VALUE(storeid) over(order by storeid
 	rows between 2 preceding and current row) f_value
-from sales.Customer
+from		sales.Customer
 where storeid is not null
 
 --find duplicate
@@ -71,4 +71,58 @@ where UserName='abbasnejad')
 select *,datediff(MONTH,f_val,CreateDate) f_wf_diff,
 concat_ws('/',datediff(MONTH,l_val,CreateDate),'m',datediff(day,l_val,CreateDate),'d')  l_wf_dif
 from cte
+
+--cume dist
+with cte as(
+select WorkflowInstanceID,
+count(StarterUserID) over(partition by cast(createdate as date)) cnt
+from task.TblWorkflowInstance)
+select *,CUME_DIST() over(order by cnt) cum_dis
+from cte
+
+--says the weight compared to highest
+create table #test_cum_dis(
+id int,
+cnt int)
+
+select *,cume_dist() over(order by cnt) c_dist
+from #test_cum_dis
+
+truncate table #test_cum_dis
+
+insert into #test_cum_dis
+values (1,9),
+		(2,6),
+		(3,4),
+		(4,12),
+		(5,8)
+--percent rank
+select *,PERCENT_RANK() over(order by cnt) c_prank
+from #test_cum_dis
+
+
+--percentile disc
+select *,PERCENTile_disc(0.2) within group(order by id) over(partition by cnt) c_percentile_rank
+from #test_cum_dis
+
+
+with cte as(
+select WorkflowInstanceID,
+count(StarterUserID) over(partition by cast(createdate as date)) cnt
+from task.TblWorkflowInstance)
+select *,PERCENTILE_DISC(0.3) within group(order by cnt) over(partition by WorkflowInstanceID) cum_dis
+from cte
+
+
+--last 3 orders
+with cte as(
+select top 1000 WorkflowInstanceID,i.WorkflowInstanceName,count(TaskID) task_count
+from task.TblWorkflowInstance i 
+join task.TblWorkflowActivityInstance a on a.WokflowInstanceID=i.WorkflowInstanceID
+join task.TblTask t on t.WorkflowActivityInstaceID=a.WorkflowActivityInstanceID
+group by WorkflowInstanceID,i.WorkflowInstanceName),
+cte2 as(
+select *,ROW_NUMBER() over(partition by task_count order by WorkflowInstanceID) rn from cte)
+select * from cte2
+where rn<=2
 

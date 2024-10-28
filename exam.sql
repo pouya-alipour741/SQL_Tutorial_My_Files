@@ -7,13 +7,13 @@ select top 1000 * from  Workflow. TblWorkflow
 
 
 --Q1
-declare @ndays int=720
+declare @ndays int=5000
 
-select t.TaskStatusID,TaskID,TaskName,CreateDate,ts.TaskStatusName from Task.TblTask t
-join Task.TblTaskStatus ts
-on t.TaskStatusID=ts.TaskStatusID
---where CreateDate < GETDATE()
-where CreateDate between dateadd(day,-@ndays,GETDATE()) and GETDATE()
+select i.WorkflowInstanceID,t.TaskStatusID,TaskID,TaskName,t.CreateDate,ts.TaskStatusName from Task.TblTask t
+join Task.TblTaskStatus ts on t.TaskStatusID=ts.TaskStatusID
+join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID=t.WorkflowActivityInstaceID
+join task.TblWorkflowInstance i on i.WorkflowInstanceID=a.WorkflowActivityInstanceID
+where t.CreateDate between dateadd(day,-@ndays,GETDATE()) and GETDATE()
 
 
 --Q2
@@ -94,5 +94,7 @@ exec sp_dynamic2 '2023-01-08','2024-01-08'
 
 
 
+select top 1000 TaskID,TaskName,WorkflowInstanceID,t.ResponsibleSuccessorUserID
+from task.tbltask t join task.TblWorkflowInstance i on i.StarterUserID=t.ResponsibleSuccessorUserID
 
 
