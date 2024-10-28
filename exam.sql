@@ -50,6 +50,15 @@ exec sp_workflow_pvt '2012-01-08','2012-01-12'
 
 
 
+select cast(CreateDate as date) CreateDate,[1] as 'درحال انجام' ,[2] as 'انجام شده' ,[4] as 'ابطال شده'
+	from (
+	select cast(CreateDate as date) CreateDate,WorkflowInstanceID,WorkflowInstanceStatusID
+	from Task.TblWorkflowInstance
+	where cast(CreateDate as date) between @date and @date2
+	) x
+	pivot(count(WorkflowInstanceID ) for WorkflowInstanceStatusID in([1],[2],[4])
+
+
 --Q4
 use TBS_Sim
 
