@@ -114,7 +114,7 @@ select *,PERCENTILE_DISC(0.3) within group(order by cnt) over(partition by Workf
 from cte
 
 
---last 3 orders
+--first 3 orders
 with cte as(
 select top 1000 WorkflowInstanceID,i.WorkflowInstanceName,count(TaskID) task_count
 from task.TblWorkflowInstance i 
@@ -126,3 +126,72 @@ select *,ROW_NUMBER() over(partition by task_count order by WorkflowInstanceID) 
 select * from cte2
 where rn<=2
 
+--wip
+with cte as(
+select top 1000 WorkflowInstanceID,i.WorkflowInstanceName,count(TaskID) task_count
+from task.TblWorkflowInstance i 
+join task.TblWorkflowActivityInstance a on a.WokflowInstanceID=i.WorkflowInstanceID
+join task.TblTask t on t.WorkflowActivityInstaceID=a.WorkflowActivityInstanceID
+group by WorkflowInstanceID,i.WorkflowInstanceName)
+select *,lead(task_count) over(order by WorkflowInstanceID) nxt from cte
+
+
+--first 3 orders for each customer
+with cte as(
+select o.CustomerID,OrderID,OrderDate,
+ROW_NUMBER() over(partition by o.customerid order by orderid) rn
+from Customers c join orders o on c.CustomerID=o.CustomerID)
+select * from cte
+where rn<=3;
+
+--lead alt method for first 3 orders for each customer
+with cte as(
+select o.CustomerID,OrderID,OrderDate,
+LEAD(OrderID,3,0) over(partition by o.customerid order by orderid) nxt
+from Customers c join orders o on c.CustomerID=o.CustomerID),
+cte2 as(
+select CustomerID,OrderID,OrderDate from cte
+where OrderID not in(select nxt from cte)
+)
+select * from cte2
+order by customerid,orderid
+
+--cross apply and top 3
+
+--create view v_cust_order
+--as
+--select o.CustomerID,OrderID,OrderDate
+--from customers c1 join orders o on c1.CustomerID=o.CustomerID
+
+--drop view v_cust_order
+
+
+select CustomerID,tmp.* from Customers c
+cross apply
+(select top 3 OrderID,OrderDate from orders o
+where c.CustomerID=o.CustomerID
+) as tmp
+order by CustomerID
+
+--offset and fetch
+select CustomerID,tmp.* from Customers c
+cross apply
+(select OrderID,OrderDate from orders o
+where c.CustomerID=o.CustomerID
+order by OrderID,OrderDate
+offset 0 rows fetch first 3 rows only
+) as tmp
+order by CustomerID
+
+
+select * from Employees
+select * from region
+
+
+select region.*,tmp.*
+from region
+cross apply
+(select top 2 EmployeeID,LastName
+from Employees
+order by EmployeeID
+) tmp

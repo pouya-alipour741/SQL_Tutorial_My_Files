@@ -169,3 +169,70 @@ where DATEDIFF(day,col1,nxt)>1
 
 
 
+--
+use archive
+create table Company (
+    companyId int identity(1,1)
+,   companyName varchar(100)
+,   zipcode varchar(10) 
+,   constraint PK_Company primary key (companyId)
+)
+GO
+
+create table Person (
+    personId int identity(1,1)
+,   personName varchar(100)
+,   companyId int
+,   constraint FK_Person_CompanyId foreign key (companyId) references dbo.Company(companyId)
+,   constraint PK_Person primary key (personId)
+)
+GO
+
+insert Company
+select 'ABC Company', '19808' union
+select 'XYZ Company', '08534' union
+select '123 Company', '10016'
+
+
+insert Person
+select 'Alan', 1 union
+select 'Bobby', 1 union
+select 'Chris', 1 union
+select 'Xavier', 2 union
+select 'Yoshi', 2 union
+select 'Zambrano', 2 union
+select 'Player 1', 3 union
+select 'Player 2', 3 union
+select 'Player 3', 3 
+
+
+select * from Person
+select * from Company
+
+
+select personId,tmp.* from Person
+cross apply
+(select * from Company
+where person.companyId=Company.companyId
+) tmp
+
+select * from Person
+cross join
+(select * from Company
+) tmp
+
+
+/* using CROSS APPLY */
+select *
+from Person p
+cross apply (
+    select *
+    from Company c
+    where p.companyid = c.companyId
+) Czip
+
+
+/* the equivalent query using INNER JOIN */
+select *
+from Person p
+inner join Company c on p.companyid = c.companyId
