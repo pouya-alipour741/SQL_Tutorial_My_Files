@@ -236,3 +236,51 @@ cross apply (
 select *
 from Person p
 inner join Company c on p.companyid = c.companyId
+
+--findingn managers in tbs
+use TBSSimNew
+go
+create proc sp_getManagertest
+as
+begin
+with cte as(
+select p.UserId,FullName,ug.GroupId,GroupName,ROW_NUMBER() over(partition by fullname order by (select null)) rn
+from users.TblProfiles p 
+join users.tblusersgroups ug on ug.userid=p.userid
+join users.tblgroups g on g.groupid=ug.groupid
+where  GroupName like N'%مدیر%'
+)
+select *
+from cte
+where rn=1
+end
+
+
+
+--sub
+select * from users.TblProfiles
+where UserId in(select userid from users.TblUsersGroups
+where GroupId in(select GroupId from users.TblGroups 
+where GroupName like N'%مدیر%'))
+order by FullName;
+
+
+--row number
+with cte as(
+select p.UserId,FullName,ug.GroupId,GroupName,ROW_NUMBER() over(partition by fullname order by (select null)) rn
+from users.TblProfiles p 
+join users.tblusersgroups ug on ug.userid=p.userid
+join users.tblgroups g on g.groupid=ug.groupid
+where  GroupName like N'%مدیر%'
+)
+select *
+from cte
+where rn=1
+
+
+--distinct
+select distinct p.UserId,FullName
+from users.TblProfiles p 
+join users.tblusersgroups ug on ug.userid=p.userid
+join users.tblgroups g on g.groupid=ug.groupid
+where  GroupName like N'%مدیر%'
