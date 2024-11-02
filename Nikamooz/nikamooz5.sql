@@ -204,3 +204,108 @@ cross apply
 from Employees
 order by EmployeeID
 ) tmp
+
+
+
+--summation pool
+select * from task.TblTaskStatus
+select top 1000 * from task.TblTask
+select top 1000 * from users.TblProfiles
+
+
+
+select p.UserId,FullName,count(t.TaskID) user_count
+from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
+join users.TblProfiles p on p.UserId=t.UserID
+where s.TaskStatusName In('انجام شده','ابطال شده')
+and CreateDate between '2018' and GETDATE()
+and datediff(day,CreateDate,ViewDate)<=2
+group by p.UserId,FullName
+
+
+
+create proc sp_dynamic_user_task
+@fromdate varchar(10)=null,
+@todate varchar(10)=null,
+@taskname nvarchar(50)=null,
+@viewdiff int=null
+as
+begin
+	declare @sql nvarchar(max)
+	set @sql=N'
+	select p.UserId,FullName,count(t.TaskID) user_count
+	from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
+	join users.TblProfiles p on p.UserId=t.UserID where 1=1'
+	if (@taskname is not null)
+		set @sql+='
+		 and s.TaskStatusName =@tn'
+	if (@fromdate is not null)
+		set @sql+=
+		' and CreateDate between @fd and @td'
+	if (@viewdiff is not null)
+		set @sql+=
+		' and datediff(day,CreateDate,ViewDate)<= cast(@vd as nvarchar(50))'
+	set @sql+=
+	'group by p.UserId,FullName'
+
+	exec sp_executesql @sql,
+		N'@tn nvarchar(50), @fd date,@td date, @vd int',
+		@tn=@taskname,@td=@todate,@fd=@fromdate,@vd=@viewdiff
+end
+
+
+exec sp_dynamic_user_task @fromdate='2018',@todate='2024',@taskname='در حال انجام' --@viewdiff not included
+
+
+
+
+use northwind
+GO
+select o.CustomerID,o.OrderID,c.CompanyName,(UnitPrice*Quantity) price, sum(UnitPrice*Quantity) over(partition by o.customerid order by o.orderid
+ rows between unbounded preceding and current row) total_price
+from customers c join orders o on c.CustomerID=o.CustomerID
+join [Order Details] od on od.OrderID=o.OrderID;
+--where o.CustomerID= 'VINET'
+
+--create view v_customer_order
+--as
+--select o.CustomerID,o.OrderID,c.CompanyName,(UnitPrice*Quantity) price
+--from customers c join orders o on c.CustomerID=o.CustomerID
+--join [Order Details] od on od.OrderID=o.OrderID
+
+
+--join method
+select c1.CustomerID,c1.OrderID,c1.price, sum(c2.price) price
+from v_customer_order c1
+join v_customer_order c2 on c1.CustomerID=c2.CustomerID 
+and c2.price<=c1.price
+group by c1.CustomerID,c1.OrderID,c1.price
+order by CustomerID,c1.price;
+
+
+
+--توزیع تجمعی هر شخص بر اساس تعداد تسک ها
+with cte as(
+select p.UserId,FullName,count(t.TaskID) user_count
+from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
+join users.TblProfiles p on p.UserId=t.UserID
+where s.TaskStatusName In('انجام شده','ابطال شده')
+and CreateDate between '2018' and GETDATE()
+and datediff(day,CreateDate,ViewDate)<=2
+group by p.UserId,FullName)
+select *,CUME_DIST() over(order by user_count) cd
+from cte;
+
+
+
+
+with cte as(
+select p.UserId,FullName,count(t.TaskID) user_count
+from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
+join users.TblProfiles p on p.UserId=t.UserID
+where s.TaskStatusName In('انجام شده','ابطال شده')
+and CreateDate between '2018' and GETDATE()
+and datediff(day,CreateDate,ViewDate)<=2
+group by p.UserId,FullName)
+select *,PERCENT_RANK() over(order by user_count) pr
+from cte;
