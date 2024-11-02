@@ -65,7 +65,7 @@ Range_Start   Range_End
 
 select col1,
 (select min(col1) from Island_numeric i2 where i2.col1>=i1.col1
---and exists(select 1 from Island_numeric i3 where i3.col1!=i2.col1+1)
+and exists(select 1 from Island_numeric i3 where i3.col1!=i2.col1+1)
 ) grp
 from Island_numeric i1;
 
@@ -461,3 +461,61 @@ join Orders o on e.EmployeeID=o.EmployeeID
 join [Order Details] od on od.OrderID=o.OrderID
 where orderdate between '1996' and '1997'
 
+
+
+--group by and wf
+/*
+تمرین کلاسی
+.را به ساده‌ترین شکل ممکن بازنویسی کنید Query2-1
+*/
+WITH CTE
+AS
+(
+	-- محاسبه مجموع مبالغ هر کارمند
+	SELECT
+		empid,
+		SUM(val) AS Sum_Emp
+	FROM Sales.OrderValues
+	GROUP BY empid
+)
+SELECT
+	empid,
+	Sum_Emp AS Sum_Emp,
+	SUM(Sum_Emp) OVER() AS Sum_All,
+	Sum_Emp - SUM(Sum_Emp) OVER() AS Diff,
+	Sum_Emp / SUM(Sum_Emp) OVER() * 100 AS Prcnt
+FROM CTE;
+GO
+
+
+
+--distinct aggregate
+/*
+،اکنون می‌خواهیم بدانیم که مشتری 1 در هر لحظه با چه تعداد کارمند در ارتباط بوده است
+:یعنی خروجی به‌صورت زیر باشد
+
+custid   empid   orderdate    Num_Cust
+------- ------- ------------ -----------
+  1       6      2017-08-25      1
+  1       4      2017-10-03      2
+  1       4      2017-10-13      2
+  1       1      2018-01-15      3
+  1       1      2018-03-16      3
+  1       3      2018-04-09      4
+
+
+اما کوئری زیر به‌ازای هر ثبت‌سفارش، عملیات شمارش را انجام داده
+،و اگر مشتری‌ای در تاریخ دیگر هم با کارمندی که قبلا شمارش شده
+.ثبت‌سفارش داشته باشد آن را مجددا شمارش می‌کند
+*/
+
+-- .می‌شود NULL با استفاده از ترفند زیر مقادیر تکراری مشتری-کارمند
+SELECT
+	custid, empid, orderdate,
+	CASE
+		WHEN ROW_NUMBER() OVER( PARTITION BY custid,empid 
+								ORDER BY orderdate ) = 1
+		THEN empid/*توضیح داده شود*/ END AS Distinct_Emp
+FROM Sales.OrderValues
+	WHERE custid = 1;
+GO

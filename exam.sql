@@ -102,6 +102,38 @@ end
 exec sp_dynamic2 '2023-01-08','2024-01-08'
 
 
+--good dyanmic sql
+alter proc sp_dynamicgood 
+@fromdate nvarchar(20) = null,
+@todate nvarchar(20) = null
+as
+begin
+	declare @sql nvarchar(max)
+
+	set @sql = N'select cast(CreateDate as date) CreateDate,[1] as ''درحال انجام'' ,
+	[2] as ''انجام شده'',
+	[4] as ''ابطال شده''
+	from (
+	select cast(CreateDate as date) CreateDate,WorkflowInstanceID,WorkflowInstanceStatusID
+	from Task.TblWorkflowInstance where 1=1'
+	if (@fromdate is not null and @todate is not null)
+		set @sql += ' and cast(CreateDate as date) between @fd and @td) x'
+	set @sql+=
+	'
+	pivot(count(WorkflowInstanceID ) for WorkflowInstanceStatusID in([1],[2],[4])
+	) pvt
+	order by CreateDate'
+
+	exec sp_executesql @sql,
+					N'@fd nvarchar(20),@td nvarchar(20)',
+					@fd=@fromdate,@td=@todate
+end
+
+exec sp_dynamicgood '2023-01-08','2024-01-08'
+
+
+
+
 
 select top 1000 TaskID,TaskName,WorkflowInstanceID,t.ResponsibleSuccessorUserID
 from task.tbltask t join task.TblWorkflowInstance i on i.StarterUserID=t.ResponsibleSuccessorUserID

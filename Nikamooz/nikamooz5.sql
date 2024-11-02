@@ -37,6 +37,15 @@ custid    orderdate    orderid      val     F_Val     L_Val
 
 */
 
+
+select c.customerid, unitprice,orderdate
+,FIRST_VALUE(unitprice) over(partition by c.customerid order by orderdate) lowest_p
+,LAST_VALUE(UnitPrice) over(order by orderdate) highest_p
+from Customers c join Orders o on o.CustomerID=c.CustomerID
+join [Order Details] od on od.OrderID=o.OrderID
+
+
+
 select top 1000 * from Task.TblTask
 select top 1000 * from  Users.TblUsers
 select top 1000 * from  Users.TblProfiles
