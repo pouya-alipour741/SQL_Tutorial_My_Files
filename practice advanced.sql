@@ -284,3 +284,24 @@ from users.TblProfiles p
 join users.tblusersgroups ug on ug.userid=p.userid
 join users.tblgroups g on g.groupid=ug.groupid
 where  GroupName like N'%مدیر%'
+
+--is admin in personel list
+select * from users.TblUsersGroups
+select * from users.TblUsers
+select * from users.TblGroups
+
+
+select u.UserName,* from users.TblGroups g
+join users.TblUsersGroups ug on g.GroupId=ug.GroupId
+join users.TblUsers u on u.UserId=ug.UserId
+where GroupName like N'پرسنل'
+and 'admin' in (select u.UserName from users.TblUsers);
+
+
+select *
+from users.TblUsers
+where UserId in(select UserId from users.TblUsersGroups where GroupId in 
+(select GroupId from users.TblGroups
+where GroupName like N'پرسنل')
+)
+and username='admin';
