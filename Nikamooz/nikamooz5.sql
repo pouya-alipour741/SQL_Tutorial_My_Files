@@ -224,7 +224,7 @@ group by p.UserId,FullName
 
 
 
-create proc sp_dynamic_user_task
+alter proc sp_dynamic_user_task
 @fromdate varchar(10)=null,
 @todate varchar(10)=null,
 @taskname nvarchar(50)=null,
@@ -243,8 +243,10 @@ begin
 		set @sql+=
 		' and CreateDate between @fd and @td'
 	if (@viewdiff is not null)
+		begin
 		set @sql+=
 		' and datediff(day,CreateDate,ViewDate)<= cast(@vd as nvarchar(50))'
+		end
 	set @sql+=
 	'group by p.UserId,FullName'
 
@@ -254,7 +256,7 @@ begin
 end
 
 
-exec sp_dynamic_user_task @fromdate='2018',@todate='2024',@taskname='در حال انجام' --@viewdiff not included
+exec sp_dynamic_user_task @fromdate='2018',@todate='2024',@taskname='در حال انجام' ,@viewdiff =5
 
 
 
@@ -285,6 +287,7 @@ order by CustomerID,c1.price;
 
 
 --توزیع تجمعی هر شخص بر اساس تعداد تسک ها
+--cume_dist
 with cte as(
 select p.UserId,FullName,count(t.TaskID) user_count
 from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
@@ -298,7 +301,7 @@ from cte;
 
 
 
-
+--PERCENT_RANK()
 with cte as(
 select p.UserId,FullName,count(t.TaskID) user_count
 from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
@@ -309,3 +312,75 @@ and datediff(day,CreateDate,ViewDate)<=2
 group by p.UserId,FullName)
 select *,PERCENT_RANK() over(order by user_count) pr
 from cte;
+
+
+--percentile_disc
+with cte as(
+select p.UserId,FullName,count(t.TaskID) user_count
+from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
+join users.TblProfiles p on p.UserId=t.UserID
+where s.TaskStatusName In('انجام شده','ابطال شده')
+and CreateDate between '2018' and GETDATE()
+and datediff(day,CreateDate,ViewDate)<=2
+group by p.UserId,FullName)
+select *,percentile_disc(0.5) within group(order by userid) over(partition by user_count) pd
+from cte;
+
+
+--percentile_cont
+with cte as(
+select p.UserId,FullName,count(t.TaskID) user_count
+from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
+join users.TblProfiles p on p.UserId=t.UserID
+where s.TaskStatusName In('انجام شده','ابطال شده')
+and CreateDate between '2018' and GETDATE()
+and datediff(day,CreateDate,ViewDate)<=2
+group by p.UserId,FullName)
+select *,percentile_cont(0.5) within group(order by userid) over(partition by user_count) pd
+from cte;
+
+
+select * from users.tblprofiles
+
+alter proc sp_test
+@fullname nvarchar(50) = null
+as begin
+	declare @sql nvarchar(max)
+	set @sql ='select * from users.tblprofiles where 1=1'
+	if @fullname is not null
+		set @sql+= N' and fullname=@fn'
+	exec sp_executesql @sql,
+		N'@fn nvarchar(50)',
+		@fn=@fullname
+		
+end
+
+exec sp_test N'سهیل نعمتی'
+
+
+
+--alter proc sp_test2
+--@fullname nvarchar(50) = null
+--as begin
+--	declare @sql nvarchar(max)
+--	set @sql =N'select * from users.tblprofiles where 1=1'
+--	if @fullname is not null
+--		set @sql+= N' and fullname='''+@fullname+'''
+--		'
+--	exec sp_executesql @sql
+--end
+
+--exec sp_test2 N'مدیر سیستم'
+
+
+--alter proc sp_test2
+--@fullname nvarchar(50)
+--as begin
+--	declare @sql nvarchar(max)
+--	set @sql =N'select * from users.tblprofiles where fullname='''+@fullname+'''
+--	'
+--	exec sp_executesql @sql
+--end
+
+--exec sp_test2 N'مدیر سیستم'
+
