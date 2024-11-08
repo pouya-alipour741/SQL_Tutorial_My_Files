@@ -49,7 +49,7 @@ as
 		from task.TblTask t 
 		join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
 		join users.TblUsers u on u.UserId=t.UserID
-		join users.TblProfiles p on u.UserId=p.UserId
+		join users.TblProfiles p on u.UserId=p.UserId 
 		where TaskStatusName=''در حال انجام''
 		)
 		select * from cte

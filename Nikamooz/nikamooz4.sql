@@ -510,12 +510,20 @@ custid   empid   orderdate    Num_Cust
 */
 
 -- .می‌شود NULL با استفاده از ترفند زیر مقادیر تکراری مشتری-کارمند
-SELECT
+WITH CTE
+AS
+(
+	SELECT
 	custid, empid, orderdate,
 	CASE
-		WHEN ROW_NUMBER() OVER( PARTITION BY custid,empid 
+		WHEN ROW_NUMBER() OVER( PARTITION BY custid, empid
 								ORDER BY orderdate ) = 1
-		THEN empid/*توضیح داده شود*/ END AS Distinct_Emp
-FROM Sales.OrderValues
-	WHERE custid = 1;
-GO
+		THEN empid END AS Distinct_Emp
+	FROM Sales.OrderValues
+		WHERE custid = 1
+)
+SELECT
+	custid, empid, orderdate,
+	COUNT(Distinct_Emp) OVER( PARTITION BY custid
+							  ORDER BY orderdate ) AS Num_Cust
+FROM CTE;

@@ -16,6 +16,7 @@ select country from suppliers
 except
 select country from customers
 
+
 ---مثال: کدام کالاها هم در ماه 9 و هم در ماه 10 سال 1997 فروش رفته اند 
 select p.ProductID,ProductName from Products p join [Order Details] od on od.ProductID=p.ProductID
 join Orders o on o.OrderID=od.OrderID

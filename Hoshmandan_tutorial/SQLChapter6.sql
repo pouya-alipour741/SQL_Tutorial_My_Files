@@ -35,9 +35,31 @@ select categoryid, categoryname from Categories c
 where 80<any(select unitprice from Products
 			where CategoryID=c.CategoryID)
 
-select categoryid, categoryname from Categories c
-where 80<any(select unitprice from Products
-			)
+--with join
+select
+	c.CategoryID, c.CategoryName,UnitPrice
+from
+	Categories c join Products p on  p.CategoryID=c.CategoryID
+where
+	UnitPrice>80
+
+
+--again
+select
+	c.CategoryID, c.CategoryName
+from
+	Categories c
+where
+	80<any(select unitprice from Products p where p.CategoryID=c.CategoryID)
+
+
+--exists method
+select
+	c.CategoryID, c.CategoryName
+from
+	Categories c
+where exists(select * from Products where CategoryID=c.CategoryID and UnitPrice>80)
+
 
 
 ---مثال: کارمندانی را لیست کنید که به دانمارک فروش داشتند
@@ -50,7 +72,7 @@ where exists(select * from customers c join orders o
 
 ---مثال: مشریانی را لیست کنید که هرگز از ما خرید نکرده اند
 select * from customers c
-where not exists(select orderid from orders
+where not exists(select 1 from orders --1 can be anything
 				where c.CustomerID=CustomerID)
 
 
