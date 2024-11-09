@@ -1,0 +1,20 @@
+https://customer.jpcomplex.com/portaljam/#/login/en  user:safaee@tazarv.com pass: T@zarv76 customer:persian
+https://customer.jpcomplex.com/portaljam/#/questionnaire-landing/en
+https://crm.jpcomplex.com/	Pass: 1234567$Q
+
+---------------------------------------------------------------------
+https://pam.jpcomplex.com
+user: tazarv  pass: T@v123589$
+user: tazarv1 pass: CRMT@z$$2020
+user: tazarv2 pass: CRMT@z$$2020
+
+214: T@z@123!!
+213: @fzaR1400!
+39 portal: qQwe@2468
+
+---------------------------------------------------------------------
+https://pam360.jpcomplex.com/PassTrixMain.cc
+user: tazarv
+pass: z0hR@b1401!
+log on to: Local Authentication
+سپس به تب Connections رفته و سرور مورد نظر را انتخاب و سپس به تب Local Accounts رفته و با قرار روی دکمه Connet گزینه Windows Remote Desktop را انتخاب نمایید.
