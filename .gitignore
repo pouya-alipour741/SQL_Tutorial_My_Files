@@ -2,6 +2,5 @@ sample_database_backup/*.MDF
 sample_database_backup/*.lDF
 sample_database_backup/KCC Sample Database.bak
 blacklist_test_db.sql
-JPC.CRM.PSC03-01.3.docx
-Saderat.INSP.PSC02-01.0(1).docx
-Saderat.INSP.PSC02-01.0.docx
+*.docx
+!New EmplymentSqlQuestions.docx
