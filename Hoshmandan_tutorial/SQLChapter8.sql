@@ -1,7 +1,4 @@
-﻿/*
-did not run most of the code in this chapter to preserve database
-*/
-
+﻿
 select customerid,Country,city,companyname
 into germany_customers
 from Customers
