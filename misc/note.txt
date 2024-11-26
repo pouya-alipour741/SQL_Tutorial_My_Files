@@ -1,0 +1,2 @@
+run regedit >:
+hkey_local_machine > software > policy

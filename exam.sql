@@ -134,7 +134,6 @@ exec sp_dynamicgood '2023-01-08','2024-01-08'
 
 
 
-
 select top 1000 TaskID,TaskName,WorkflowInstanceID,t.ResponsibleSuccessorUserID
 from task.tbltask t join task.TblWorkflowInstance i on i.StarterUserID=t.ResponsibleSuccessorUserID
 
