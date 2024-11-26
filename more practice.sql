@@ -384,6 +384,12 @@ use [SofiaCarRental_v2.2]
 go
 
 
+declare @table table(
+	car varchar(40),
+	car_count int
+)
+
+insert into @table
 select 
 	Make,count(CarID) car_count
 from
@@ -391,6 +397,7 @@ from
 group by
 	Make
 
-
-
+alter table @table
+add RentalOrderID int 
+select * from @table
 
