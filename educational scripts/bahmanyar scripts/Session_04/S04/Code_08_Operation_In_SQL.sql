@@ -1,0 +1,7 @@
+--Operators in SQL:
+			--	=	<>	 !=	 >=	 <=		>	 <
+			--[Between value1 and value2]
+			--Is Null	 Is Not Null	 like	 and	 or
+--Two kinds of Operation:
+		-- Operator&Operand
+		-- Function

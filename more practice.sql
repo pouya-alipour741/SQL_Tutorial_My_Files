@@ -378,3 +378,19 @@ where
 	task_count>200
 	and rn=1
 
+
+--group by with temp table
+use [SofiaCarRental_v2.2]
+go
+
+
+select 
+	Make,count(CarID) car_count
+from
+	cars c
+group by
+	Make
+
+
+
+

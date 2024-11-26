@@ -1,0 +1,9 @@
+--*****************************[ While ]***********************
+--While condition
+--Begin
+--If condition1
+--Break
+--If condition2
+--Continue
+--End
+--…
