@@ -223,7 +223,7 @@ cross join
 
 
 /* using CROSS APPLY */
-select *
+select * 
 from Person p
 cross apply (
     select *
@@ -305,3 +305,32 @@ where UserId in(select UserId from users.TblUsersGroups where GroupId in
 where GroupName like N'پرسنل')
 )
 and username='admin';
+
+
+--simulate rank function
+select ShippedDate,
+RANK() over(order by ShippedDate) rk
+from orders
+where ShippedDate is not null
+order by ShippedDate
+
+
+select ShippedDate,
+(select count(distinct ShippedDate) from Orders o2
+where o2.ShippedDate<=o1.ShippedDate
+) rnk
+from orders o1
+where ShippedDate is not null
+order by ShippedDate
+
+
+with cte as(
+select ShippedDate,
+ROW_NUMBER() over(order by ShippedDate) rn,
+count(*) over(partition by ShippedDate) cnt
+from orders
+where ShippedDate is not null)
+select *,
+rn-cnt+1 rnk
+from cte
+order by ShippedDate
