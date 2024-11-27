@@ -734,9 +734,9 @@ GROUP BY Product;
 
 --debug 
 select cast(t1.CreateDate as date) CreateDate,
-count(case when t1.TaskStatusID=1 then WorkflowInstanceID else 0 end) [در حال انجام],
-count(case when t1.taskstatusid=2 then WorkflowInstanceID else 0 end) [انجام شده],
-count(case when t1.taskstatusid=4 then WorkflowInstanceID else 0 end) [ابطال شده]
+count(case when t1.TaskStatusID=1 then WorkflowInstanceID  end) [در حال انجام],
+count(case when t1.taskstatusid=2 then WorkflowInstanceID  end) [انجام شده],
+count(case when t1.taskstatusid=4 then WorkflowInstanceID  end) [ابطال شده]
 from
 	task.TblTask t1
 	join task.TblTaskStatus s on t1.TaskStatusID=s.TaskStatusID
