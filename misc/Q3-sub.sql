@@ -34,3 +34,4 @@ group by cast(i.CreateDate as date),WorkflowInstanceID,WorkflowInstanceStatusID
 select * from task.TblWorkflowInstance
 where cast(CreateDate as date) = '2012-01-11' and WorkflowInstanceStatusID = 2
 
+

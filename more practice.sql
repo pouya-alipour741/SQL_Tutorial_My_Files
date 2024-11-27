@@ -715,3 +715,35 @@ group by
 select * from cte
 where avg_per_region > avg_total
 
+
+/*
+Here’s an alternative to a PIVOT table using conditional aggregation:
+
+Problem:
+Show total sales for each product categorized by year.
+*/
+
+SELECT 
+    Product,
+    SUM(CASE WHEN YEAR(SaleDate) = 2021 THEN Sales ELSE 0 END) AS Sales_2021,
+    SUM(CASE WHEN YEAR(SaleDate) = 2022 THEN Sales ELSE 0 END) AS Sales_2022,
+    SUM(CASE WHEN YEAR(SaleDate) = 2023 THEN Sales ELSE 0 END) AS Sales_2023
+FROM SalesData
+GROUP BY Product;
+
+
+--debug 
+select cast(t1.CreateDate as date) CreateDate,
+count(case when t1.TaskStatusID=1 then WorkflowInstanceID else 0 end) [در حال انجام],
+count(case when t1.taskstatusid=2 then WorkflowInstanceID else 0 end) [انجام شده],
+count(case when t1.taskstatusid=4 then WorkflowInstanceID else 0 end) [ابطال شده]
+from
+	task.TblTask t1
+	join task.TblTaskStatus s on t1.TaskStatusID=s.TaskStatusID
+	join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID=t1.WorkflowActivityInstaceID
+	join task.TblWorkflowInstance i on i.WorkflowInstanceID=a.WorkflowActivityInstanceID
+where t1.CreateDate between '2012-10-25' and '2013'
+group by
+	cast(t1.CreateDate as date)
+order by CreateDate
+-----------------
