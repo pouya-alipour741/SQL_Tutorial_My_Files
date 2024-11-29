@@ -16,7 +16,6 @@ where task_count > 100
 	and rn =1;
 
 
-
 declare @Temp table 
 (
 	userID int,
@@ -39,6 +38,26 @@ inner join users.TblProfiles B
 On A.userID = B.UserId
 inner join task.TblTaskStatus C
 On A.taskStatus = c.TaskStatusID;
+
+
+--with cte
+with cte as(
+select  UserID , Count(UserID),TaskStatusID from task.TblTask
+where TaskStatusID = 1
+group by UserID,TaskStatusID
+having Count(UserID) > 100
+)
+select 
+	A.userID,
+	A.Countt,
+	B.FullName,
+	c.TaskStatusName
+from cte A
+inner join users.TblProfiles B
+On A.userID = B.UserId
+inner join task.TblTaskStatus C
+On A.taskStatus = c.TaskStatusID;
+
 
 
 --adding createdate
@@ -64,5 +83,7 @@ inner join users.TblProfiles B
 On A.userID = B.UserId
 inner join task.TblTaskStatus C
 On A.taskStatus = c.TaskStatusID;
+
+
 
 

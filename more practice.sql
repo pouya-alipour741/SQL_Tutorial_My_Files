@@ -716,6 +716,10 @@ select * from cte
 where avg_per_region > avg_total
 
 
+--above with sub query
+
+
+
 /*
 Here’s an alternative to a PIVOT table using conditional aggregation:
 
@@ -747,3 +751,69 @@ group by
 	cast(t1.CreateDate as date)
 order by CreateDate
 -----------------
+use [SofiaCarRental_v2.2]
+select carid,Make, n
+from
+	cars
+	cross join (select 2 n  union select 3 union select 5 m) x
+	
+
+--Write an SQL query to fetch three max GPA from a table using co-related subquery.
+--two max daily rates from rental rates
+select RentalRateID,Daily
+from RentalRates r1
+where 2 > (select count(distinct Daily) from RentalRates r2 
+			where r2.Daily>r1.Daily)
+order by Daily
+
+select * from RentalRates order by daily
+
+--
+with cte as(
+select RentalRateID,Daily,
+dense_Rank() over(order by daily desc) rn
+from RentalRates
+)
+select * from cte
+where rn < 3
+
+--simulate dense_rank function
+select RentalRateID,Daily,
+(select count(distinct daily) from RentalRates r2 where r2.Daily<r1.Daily)+1 rnk
+from RentalRates r1
+order by rnk
+
+
+
+----
+declare @temp table
+(
+	userid int,
+	taskstatustitle varchar(20),
+	taskcount int
+)
+
+
+insert into @temp
+select userid,taskstatusid, count(taskid) task_count 
+from task.tbltask
+where taskstatusname = 1
+group by userid,taskstatusname
+having count(taskid)>100
+
+
+select
+	*
+from 
+	@temp t
+	join users.tblprofiles p on p.userid=t.userid
+	join task.tbltaskstatus s on s.taskstatusid=t.taskstatusid
+
+
+
+
+
+
+
+
+
