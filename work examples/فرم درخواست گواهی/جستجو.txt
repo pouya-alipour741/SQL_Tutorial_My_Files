@@ -1,0 +1,6 @@
+﻿10.10.15.145\sql2017
+sa
+T@zarv76
+SAODB
+https://10.10.15.119/HTMLSAO/
+Tbl_CU_ForeignCertificateStudent_LOG

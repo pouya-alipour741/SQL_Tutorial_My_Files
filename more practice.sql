@@ -812,8 +812,10 @@ from
 
 
 
-
-
+use SAODB
+select * from users.tblusers
+select * from users.TblUsersGroups
+select * from users.TblUsersRoles
 
 
 
