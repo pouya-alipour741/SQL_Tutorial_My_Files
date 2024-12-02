@@ -9,7 +9,7 @@ begin
 	insert into archive.dbo.extract_from_Tbl_frm41595
 	select
 		frm41595Id,
-		@WfID WFID,
+		@WfID WFID,   --
 		Col_5495806091242693244 is_in_agreement,
 		Col_5114004911691428366 Name,
 		Col_4781317539296606537 [Last Name],
@@ -20,14 +20,14 @@ begin
 		Col_5154626302134564841 [Millitary Service Type],
 		Col_5374241705952202396 [Complaint Topic],
 		Col_5427101089299435783 attached,
-		col_4736537888083015687 RegUser,
+		col_4736537888083015687 RegUser,  --
 		getdate() RegDate
 	--into
 	--	archive.dbo.extract_from_Tbl_frm41595
 	from
 		Tbl_frm41595 f
 	where
-		frm41595Id in (select PkformID from  task.TblFormInstance where formid = 41595 and WorkflowInstanceId = @WfID)	
+		frm41595Id in (select PkformID from  task.TblFormInstance where formid = 41595 and WorkflowInstanceId = @WfID)	 --
 end
 
 --set identity_insert archive.dbo.extract_from_Tbl_frm41595 on
@@ -57,6 +57,6 @@ create table archive.dbo.extract_from_Tbl_frm41595
 )
 
 
-select *
+select DATA_TYPE,*
 from INFORMATION_SCHEMA.COLUMNS
-where TABLE_NAME = 'Tbl_frm41595'
+where TABLE_NAME = 'TblFormInstance'
