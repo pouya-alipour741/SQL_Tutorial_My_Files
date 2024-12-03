@@ -43,6 +43,8 @@ and TABLE_SCHEMA not in( 'dbo','log')
 --select top 1000 *
 --from task.TblWorkflowInstance
 
+
+-- اخذ ارز دانشجویی 
 ----------------------
 select
 	TaskName,t.CreateDate, t.EndDate, TaskStatusName, p.FullName
@@ -56,7 +58,7 @@ from
 where
 	WorkflowID = 2000047
 	and WorkflowInstanceID = 795837
-	and ActivityID = 5283081201124906313
+	and ActivityID = 5556998559925532037
 	--and FullName != N'کاربر سیستم'
 
 

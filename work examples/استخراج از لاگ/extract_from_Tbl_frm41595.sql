@@ -60,3 +60,8 @@ create table archive.dbo.extract_from_Tbl_frm41595
 select DATA_TYPE,*
 from INFORMATION_SCHEMA.COLUMNS
 where TABLE_NAME = 'TblFormInstance'
+
+
+
+select * from task.TblFormInstance
+

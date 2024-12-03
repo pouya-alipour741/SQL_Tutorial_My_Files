@@ -104,44 +104,51 @@ exec sp_sao_certificate_request @FromDate=N'1399/11/01',
 --		((select [dbo].[MiladiToShamsi](RegDate)) >= '1398')
 --		and ((select [dbo].[MiladiToShamsi](RegDate)) <= '1405')
 
+--------------
+alter proc sp_cu_check_not_less_than_current_date
+	@fromdate nvarchar(10)
 
-create proc sp_sao_certificate_request_test @FromDate nvarchar(10), @ToDate nvarchar(10), @tracking_Code nvarchar(10),
-										@name varchar(20), @last nvarchar(20), @WfID int, @national_code nvarchar(10)
 as
-begin
-	declare @flag int
-	if @FromDate < GETDATE()
 	begin
-		set @flag = 1
+		--declare @date date,
+		declare @current_date date, @result bit
+		--set @date = 
+		--	(select
+		--		(select dbo.MiladiToShamsi(regdate)) regdate,*
+		--	from
+		--		Tbl_CU_ForeignCertificateStudent_LOG l)
+		set @current_date = (select dbo.MiladiToShamsi(GETDATE()))
+
+		if @fromdate < @current_date
+			set @result = 1
+		else
+			set @result = 0
+		select @result as result
 	end
-	with cte as(
-		select
-			wfid , FollowUpCode , (select [dbo].[MiladiToShamsi](RegDate)) RegDate , RegTime ,
-			NationalCode , a.Name, a.LastName, s.LogStatusTitle 
-		from
-			Tbl_CU_ForeignCertificateStudent_LOG l
-			join Tbl_Cu_ApplierProfile a on a.UserPortalID = l.PortalUserID
-			join Tbl_CU_LogStatus s on s.LogStatusID = StatusID
-			)
-		select * from cte
-			where
-				(RegDate >= @FromDate or @FromDate = '')
-				and (RegDate <= @ToDate or @ToDate = '')
-				and (FollowUpCode = @tracking_Code or @tracking_Code = '')
-				and (Name = @name or @name='')
-				and (LastName = @last or @last='')
-				and (NationalCode = @national_code or @national_code= '')
-				and (WFID  = @WfID or @WfID = '')	
-end
 
-go
 
-exec sp_sao_certificate_request_test @FromDate=N'1399/11/01',
-								@ToDate=N'',
-								@tracking_Code=N'',
-								@name=N'',
-								@last=N'غبرانژاد',
-								@WfID='',
-								@national_code=N'0012360422'
+exec sp_cu_check_not_less_than_current_date N'1403/09/12'
 
-	
+
+
+---------------
+create proc sp_cu_check_ToDate_bigger_than_FromDate
+	@fromdate nvarchar(10),
+	@todate nvarchar(10)
+as 
+	begin
+		declare @result bit
+
+		if @todate < @fromdate
+			set @result = 1
+		else
+			set @result = 0
+
+		select @result as result
+	end
+
+
+exec sp_cu_check_ToDate_bigger_than_FromDate N'1403/09/12', N'1403/09/10'
+
+
+

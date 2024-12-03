@@ -34,13 +34,15 @@
 --from INFORMATION_SCHEMA.COLUMNS
 --where TABLE_NAME like '%activity%'
 
+
+ --درخواست تغییرات امور نظام وظیفه دانشجویان 
 -----------------
 select
 	TaskName,
 	(select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
 	(select dbo.MiladiToShamsi(t.EndDate)) EndDate, TaskStatusName,
 	p.FullName
-	,ActivityID
+	--,ActivityID
 	--,p.UserID
 	--, tr.Groupid
 from
@@ -54,7 +56,7 @@ where
 	WorkflowID = 62
 	and WorkflowInstanceStatusID = 2
 	and i.WorkflowInstanceID = 3997921
-	--and FullName != N'کاربر سیستم'
+	and FullName != N'کاربر سیستم'
 	--and ActivityID  = 4774034869929086367
 
 
@@ -72,12 +74,41 @@ where
 
 
 ----------------------
+--select
+--	TaskName, (select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
+--	(select dbo.MiladiToShamsi(t.EndDate)) EndDate, TaskStatusName,
+--	p.FullName
+--	--,GroupName,
+--	,(select GroupName from users.TblGroups g where g.GroupId = t.GroupId ) Group_Name
+--	--,ActivityID
+--	--,p.UserID
+--	--, g.Groupid
+--from
+--	task.TblWorkflowInstance i
+--	join task.TblWorkflowActivityInstance a on a.WokflowInstanceID = i.WorkflowInstanceID
+--	join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+--	join task.TblTaskStatus s on s.TaskStatusID = t.TaskStatusID
+--	join users.TblProfiles p on p.UserId = t.UserId
+--	--join users.TblUsersGroups ug on ug.UserId = p.UserId
+--	--join users.TblGroups g on g.GroupId = ug.GroupId
+--where
+--	WorkflowID = 62
+--	and WorkflowInstanceStatusID = 2
+--	and i.WorkflowInstanceID = 3997921
+--	and p.UserID != 2
+	--and FullName != N'کاربر سیستم'
+
+
+
+-----------
+--sub query
 select
 	TaskName, (select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
 	(select dbo.MiladiToShamsi(t.EndDate)) EndDate, TaskStatusName,
 	p.FullName
-	,GroupName
-	,ActivityID
+	--,GroupName
+	,(select GroupName from users.TblGroups g where g.GroupId = t.GroupId ) GroupName
+	--,ActivityID
 	--,p.UserID
 	--, g.Groupid
 from
@@ -86,10 +117,34 @@ from
 	join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
 	join task.TblTaskStatus s on s.TaskStatusID = t.TaskStatusID
 	join users.TblProfiles p on p.UserId = t.UserId
-	join users.TblUsersGroups ug on ug.UserId = p.UserId
-	join users.TblGroups g on g.GroupId = ug.GroupId
+	--join users.TblGroups g on g.GroupId = t.GroupId
 where
 	WorkflowID = 62
-	and WorkflowInstanceStatusID = 2
+	--and WorkflowInstanceStatusID = 2
 	and i.WorkflowInstanceID = 3997921
-	and FullName != N'کاربر سیستم'
+	and p.UserID != 2;
+
+
+--join
+select
+	TaskName, (select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
+	(select dbo.MiladiToShamsi(t.EndDate)) EndDate, TaskStatusName,
+	p.FullName
+	,GroupName
+	--,(select GroupName from users.TblGroups g where g.GroupId = t.GroupId ) Group_Name
+	--,ActivityID
+	--,p.UserID
+	--, g.Groupid
+from
+	task.TblWorkflowInstance i
+	join task.TblWorkflowActivityInstance a on a.WokflowInstanceID = i.WorkflowInstanceID
+	join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+	join task.TblTaskStatus s on s.TaskStatusID = t.TaskStatusID
+	join users.TblProfiles p on p.UserId = t.UserId
+	left join users.TblGroups g on g.GroupId = t.GroupId
+where
+	WorkflowID = 62
+	--and WorkflowInstanceStatusID = 2
+	and i.WorkflowInstanceID = 3997921
+	and p.UserID != 2
+
