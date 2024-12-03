@@ -15,7 +15,7 @@ select * from cte
 where task_count > 100
 	and rn =1;
 
-
+----------------------
 declare @Temp table 
 (
 	userID int,
@@ -84,6 +84,25 @@ On A.userID = B.UserId
 inner join task.TblTaskStatus C
 On A.taskStatus = c.TaskStatusID;
 
+
+------------------
+select 
+	x.*, s.taskstatusname
+from
+	task.tbltaskstatus
+	join
+	(select 
+		userid, count(userid) task_count, taskstatusid
+	from
+		task.tbltask t 
+	where
+		taskstatusid = 1
+	group by
+		userid, taskstatusid) x x.taskstatusid = ts.taskstatusid
+	having
+		Count(UserID) > 100
+
+---------------
 
 
 
