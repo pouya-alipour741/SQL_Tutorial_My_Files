@@ -151,4 +151,3 @@ as
 exec sp_cu_check_ToDate_bigger_than_FromDate N'1403/09/12', N'1403/09/10'
 
 
-

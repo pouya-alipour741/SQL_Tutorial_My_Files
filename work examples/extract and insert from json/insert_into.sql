@@ -8,9 +8,9 @@
 --insert into dbo.Tbl_CU_PortalRequestStatus with sp: Sp_Cu_Insert_Into_Tbl_CU_PortalRequestStatus
 
 
-select top 1000 * from dbo.Tbl_Cu_PortalReceiveLog
+select top 1000 * from dbo.Tbl_Cu_PortalReceiveLog 'insert into ' select top 1000 * from dbo.Tbl_Cu_GetCurrencyForStudent_LOG
 
-select top 1000 * from Tbl_Cu_AttachmentGetCurrency_LOG
+'get data from json and insert into' select top 1000 * from Tbl_Cu_AttachmentGetCurrency_LOG  
 
 select top 1000 * from dbo.Tbl_CU_PortalRequestStatus
 
@@ -19,7 +19,7 @@ select top 1000 * from dbo.Tbl_CU_PortalRequestStatus
 --update  with StoredProcedure [dbo].[Sp_Cu_Insert_Update_Tbl_Cu_ExchangeStudent_LOG_GetCurrency]  from  dbo.Tbl_frm31143
 --UPDATE  dbo.Tbl_Cu_GetCurrencyForStudent_LOG
         --SET     PkForm31143ID = @PkForm1ID ...
-select top 1000 * from dbo.Tbl_Cu_GetCurrencyForStudent_LOG
+
 
 --sp
 Sp_Cu_Insert_Into_Tbl_CU_PortalRequestStatus

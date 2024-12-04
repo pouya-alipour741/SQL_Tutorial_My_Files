@@ -77,3 +77,16 @@ UPDATE  dbo.Tbl_Cu_GetCurrencyForStudent_LOG
  --SELECT  @RegDate = dbo.MiladiToShamsi(Date) ,
  --               @RegTime = SUBSTRING(time,1,5)
 
+
+  IF EXISTS ( SELECT *
+                 FROM   @tbl T
+                 WHERE  ISNULL(AttachmentForm120, '') != '' )
+        INSERT  INTO dbo.Tbl_Cu_AttachmentGetCurrency_LOG
+                ( WFID ,
+                  PortalLogID ,
+				  AttachmetLinkPDF ,
+                  AttachmetLinkJPG ,
+                  CertificateName ,
+                  RegDate ,
+                  RegTime
+                )

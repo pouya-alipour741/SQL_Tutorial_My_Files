@@ -42,9 +42,9 @@ select
 	(select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
 	(select dbo.MiladiToShamsi(t.EndDate)) EndDate, TaskStatusName,
 	p.FullName
-	--,ActivityID
-	--,p.UserID
-	--, tr.Groupid
+--,ActivityID
+--,p.UserID
+--, tr.Groupid
 from
 	task.TblWorkflowInstance i
 	join task.TblWorkflowActivityInstance a on a.WokflowInstanceID = i.WorkflowInstanceID
@@ -56,10 +56,7 @@ where
 	WorkflowID = 62
 	and WorkflowInstanceStatusID = 2
 	and i.WorkflowInstanceID = 3997921
-	and FullName != N'کاربر سیستم'
-	--and ActivityID  = 4774034869929086367
-
-
+	and p.UserId != 2  --کاربر سیستم
 --select * from users.TblProfiles
 --where UserId = 2112
 
@@ -101,7 +98,7 @@ where
 
 
 -----------
---sub query
+--sub query for GroupName
 select
 	TaskName, (select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
 	(select dbo.MiladiToShamsi(t.EndDate)) EndDate, TaskStatusName,
@@ -125,7 +122,7 @@ where
 	and p.UserID != 2;
 
 
---join
+--left join
 select
 	TaskName, (select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
 	(select dbo.MiladiToShamsi(t.EndDate)) EndDate, TaskStatusName,
@@ -147,4 +144,31 @@ where
 	--and WorkflowInstanceStatusID = 2
 	and i.WorkflowInstanceID = 3997921
 	and p.UserID != 2
+
+
+
+
+-------sub query for TaskStatusName--------
+select
+	TaskName,
+	(select dbo.MiladiToShamsi(t.CreateDate)) CreateDate,
+	(select dbo.MiladiToShamsi(t.EndDate)) EndDate
+	,(select TaskStatusName from task.TblTaskStatus s where s.TaskStatusID = t.TaskStatusID) TaskStatusName 
+	,p.FullName
+	
+	--,TaskStatusName
+	--,p.UserID
+	--, tr.Groupid
+from
+	task.TblWorkflowInstance i
+	join task.TblWorkflowActivityInstance a on a.WokflowInstanceID = i.WorkflowInstanceID
+	join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+	--join task.TblTaskStatus s on s.TaskStatusID = t.TaskStatusID
+	--join task.TblWorkflowInstanceTrustee tr on tr.WorkflowInstanceId = i.WorkflowInstanceID
+	join users.TblProfiles p on p.UserId = t.UserId	
+where
+	WorkflowID = 62
+	and WorkflowInstanceStatusID = 2
+	and i.WorkflowInstanceID = 3997921
+
 
