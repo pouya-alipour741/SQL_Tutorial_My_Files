@@ -334,3 +334,51 @@ select *,
 rn-cnt+1 rnk
 from cte
 order by ShippedDate
+
+
+use tbssimnew
+
+--find the most concurrent tasks
+
+--method 1 window function
+with cte as(
+select
+	taskid, createdate, 1 as conc
+from
+	task.tbltask t
+union all
+select
+	taskid, enddate, -1 as conc
+from
+	task.tbltask t
+),
+cte2 as(
+	select *, sum(conc) over(partition by taskid order by createdate, conc rows between unbounded preceding and current row) conc_sum
+	from cte
+),
+select
+	taskid, max(conc_sum) max_conc_sum
+from
+	cte2
+group by
+	taskid
+
+
+
+--method 2 sub query
+with cte as(
+select
+	taskid, stardate,
+	(select count(*) from task.tbltask t2
+	where t2.taskid = t1.taskid
+	and t2.enddate >= t1.createdate
+	and t2.createdate > t1.createdate) num_concurrent
+from
+	task.tbltask t1
+)
+select taskid, max(num_concurrent) 
+from cte
+group by
+	taskid
+
+
