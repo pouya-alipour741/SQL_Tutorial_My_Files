@@ -12,7 +12,7 @@ select top 1000 * from dbo.Tbl_Cu_PortalReceiveLog 'insert into ' select top 100
 
 'get data from json and insert into' select top 1000 * from Tbl_Cu_AttachmentGetCurrency_LOG  
 
-select top 1000 * from dbo.Tbl_CU_PortalRequestStatus
+select top 1000 * from dbo.Tbl_CU_PortalRequestStatus  >>   'insert FROM dbo.Tbl_CU_FollowUpCode that consist follow up code'
 
 
 
@@ -20,7 +20,7 @@ select top 1000 * from dbo.Tbl_CU_PortalRequestStatus
 --UPDATE  dbo.Tbl_Cu_GetCurrencyForStudent_LOG
         --SET     PkForm31143ID = @PkForm1ID ...
 
-
+Sp_Cu_Update_Tbl_CU_PortalRequestStatus_PortalEntryID  >> 'EXEC Sp_Cu_SelectPortalLogData @PortalLogID '
 --sp
 Sp_Cu_Insert_Into_Tbl_CU_PortalRequestStatus
 
