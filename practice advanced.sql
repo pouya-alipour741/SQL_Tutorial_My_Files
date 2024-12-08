@@ -355,7 +355,7 @@ from
 cte2 as(
 	select *, sum(conc) over(partition by taskid order by createdate, conc rows between unbounded preceding and current row) conc_sum
 	from cte
-),
+)
 select
 	taskid, max(conc_sum) max_conc_sum
 from
@@ -368,7 +368,7 @@ group by
 --method 2 sub query
 with cte as(
 select
-	taskid, stardate,
+	taskid, CreateDate,
 	(select count(*) from task.tbltask t2
 	where t2.taskid = t1.taskid
 	and t2.enddate >= t1.createdate

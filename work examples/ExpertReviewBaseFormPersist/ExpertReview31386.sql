@@ -22,7 +22,7 @@ as
 			ROW_NUMBER() over(order by ID) row_number,
 			[ID], [Description],
 			(case when [IsActive] = 1 then 'فعال' when isactive = 0 then 'غیر فعال' end) as isactive
-			,[RegUser], [RegDate], [RegTime]
+			--,[RegUser], [RegDate], [RegTime]
 		from
 			Tbl_Cu_Base_ExpertDes_StudentGetCertificateCode
 	end
@@ -44,13 +44,48 @@ as
 
 --select top 100 * from Tbl_Cu_Base_ExpertDes_StudentGetCertificateCodeTest
 
-
-create proc sp_cu_select_expert_frm31386Test
+--expert table
+alter proc sp_cu_select_expert_frm31386Test
 as
 	begin
 		select 
-			[ID], [Description], [IsActive], [RegUser], [RegDate], [RegTime], [Test_col]
+			[ID], [Description], [IsActive]
+			--,[RegUser], [RegDate], [RegTime], [Test_col]
 		from
 			Tbl_Cu_Base_ExpertDes_StudentGetCertificateCodeTest
 	end
 
+
+
+--create flag for mandatory description
+alter proc sp_cu_select_expert_DescMandatory
+	@desc nvarchar(1000)
+as
+	begin
+		declare @result bit
+		--select @desc = Description from Tbl_Cu_Base_ExpertDes_StudentGetCertificateCode
+
+		if @desc = ''
+			set @result = 1
+		else 
+			set @result = 0
+		select @result as result
+	end
+
+exec sp_cu_select_expert_DescMandatory ''
+
+
+
+--alternative method
+create proc sp_cu_select_expert_DescMandatoryTest
+	@desc nvarchar(1000)
+as
+	begin
+		if @desc = ''
+			select cast (1 as bit) res
+		else 
+			select cast (0 as bit) res
+	end
+
+
+exec sp_cu_select_expert_DescMandatoryTest ''
