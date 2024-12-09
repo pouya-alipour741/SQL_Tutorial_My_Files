@@ -77,11 +77,11 @@ exec sp_cu_select_expert_DescMandatory ''
 
 
 --alternative method
-create proc sp_cu_select_expert_DescMandatoryTest
+alter proc sp_cu_select_expert_DescMandatoryTest
 	@desc nvarchar(1000)
 as
 	begin
-		if @desc = ''
+		if isnull(@desc,'') = ''
 			select cast (1 as bit) res
 		else 
 			select cast (0 as bit) res
