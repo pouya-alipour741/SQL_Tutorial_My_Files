@@ -219,3 +219,26 @@ as
 			select cast(0 as bit) res
 	end
 
+
+
+--SELECT top 100 *
+--FROM Tbl_CU_PortalRequestStatus
+--order by WorkFlowInstanceID
+
+--select top 1000 * from dbo.Tbl_CU_FollowUpCode
+
+
+--select top 100 * from Tbl_Cu_StudentGetCertificateCode_LOG
+
+--use saodb
+--SELECT *
+--FROM tbl_frm31557
+--where frm31557Id = (select pkformid from task.TblFormInstance where FormID = 31557 and WorkflowInstanceId = 4031540);
+
+--SELECT *
+--FROM tbl_frm31557 f
+--join task.TblFormInstance fi on fi.PKFormID = f.frm31557Id
+--where FormID = 31557 and WorkflowInstanceId = 4031540
+
+
+
