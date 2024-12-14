@@ -1,4 +1,4 @@
-select top 1000 * from Tbl_Cu_ApplierProfile
+﻿select top 1000 * from Tbl_Cu_ApplierProfile
 
 
 ----ds load data
@@ -7,7 +7,7 @@ AS
 BEGIN
 	select 
 		top 1 Name, LastName, ShamsiBirthday, NationalCode
-		, (case when MaritalStatusID=1 then '����' when MaritalStatusID=2 then '�����' end) MaritalStatusID
+		, (case when MaritalStatusID=1 then 'مجرد' when MaritalStatusID=2 then 'متعهل' end) MaritalStatusID
 	from
 		Tbl_Cu_ApplierProfile
 	where
@@ -18,7 +18,7 @@ GO
 exec sp_cu_profile_from_Tbl_Cu_ApplierProfile 1
 
 select 
-		Name, LastName, ShamsiBirthday, NationalCode, (case when MaritalStatusID=1 then '����' when MaritalStatusID=2 then '�����' end) MaritalStatusID
+		Name, LastName, ShamsiBirthday, NationalCode, (case when MaritalStatusID=1 then 'مجرد' when MaritalStatusID=2 then 'متعهل' end) MaritalStatusID
 	from
 		Tbl_Cu_ApplierProfile
 	where
@@ -240,5 +240,72 @@ as
 --join task.TblFormInstance fi on fi.PKFormID = f.frm31557Id
 --where FormID = 31557 and WorkflowInstanceId = 4031540
 
+exec Sp_Cu_GetApplicantInformationsInquiryOfDocuments_CertificateCode
+
+
+
+declare @applieruserid bigint = (select top 1 ExternalUserId from users.TblMemebrShips where ExternalUserId is not null)
+
+select  NationalCode from Tbl_Cu_ApplierProfile where UserPortalID= @applieruserid
+
+
+select top 100 * from users.TblMemebrShips
+
+
+exec [Sp_Cu_GetApplicantInformationsInquiryOfDocuments_CertificateCode ] '1272667693'
+
+
+
+--practice
+declare @table as table
+(
+	RowNO bigint,
+	ID bigint,
+	EducationGradeTitle nvarchar(200),
+	GradeID bigint,
+	University nvarchar(200),
+	UniID bigint,
+	UniversityCode bigint,
+	InstituteName nvarchar(200),
+	InstituteID bigint,
+	EducationFieldStudyTitle nvarchar(100),
+	EducationFieldStudyID bigint,
+	CertificateCode bigint,
+	InquirySource nvarchar(10),
+	DegreeType nvarchar(100),
+	DegreeImage nvarchar(1000),
+	linkname nvarchar(1000),
+	WFID bigint,
+	StartDate nvarchar(10),
+	EndDate nvarchar(10)
+)
+
+insert into @table
+exec Sp_Cu_GetApplicantInformationsInquiryOfDocuments_CertificateCode 1
+
+if exists(select 1 from @table where GradeID = 1 and UniID = 1)
+	begin
+		select 
+			cast(1 as bit) res,
+			'شما قبلا برای مقطع' + ' ' + EducationGradeTitle + ' ' + 'در دانشگاه' + ' ' + University + ' ' + 'در رشته' + ' ' + EducationFieldStudyTitle
+			+ ' ' + 'کد صحت دریافت کرده اید و نیاز به ثبت درخواست جدید ندارید. کد صحت شما' + ' ' + CertificateCode as FirstLable,
+			'در دانشگاه' + ' ' + University + ' ' + 'و در مقطع' + ' ' + EducationGradeTitle + ' ' +'(در دورشته مختلف تحصیل کرده ام.(دانشجوی دو رشته ای هستم' SecondLable
+
+			from
+				@table where GradeID = 1 and UniID = 1
+	end
+else
+	select cast(0 as bit) res,
+	 '' as FirstLable,
+	'' as SecondLable
+
+
+exec SP_CU_Select_TBL_CU_CertificateCodeDatas_Log
+
+
+select * from [TBSFileServerDB].[dbo].[TblFilesStream]
+where id = 67922
+
+exec SP_CU_CheckCommitmentCancellationFile_FRm31557 
 
 

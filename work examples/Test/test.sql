@@ -80,3 +80,6 @@ exec sp_testcheckDelete_frm41606 ''
 
 --select * from task.tblforminstance
 
+
+select * from INFORMATION_SCHEMA.COLUMNS
+where TABLE_NAME = '[archive].dbo.test_frm41606'
