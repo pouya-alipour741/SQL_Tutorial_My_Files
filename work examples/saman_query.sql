@@ -12,10 +12,10 @@ with cte as(
 select
 	f.Name,
 	last_VALUE(i.CreateDate) over(partition by f.name order by(select null)) last_CreateDate,
-	count(i.WorkflowInstanceID ) over(partition by f.Name) wf_count
-	,count(case when t.TaskStatusID = 6 then i.WorkflowInstanceID end) over(partition by f.Name) wf_count_open
-	,count(case when t.TaskStatusID = 1 then i.WorkflowInstanceID end) over(partition by f.Name) wf_count_in_progress
-	,ROW_NUMBER() over(partition by f.Name order by (select null)) RowNumber
+	count(i.WorkflowInstanceID ) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count
+	,count(case when t.TaskStatusID = 6 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count_open
+	,count(case when t.TaskStatusID = 1 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count_in_progress
+	,ROW_NUMBER() over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) RowNumber
 from
 	Workflow.TblWorkflow f
 	join task.TblWorkflowInstance i on f.WorkflowId = i.WorkflowID
