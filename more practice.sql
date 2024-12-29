@@ -819,3 +819,57 @@ select * from users.TblUsersRoles
 
 
 
+
+------------output
+use Northwind
+
+alter PROCEDURE GetEmployeesAndTotalSalary
+    @EmployeeID INT,
+    @TotalSalary INT OUTPUT
+AS
+BEGIN
+    -- Return result set
+    --SELECT *
+    --FROM Employees
+    --WHERE EmployeeID = @EmployeeID;
+
+    -- Return total salary
+    SELECT @TotalSalary = SUM(ReportsTo)
+    FROM Employees
+    --WHERE EmployeeID = @EmployeeID;
+	print(@TotalSalary)
+END;
+-- Usage
+DECLARE @Total INT;
+EXEC GetEmployeesAndTotalSalary @EmployeeID = 1, @TotalSalary = @Total OUTPUT;
+
+PRINT 'Total Salary: ' + CAST(@Total AS NVARCHAR);
+
+
+select * from INFORMATION_SCHEMA.COLUMNS
+where TABLE_NAME = 'Employees'
+and COLUMN_NAME = 'ReportsTo'
+
+
+
+SELECT *
+FROM Employees
+order by FirstName
+offset 1 rows fetch first 4 rows only
+
+
+SELECT *
+FROM Employees
+order by EmployeeID
+offset 2 rows 
+
+
+
+SELECT top 50 percent *
+FROM Employees
+order by EmployeeID
+
+
+SELECT top 4 with ties *
+FROM Employees
+order by Title

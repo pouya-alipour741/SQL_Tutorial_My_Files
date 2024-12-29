@@ -8,14 +8,16 @@ group by
 
 
 
+
+------------------------------
 with cte as(
 select
 	f.Name,
-	last_VALUE(i.CreateDate) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) last_CreateDate,
-	count(i.WorkflowInstanceID ) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count
-	,count(case when t.TaskStatusID = 6 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count_open
-	,count(case when t.TaskStatusID = 1 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count_in_progress
-	,ROW_NUMBER() over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) RowNumber
+	last_VALUE(i.CreateDate) over(partition by f.Name order by i.WorkflowInstanceID) last_CreateDate,
+	count(i.WorkflowInstanceID ) over(partition by f.Name order by i.WorkflowInstanceID) wf_count
+	,count(case when t.TaskStatusID = 6 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID) wf_count_open
+	,count(case when t.TaskStatusID = 1 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID) wf_count_in_progress
+	,ROW_NUMBER() over(partition by f.Name order by i.WorkflowInstanceID) RowNumber
 from
 	Workflow.TblWorkflow f
 	join task.TblWorkflowInstance i on f.WorkflowId = i.WorkflowID
@@ -29,6 +31,10 @@ from
 	cte
 where
 	RowNumber = 1
+
+-------------------------------
+
+
 
 
 SELECT CustomerID,

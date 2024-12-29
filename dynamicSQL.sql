@@ -105,3 +105,67 @@ begin
 end
 
 exec sp_dynamicQ2 '2009-01-08','2022-01-08',100
+
+
+
+----variable parameter
+DECLARE @Category NVARCHAR(50) = 'Electronics'; -- Example input for category
+DECLARE @MinPrice DECIMAL(10, 2) = 100.00;      -- Example input for minimum price
+DECLARE @SQL NVARCHAR(MAX);                     -- To hold the dynamic SQL query
+
+-- Construct the dynamic SQL query
+SET @SQL = '
+    SELECT ProductID, ProductName, Category, Price
+    FROM Products
+    WHERE 1 = 1'; -- Always true condition for flexible query building
+
+-- Add dynamic conditions based on input parameters
+IF @Category IS NOT NULL
+    SET @SQL = @SQL + ' AND Category = @CategoryParam';
+
+IF @MinPrice IS NOT NULL
+    SET @SQL = @SQL + ' AND Price >= @MinPriceParam';
+
+-- Execute the dynamic SQL query using sp_executesql
+EXEC sp_executesql 
+    @SQL, 
+    N'@CategoryParam NVARCHAR(50), @MinPriceParam DECIMAL(10, 2)', -- Declare parameters
+    @CategoryParam = @Category, 
+    @MinPriceParam = @MinPrice;
+
+
+
+
+alter proc sp_dynamic_user_task
+@fromdate varchar(10)=null,
+@todate varchar(10)=null,
+@taskname nvarchar(50)=null,
+@viewdiff int=null
+as
+begin
+	declare @sql nvarchar(max)
+	set @sql=N'
+	select p.UserId,FullName,count(t.TaskID) user_count
+	from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
+	join users.TblProfiles p on p.UserId=t.UserID where 1=1'
+	if (@taskname is not null)
+		set @sql+='
+		 and s.TaskStatusName =@tn'
+	if (@fromdate is not null)
+		set @sql+=
+		' and CreateDate between @fd and @td'
+	if (@viewdiff is not null)
+		begin
+		set @sql+=
+		' and datediff(day,CreateDate,ViewDate)<= cast(@vd as nvarchar(50))'
+		end
+	set @sql+=
+	'group by p.UserId,FullName'
+
+	exec sp_executesql @sql,
+		N'@tn nvarchar(50), @fd date,@td date, @vd int',
+		@tn=@taskname,@td=@todate,@fd=@fromdate,@vd=@viewdiff
+end
+
+
+exec sp_dynamic_user_task @fromdate='2018',@todate='2024',@taskname='در حال انجام' ,@viewdiff =5
