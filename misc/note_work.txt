@@ -10,3 +10,9 @@
 41584  فرم لغو تعهد
 
 91745  ثبت گفتگو
+
+
+connect to sazman remote
+172.50.0.111  Support T@zarv76
+
+forti: H.PourMoharami   Qazwsx@13
