@@ -11,7 +11,7 @@ group by
 with cte as(
 select
 	f.Name,
-	last_VALUE(i.CreateDate) over(partition by f.name order by(select null)) last_CreateDate,
+	last_VALUE(i.CreateDate) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) last_CreateDate,
 	count(i.WorkflowInstanceID ) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count
 	,count(case when t.TaskStatusID = 6 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count_open
 	,count(case when t.TaskStatusID = 1 then i.WorkflowInstanceID end) over(partition by f.Name order by i.WorkflowInstanceID,t.taskid) wf_count_in_progress
