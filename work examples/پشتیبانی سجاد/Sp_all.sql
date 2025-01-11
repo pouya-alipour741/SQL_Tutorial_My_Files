@@ -41,7 +41,7 @@ go
 
 go
 
-create PROCEDURE [dbo].[Sp_Cu_TaskName_SaoSupport] @WFID AS BIGINT  --اعمال نشده
+create PROCEDURE [dbo].[Sp_Cu_TaskName_SaoSupport] @WFID AS BIGINT  --هنوز اجرا نکردم
 AS
 BEGIN
     DECLARE @MainSubject AS NVARCHAR(300) = (
@@ -62,11 +62,11 @@ BEGIN
 							join users.TblProfiles p on l.RegisteredUserId = p.UserId
 							where WFID = @WFID)
 
-    SELECT CAST('پشتیبانی' AS NVARCHAR(MAX))+ '-' + @regUsername + '-'+isnull(@MainSubject,'') AS TASKNAME1,
-           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + @regUsername +'-'+isnull(@MainSubject,'') AS TASKNAME2,
-           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + @regUsername +'-'+isnull(@MainSubject,'') AS TASKNAME3,
-           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + @regUsername +'-'+isnull(@MainSubject,'') AS TASKNAME4,
-           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + @regUsername +'-'+isnull(@MainSubject,'') AS TASKNAME5;
+    SELECT CAST('پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') + '-'+isnull(@MainSubject,'') AS TASKNAME1,
+           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME2,
+           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME3,
+           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME4,
+           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME5;
 
 END;
 
