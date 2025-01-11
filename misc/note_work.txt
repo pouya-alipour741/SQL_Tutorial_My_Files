@@ -16,3 +16,9 @@ connect to sazman remote
 172.50.0.111  Support T@zarv76
 
 forti: H.PourMoharami   Qazwsx@13
+
+
+------
+172.50.0.106  admin اصلی
+
+172.50.0.94  admin simulation
