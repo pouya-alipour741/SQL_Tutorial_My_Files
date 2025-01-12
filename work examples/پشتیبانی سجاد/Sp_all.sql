@@ -17,16 +17,34 @@ END;
 
 go
 
-create PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
+----test
+
+--select top 1000 FollowUpCode,* from Tbl_CU_QuestionAnswer order by wfid desc
+
+--select top 1000 WFID,* from Tbl_CU_FollowUpCode
+--where  FollowUpCode = '6452642'
+
+--select distinct MainSubjectID from  Tbl_CU_QuestionAnswer
+
+select top 1000 WorkflowInstanceID,*
+from Workflow.TblWorkflow w
+join task.TblWorkflowInstance i on i.WorkflowID = w.WorkflowId
+where Name like N'%فرآیند درخواست پشتیبانی سامانه سجاد%'
+-------------------
+alter PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
 @MainSubject int,
 @FollowUpCode int
 AS
 BEGIN
-	if @FollowUpCode not in(select FollowUpCode from Tbl_CU_QuestionAnswer where WFID in( @MainSubject))
+	if @FollowUpCode = ''  or @MainSubject = -1
+		select '' as  res
+	else if @FollowUpCode in(select FollowUpCode from Tbl_CU_QuestionAnswer where MainSubjectID=@MainSubject)
 		select cast(1 as bit) res
 	else
 		select cast(0 as bit) res
 END;
+
+--exec Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041  154,6452646
 
 go
 --create PROC [dbo].[Sp_CU_GetNonActiveWorkflow_SajadSupport]  --not used
@@ -57,9 +75,9 @@ BEGIN
                                                 )
                                             );
 
-	declare @regUsername nvarchar(50) = (select top 1 FullName
+	declare @regUsername nvarchar(50) = (select top 1 UserName
 							from Tbl_CU_QuestionAnswer l
-							join users.TblProfiles p on l.RegisteredUserId = p.UserId
+							join users.TblUsers p on l.RegisteredUserId = p.UserId      
 							where WFID = @WFID)
 
     SELECT CAST('پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') + '-'+isnull(@MainSubject,'') AS TASKNAME1,
@@ -107,7 +125,7 @@ go
 --select * from users.TblProfiles
 --where UserId =64505
 
-select * from [Tbl_CU_QuestionAnswer]
+select top 1000 * from [Tbl_CU_QuestionAnswer]
 --where wfid = 154
 
 
@@ -149,5 +167,43 @@ go
 --WHERE     (Task.TblWorkflowActivityInstance.ActivityID = 5301958918738439373)
 --and Task.TblTask.TaskStatusID in(1,6)
 --ORDER BY Task.TblTask.TaskID desc
+
+
+
+/*در صورت انتخاب گزینه ارجاع به سایر ادارات ارجاع به دانشگاه ها ، در فیلد "نوع دانشگاه" و "نام دانشگاه" ،
+تمامی دانشگاه های دیگر به جز دانشگاه فعلی که در حال بررسی درخواست است ، قابل انتخاب باشد */ 
+create proc Sp_Cu_Select_university_By_institudeID_FRM21041    --برای کمبوباکس نام دانشگاه است ولی هنوز کد را اجرا نکردم 
+@wfid bigint,
+@institudeID int
+as
+begin
+	declare @UniversityID int = (select top 1 University from Tbl_CU_QuestionAnswer where WFID = @wfid)
+	if (select top 1 ReferralToUni from Tbl_CU_QuestionAnswer where WFID = @wfid) = 1
+	begin
+		SELECT * FROM dbo.Tbl_CU_University
+		WHERE InstituteID = @institudeID and UniversityID not in(@UniversityID)
+	end
+	else
+		SELECT * FROM dbo.Tbl_CU_University
+		WHERE InstituteID = @institudeID 
+end
+
+
+/*در صورت انتخاب یکی از مقادیر علمی کاربردی ، پیام نور ،
+فرهنگیان و فنی و حرفه ای ، امکان انتخاب نام دانشگاه وجود نخواهد داشت . */
+select * from Tbl_Cu_Institute
+where InstituteID in (6,8,9,2,3,1)
+
+
+create proc Sp_Cu_chkIfInCertainUniversities_FRM21041     
+@InstitudeID int
+as
+begin
+	 if @InstitudeID in(select InstituteID from Tbl_Cu_Institute where InstituteID in (3,2,1,9))
+		select cast(1 as bit) res
+	 else
+		select cast(0 as bit) res
+
+end
 
 
