@@ -31,22 +31,6 @@ go
 --join task.TblWorkflowInstance i on i.WorkflowID = w.WorkflowId
 --where Name like N'%فرآیند درخواست پشتیبانی سامانه سجاد%'
 -------------------
---alter PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
---@MainSubject int,
---@FollowUpCode int
---AS
---BEGIN
---	if @FollowUpCode = ''  or @MainSubject = -1
---		select '' as  res
---	else if @FollowUpCode in(select FollowUpCode from Tbl_CU_QuestionAnswer where MainSubjectID=@MainSubject)
-
---		select cast(1 as bit) res
---	else
---		select cast(0 as bit) res
---END;
-
-
-
 alter PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
 @MainSubject int,
 @FollowUpCode nvarchar(50),
@@ -54,19 +38,21 @@ alter PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
 AS
 BEGIN
 	if @ProblemType = 6
-	begin
-		if (select WorkflowID  from Tbl_CU_FollowUpCode f
-			join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
-			where FollowUpCode = @FollowUpCode
-			) = @MainSubject
+		begin
+			if (select WorkflowID
+				from Tbl_CU_FollowUpCode f
+					join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
+				where FollowUpCode = @FollowUpCode) = @MainSubject
 
 				select cast(1 as bit) res
-		else
+			else
 				select cast(0 as bit) res
-	end
+		end
 	else
 		select cast(1 as bit) res
 END;
+
+
 
 --exec Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041  154,6452646
 
@@ -99,10 +85,17 @@ BEGIN
                                                 )
                                             );
 
-	declare @regUsername nvarchar(50) = (select top 1 UserName
-							from Tbl_CU_QuestionAnswer l
-							join users.TblUsers p on l.RegisteredUserId = p.UserId      
-							where WFID = @WFID)
+	declare @regUsername nvarchar(50) = (
+											select
+												top 1 UserName --top 1 case when UserName is not null then UserName else groupname end as Name
+												
+											from
+												Tbl_CU_QuestionAnswer l
+												join users.TblUsers p on l.RegisteredUserId = p.UserId
+												--join users.tblgroups g on l.   = g.groupid
+											where
+												WFID = @WFID
+										)
 
     SELECT CAST('پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') + '-'+isnull(@MainSubject,'') AS TASKNAME1,
            CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME2,
@@ -276,4 +269,92 @@ BEGIN
 		
 		select @ObservorUserID as ObservorID, @ObservorGroupID as ObservorGroupID
 
+END;
+
+
+go
+
+-----------------
+ALTER proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]
+@PortalUserID bigint,
+@FollowUpCode nvarchar(10)
+as
+begin
+	select (
+		SELECT CASE
+					WHEN T.WorkflowInstanceStatusID = 1 THEN
+						':وضعیت درخواست شما به شرح زیر میباشد
+						در حال بررسي'
+					ELSE
+						':وضعیت درخواست شما به شرح زیر میباشد
+						خاتمه يافته است'
+				END
+		FROM Task.TblWorkflowInstance AS T
+		WHERE WorkflowInstanceID = SN.WFID
+	) AS WFStatus
+	FROM Tbl_CU_CountriesScholarship_LOG AS SN
+	WHERE CountriesScholarshipID IN (
+										select MAX(CountriesScholarshipID) 
+										FROM Tbl_CU_CountriesScholarship_LOG
+										WHERE PortalUserID = @PortalUserID
+										GROUP BY WFID
+									)
+			and PortalUserID = @PortalUserID
+			and wfid = (select WorkflowID
+						from Tbl_CU_FollowUpCode f
+						join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
+						where FollowUpCode = @FollowUpCode)
+	union all
+	select (
+		SELECT CASE
+					WHEN T.WorkflowInstanceStatusID = 1 THEN
+						'<p class="schecking">:وضعیت درخواست شما به شرح زیر میباشد
+						در حال بررسي</p>'
+					WHEN a.StatusID = 1560 THEN
+						'<p class="schecking">:وضعیت درخواست شما به شرح زیر میباشد
+						در حال بررسي</p>'
+					ELSE
+						'<p class="sclosed">:وضعیت درخواست شما به شرح زیر میباشد
+						خاتمه يافته است</p>'
+				END
+		FROM Task.TblWorkflowInstance AS T
+		WHERE WorkflowInstanceID = a.WFID
+	) AS WFStatus
+	FROM [dbo].[Tbl_CU_QuestionAnswer] a
+	WHERE
+		PortalUserID = @PortalUserID
+		AND a.StatusID <> 1021
+		and wfid = (select WorkflowID
+					from Tbl_CU_FollowUpCode f
+					join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
+					where FollowUpCode = @FollowUpCode)
+end
+
+
+
+
+
+create proc [dbo].[Sp_cu_IsInStudentCartable]
+@PortalUserID bigint,
+@FollowUpCode nvarchar(10)
+AS
+BEGIN
+	declare @wfid bigint = (select wfid
+							from Tbl_CU_FollowUpCode 
+							where FollowUpCode = @FollowUpCode)
+	
+	if exists(select
+					1
+				from
+					task.TblWorkflowActivityInstance a
+					join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+				where
+					a.WokflowInstanceID = @wfid
+					a.activityid = 
+					and t.userid = @PortalUserID)
+
+-				select cast(1 as bit)
+	else
+				select cast(0 as bit)
+		
 END;
