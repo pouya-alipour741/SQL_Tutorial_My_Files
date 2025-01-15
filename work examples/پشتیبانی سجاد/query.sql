@@ -3,7 +3,7 @@
 
 with cte as (
 	select
-		WorkflowInstanceID, dbo.MiladiToShamsi(CreateDate) CreateDate
+		WorkflowInstanceID,WorkflowInstanceName, dbo.MiladiToShamsi(CreateDate) CreateDate
 	
 	from
 		task.TblWorkflowInstance i

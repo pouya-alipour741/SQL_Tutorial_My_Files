@@ -153,11 +153,10 @@ as
 begin
 	if exists(
 		select 1
-		from [Tbl_CU_QuestionAnswer] q
+		from [Tbl_CU_QuestionAnswer] q		
 		join task.TblWorkflowInstance i on q.WFID = i.WorkflowInstanceID
-		join Workflow.TblWorkflow w on w.WorkflowId = i.WorkflowID
 		where 
-			w.WorkflowId = @mainSubject
+			i.WorkflowId = @mainSubject
 			and WorkflowInstanceStatusID = 1
 			and PortalUserID = @userID
 			)
@@ -191,7 +190,7 @@ go
 تمامی دانشگاه های دیگر به جز دانشگاه فعلی که در حال بررسی درخواست است ، قابل انتخاب باشد */ 
 create proc Sp_Cu_Select_university_By_institudeID_FRM21041     
 @wfid bigint,
-@institudeID int
+@institudeID int  
 as
 begin
 	declare @UniversityID int = (select top 1 University from Tbl_CU_QuestionAnswer where WFID = @wfid)
@@ -275,86 +274,68 @@ END;
 go
 
 -----------------
-ALTER proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]
+ALTER proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]  --exec [sp_cu_getStatusFromDashboard_frm31548] 15883,6452657
+															--exec [Sp_CU_GetDashboard] 64505   >> followupcode: 6452504,6452642
 @PortalUserID bigint,
 @FollowUpCode nvarchar(10)
 as
 begin
-	select (
-		SELECT CASE
-					WHEN T.WorkflowInstanceStatusID = 1 THEN
-						':وضعیت درخواست شما به شرح زیر میباشد
-						در حال بررسي'
-					ELSE
-						':وضعیت درخواست شما به شرح زیر میباشد
-						خاتمه يافته است'
-				END
-		FROM Task.TblWorkflowInstance AS T
-		WHERE WorkflowInstanceID = SN.WFID
-	) AS WFStatus
-	FROM Tbl_CU_CountriesScholarship_LOG AS SN
-	WHERE CountriesScholarshipID IN (
-										select MAX(CountriesScholarshipID) 
-										FROM Tbl_CU_CountriesScholarship_LOG
-										WHERE PortalUserID = @PortalUserID
-										GROUP BY WFID
-									)
-			and PortalUserID = @PortalUserID
-			and wfid = (select WorkflowID
-						from Tbl_CU_FollowUpCode f
-						join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
-						where FollowUpCode = @FollowUpCode)
-	union all
-	select (
-		SELECT CASE
-					WHEN T.WorkflowInstanceStatusID = 1 THEN
-						'<p class="schecking">:وضعیت درخواست شما به شرح زیر میباشد
-						در حال بررسي</p>'
-					WHEN a.StatusID = 1560 THEN
-						'<p class="schecking">:وضعیت درخواست شما به شرح زیر میباشد
-						در حال بررسي</p>'
-					ELSE
-						'<p class="sclosed">:وضعیت درخواست شما به شرح زیر میباشد
-						خاتمه يافته است</p>'
-				END
-		FROM Task.TblWorkflowInstance AS T
-		WHERE WorkflowInstanceID = a.WFID
-	) AS WFStatus
-	FROM [dbo].[Tbl_CU_QuestionAnswer] a
-	WHERE
-		PortalUserID = @PortalUserID
-		AND a.StatusID <> 1021
-		and wfid = (select WorkflowID
-					from Tbl_CU_FollowUpCode f
-					join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
-					where FollowUpCode = @FollowUpCode)
+	declare @temp table  (
+	GUIDID nvarchar(50),	CountriesScholarshipID bigint,	WorkFlowName nvarchar(50),	WFID bigint,
+	FollowCode nvarchar(50),	WFStatus nvarchar(50),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
+	PageID int,	EntryID nvarchar(50),	ShowFRM nvarchar(10),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
+	)
+	insert into @temp
+	exec [Sp_CU_GetDashboard] @PortalUserID
+
+	select 
+		Desciption, 
+		case 
+			 when WFMode = 'Editable' then cast(1 as bit) else cast(0 as bit) 
+		end as res
+	from
+		@temp
+	where
+		FollowCode = @FollowUpCode
 end
 
 
 
 
-
-create proc [dbo].[Sp_cu_IsInStudentCartable]
-@PortalUserID bigint,
-@FollowUpCode nvarchar(10)
+ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]
+    @rbnDesiredOffice AS BIT,
+    @rbnOtherOrg AS BIT,
+    @OrganUnitID AS BIGINT,
+    @Subsidiary AS BIGINT
 AS
 BEGIN
-	declare @wfid bigint = (select wfid
-							from Tbl_CU_FollowUpCode 
-							where FollowUpCode = @FollowUpCode)
-	
-	if exists(select
-					1
-				from
-					task.TblWorkflowActivityInstance a
-					join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
-				where
-					a.WokflowInstanceID = @wfid
-					a.activityid = 
-					and t.userid = @PortalUserID)
+    DECLARE @GROUPID AS BIGINT;
 
--				select cast(1 as bit)
-	else
-				select cast(0 as bit)
-		
+    IF (@rbnDesiredOffice = 1)
+    BEGIN
+        SET @GROUPID =
+        (
+            SELECT GroupID
+            FROM Tbl_Cu_Base_OrganizationalUnit
+            WHERE OrganizationalUnitID = @OrganUnitID
+        );
+    END;
+
+    ELSE IF (@rbnOtherOrg = 1)
+    BEGIN
+		--set @GROUPID =
+		--( 
+		--	select groupid
+		--	from Tbl_Cu_Base_UniversitiesConnectedSystem
+		--	where  = @cmbUniversity
+		--)
+
+    END;
+
+    SELECT @GROUPID AS GROUPID;
+
+
 END;
+
+
+

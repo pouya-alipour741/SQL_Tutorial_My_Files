@@ -1,0 +1,2 @@
+https://172.50.0.93/user-tasks/  portal
+https://172.50.0.94/HTMLTBS/Account/Login?ReturnUrl=%2fHTMLTBS%2ffa tbs
