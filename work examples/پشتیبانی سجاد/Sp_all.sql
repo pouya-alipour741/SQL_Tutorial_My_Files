@@ -274,7 +274,7 @@ END;
 go
 
 -----------------
-ALTER proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]  --exec [sp_cu_getStatusFromDashboard_frm31548] 15883,6452657
+ALTER proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]  --exec [sp_cu_getStatusFromDashboard_frm31548] 15883,6452657   
 															--exec [Sp_CU_GetDashboard] 64505   >> followupcode: 6452504,6452642
 @PortalUserID bigint,
 @FollowUpCode nvarchar(10)
@@ -288,15 +288,40 @@ begin
 	insert into @temp
 	exec [Sp_CU_GetDashboard] @PortalUserID
 
-	select 
-		Desciption, 
-		case 
-			 when WFMode = 'Editable' then cast(1 as bit) else cast(0 as bit) 
-		end as res
-	from
-		@temp
-	where
-		FollowCode = @FollowUpCode
+		begin
+			select 
+				Desciption 
+				,case 
+					 when WFMode = 'Editable' then cast(1 as bit) else cast(0 as bit)    --در صورتی که درخواست در کارتابل متقاضی (دانشجو) باشد ، امکان ثبت درخواست وجود نداشته 
+				end as res
+			from
+				@temp
+			where
+				FollowCode = @FollowUpCode
+		end
+end
+
+
+
+create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]     ---اجرا شود														
+@PortalUserID bigint,
+@FollowUpCode nvarchar(10),
+@chkFollowUpCodeIfInRelatedWFID bit
+as
+begin
+	declare @temp table  (
+	GUIDID nvarchar(50),	CountriesScholarshipID bigint,	WorkFlowName nvarchar(50),	WFID bigint,
+	FollowCode nvarchar(50),	WFStatus nvarchar(50),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
+	PageID int,	EntryID nvarchar(50),	ShowFRM nvarchar(10),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
+	)
+	insert into @temp
+	exec [Sp_CU_GetDashboard] @PortalUserID
+
+	if @chkFollowUpCodeIfInRelatedWFID = 1 and not exists(select 1 from @temp where FollowCode = @FollowUpCode and WFMode = 'Editable')  --درخواست در کارتابل خود دانشجو نباشد و شماره پیگیری فرآیند مربوطه وجود داشته باشد
+		select cast(1 as bit) TrueEnableCheckbox	
+
+	else
+		select cast(0 as bit) TrueEnableCheckbox
 end
 
 
