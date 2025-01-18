@@ -84,15 +84,14 @@ BEGIN
                                                     ORDER BY Id DESC
                                                 )
                                             );
-
-	declare @regUsername nvarchar(50) = (
+											select top 1000 * from Tbl_CU_QuestionAnswer
+	declare @regUsername nvarchar(50) = (   
 											select
-												top 1 UserName --top 1 case when UserName is not null then UserName else groupname end as Name
-												
+												top 1 FullName 											
 											from
 												Tbl_CU_QuestionAnswer l
-												join users.TblUsers p on l.RegisteredUserId = p.UserId
-												--join users.tblgroups g on l.   = g.groupid
+												--join users.TblUsers p on l.RegisteredUserId = p.UserId
+												join users.TblProfiles p on l.PortalUserID = p.UserId
 											where
 												WFID = @WFID
 										)
@@ -256,7 +255,7 @@ BEGIN
 		declare @FollowUpCode nvarchar(100) = (select top 1 UserChosenFollowUpCode from Tbl_CU_QuestionAnswer where WFID = @WFID) 
 
 
-		select
+		select top 1
 			@ObservorUserID=isnull(t.UserID,0), 
 			@ObservorGroupID=isnull(t.GroupID,0) 
 		from
@@ -265,6 +264,8 @@ BEGIN
 		where
 			a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
 			and a.ActivityType = 'TZHumanActivity'
+		order by
+			t.TaskID desc
 		
 		select @ObservorUserID as ObservorID, @ObservorGroupID as ObservorGroupID
 
@@ -303,7 +304,7 @@ end
 
 
 
-create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]     ---اجرا شود														
+create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]     													
 @PortalUserID bigint,
 @FollowUpCode nvarchar(10),
 @chkFollowUpCodeIfInRelatedWFID bit
@@ -327,11 +328,12 @@ end
 
 
 
-ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]
+ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]   
     @rbnDesiredOffice AS BIT,
     @rbnOtherOrg AS BIT,
     @OrganUnitID AS BIGINT,
-    @Subsidiary AS BIGINT
+    @cmbUniversity AS BIGINT,
+	@cmbMainSubject int
 AS
 BEGIN
     DECLARE @GROUPID AS BIGINT;
@@ -347,14 +349,22 @@ BEGIN
     END;
 
     ELSE IF (@rbnOtherOrg = 1)
-    BEGIN
-		--set @GROUPID =
-		--( 
-		--	select groupid
-		--	from Tbl_Cu_Base_UniversitiesConnectedSystem
-		--	where  = @cmbUniversity
-		--)
-
+    BEGIN		
+		if @cmbMainSubject = 154   --گروه های تعریف شده در فرآیند لغو تعهد
+			set @GROUPID =          
+				( 
+					select GroupID
+					from Tbl_Cu_UniversityGroupDiploma    
+					where UniversityID = @cmbUniversity
+				)
+		--else if @cmbMainSubject = 156		--گروه های تعریف شده در فرآیند تایید مدارک دانشجویان داخل و غیرایرانی-جدید	
+		--	set @GROUPID =          
+		--		( 
+		--			select GroupID
+		--			from     
+		--			where UniversityID = @cmbUniversity
+		--		)
+	 
     END;
 
     SELECT @GROUPID AS GROUPID;
@@ -362,5 +372,173 @@ BEGIN
 
 END;
 
+go
+
+/*لیست مقادیر فیلد "موضوع اصلی" برای کارشناسان پشتیبان فرایند ها ،
+لیست فرایند هایی میباشد که دسترسی آنها در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد تعریف شده است .*/
+create PROCEDURE [dbo].[Sp_Cu_GetMainSubject_frm41606] @UserId INT   
+AS
+BEGIN
+    IF @UserId = 2085
+    BEGIN
+        PRINT 'سخاوت';
+        SELECT WorkflowId,
+               [Name]
+        FROM Workflow.TblWorkflow
+        WHERE WorkflowId IN ( 80, 68, 94, 100, 96, 2000040, 62, 60, 59 );
+    END;
+	else if @UserId IN (6,1)
+	begin
+	SELECT WorkflowId,
+               [Name]
+        FROM Workflow.TblWorkflow
+        WHERE WorkflowId IN ( 37, 40,  154, 46, 49, 61, 62, 63, 65, 66, 67, 68, 70, 73, 78, 80, 81, 82, 85, 88, 89,
+                              90, 91, 93, 94, 95, 96, 97, 98, 100, 103, 104, 107, 84, 2000044, 134, 125, 120, 121, 114,
+                              113, 110, 109, 126, 127, 128, 129, 130, 159, 122, 2000556, 2000040, 62, 59, 60, 43, 57,
+                              2000047, 2000559,2000558,2000567,2000566,2000573
+                            )
+							union all
+							SELECT 1000 as WorkflowId,
+              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
+
+	end
+	else
+	    BEGIN
+        PRINT 'به جز سخاوت';
+        SELECT WorkflowId,
+               [Name]
+        FROM Workflow.TblWorkflow
+		where WorkflowId IN
+		(SELECT WFID
+        FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
+		where ExpertID = @UserID  --فقط فرآیندهای تعریف شده برای آن کاربر در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد 
+		)OR WorkflowId = 57
+		union all
+							SELECT 1000 as WorkflowId,
+              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
+    END;
+END;
+
+go
 
 
+create table sp_cu_PremadeResponses
+(
+	PremadeResponses_ID int primary key identity(1,1),
+	MainSubject nvarchar(50),
+	RequestType nvarchar(100),
+	Response nvarchar(1000),
+	[Status] bit,
+	UserID int,
+	MainSubjectID int
+)
+
+
+go
+
+alter proc sp_cu_gvPremadeResponses_frm41606
+@mainSubject int,
+@userID int
+as
+	begin
+		select
+			PremadeResponses_ID,
+			MainSubject,
+			RequestType,
+			Response,
+			case Status
+				when 1 then 'فعال'
+				else 'غیر فعال'
+			end [status]
+		from
+			sp_cu_PremadeResponses
+		where
+			(MainSubjectID = @mainSubject) and
+			UserID = @userID
+	end
+
+select * from sp_cu_PremadeResponses
+
+go
+
+
+--حذف گزینه ارسال به تذرو از لیست گزینه های فیلد "نتیجه بررسی" در بخش نتیجه بررسی 
+--ALTER PROCEDURE [dbo].[Sp_Cu_GetFinalResult_frm20295] @UserID AS BIGINT   --backup_old
+--AS
+--BEGIN
+
+--    IF EXISTS
+--    (
+--        SELECT *
+--        FROM Users.TblUsersGroups
+--        WHERE GroupId = 923
+--              AND UserId = @UserID
+--    )
+--       OR (@UserID IN ( 2043, 2045 ))
+--    BEGIN
+--        SELECT FinalResultID,
+--               FinalResult
+--        FROM Tbl_Cu_SaoSupportFinalResult
+--        ORDER BY OrderID ASC;
+--    END;
+--    ELSE
+--    BEGIN
+--        SELECT FinalResultID,
+--               FinalResult
+--        FROM Tbl_Cu_SaoSupportFinalResult
+--        WHERE FinalResultID NOT IN ( 1 )
+--        ORDER BY OrderID ASC;
+--    END;
+
+
+--END;
+
+
+ALTER PROCEDURE [dbo].[Sp_Cu_GetFinalResult_frm20295] @UserID AS BIGINT   
+AS
+BEGIN   
+    SELECT FinalResultID,
+            FinalResult
+    FROM Tbl_Cu_SaoSupportFinalResult
+    WHERE FinalResultID NOT IN ( 1 )
+    ORDER BY OrderID ASC;
+END;
+
+
+/*چکباکس "ارسال به تذرو" ، فقط برای پشتیبان های سامانه قابل مشاهده و انتخاب است.
+در صورت عدم انتخاب گزینه از میان فیلد های نتیجه بررسی ، انتخاب چکباکس "ارسال به تذرو" اجباری میباشد.*/
+
+--create PROCEDURE [dbo].[Sp_Cu_chkSendToTazarv_frm21041]  
+--@UserID AS BIGINT   
+--AS
+--BEGIN   
+--    if @userID in (select ExpertID from  dbo.Tbl_Cu_Base_ExpertWF_SaoSupport) 
+--		or @userID in(select distinct e.GroupID
+--		from  dbo.Tbl_Cu_Base_ExpertWF_SaoSupport e
+--			join users.TblUsersGroups ug on ug.GroupId = e.GroupID)
+--		select cast(1 as bit) res
+--	else
+--		select cast(0 as bit) res
+--END;
+
+
+-------------------------------------------
+--select * from Workflow.TblWorkflow
+--where name like N'%پشتیبانی سامانه سجاد%'
+
+
+--select *
+--from task.TblWorkflowInstance i
+--where WorkflowID = 2000045
+--order by WorkflowInstanceID desc
+
+
+--SELECT    top 1000 Task.TblWorkflowActivityInstance.WokflowInstanceID,Task.TblWorkflowActivityInstance.WorkflowActivityInstanceID, Task.TblWorkflowActivityInstance.ActivityID, Task.TblTask.UserID, Task.TblTask.TaskID, Task.TblTask.TaskName, 
+--                      Task.TblTask.GroupID, Task.TblTask.TaskStatusID, Task.TblTask.WorkflowActivityInstaceID, Task.TblTask.FromTaskID, Task.TblTask.TaskPriorityID, Task.TblTask.ResponsibleUserID, 
+--                      Task.TblTask.CreateDate, Task.TblTask.ViewDate, Task.TblTask.EndDate, Task.TblTask.IntervalTime, Task.TblTask.FolderId, Task.TblTask.UserID AS Expr1, Task.TblTask.RoleID, 
+--                       Task.TblTask.IsSendforAll, Task.TblWorkflowActivityInstance.ResualtConditionID
+--FROM         Task.TblTask INNER JOIN
+--                      Task.TblWorkflowActivityInstance ON Task.TblTask.WorkflowActivityInstaceID = Task.TblWorkflowActivityInstance.WorkflowActivityInstanceID
+--WHERE     Task.TblTask.TaskStatusID in (1,6) and Task.TblWorkflowActivityInstance.ActivityID=4981242400227183039
+--ORDER BY Task.TblTask.TaskID desc
+-------------------------------------------
