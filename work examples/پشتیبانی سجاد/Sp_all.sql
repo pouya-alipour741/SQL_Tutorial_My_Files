@@ -84,7 +84,7 @@ BEGIN
                                                     ORDER BY Id DESC
                                                 )
                                             );
-											select top 1000 * from Tbl_CU_QuestionAnswer
+											
 	declare @regUsername nvarchar(50) = (   
 											select
 												top 1 FullName 											
@@ -105,35 +105,6 @@ BEGIN
 END;
 
 
-go
-
-
-
---alter proc sp_cu_chk_NoRepeatedReqestPerUser_frm21041
---@userID int,
---@mainSubject int
---as
---begin
---	if exists(
---		select
---			1
---		from
---			task.TblWorkflowInstance
---		where
---			@mainSubject in(
---			  select WorkFlowID
---			  FROM dbo.Tbl_Cu_Base_WorkFlowInReqOrder
---			  where WorkFlowID not in (153,155,81,66,42,2000564,2000553,84)
---				  and IsActive=1)
---			and WorkflowInstanceStatusID = 1
---			and StarterUserID = @userID
---			)
---		begin
---			select cast(1 as bit) res
---		end
---	else
---		select cast(0 as bit) res
---end
 
 go
 
@@ -187,13 +158,32 @@ go
 
 /*در صورت انتخاب گزینه ارجاع به دانشگاه ها ، در فیلد "نوع دانشگاه" و "نام دانشگاه" ،
 تمامی دانشگاه های دیگر به جز دانشگاه فعلی که در حال بررسی درخواست است ، قابل انتخاب باشد */ 
-create proc Sp_Cu_Select_university_By_institudeID_FRM21041     
+--create proc Sp_Cu_Select_university_By_institudeID_FRM21041     
+--@wfid bigint,
+--@institudeID int  
+--as
+--begin
+--	declare @UniversityID int = (select top 1 University from Tbl_CU_QuestionAnswer where WFID = @wfid)
+--	if (select top 1 ReferralToUni from Tbl_CU_QuestionAnswer where WFID = @wfid) = 1
+--	begin
+--		SELECT UniversityID,UniversityName
+--		FROM dbo.Tbl_CU_University
+--		WHERE InstituteID = @institudeID and UniversityID not in(@UniversityID)
+--	end
+--	else
+--		SELECT UniversityID,UniversityName
+--		FROM dbo.Tbl_CU_University
+--		WHERE InstituteID = @institudeID 
+--end
+
+
+alter proc Sp_Cu_Select_university_By_institudeID_FRM21041     
 @wfid bigint,
 @institudeID int  
 as
 begin
-	declare @UniversityID int = (select top 1 University from Tbl_CU_QuestionAnswer where WFID = @wfid)
-	if (select top 1 ReferralToUni from Tbl_CU_QuestionAnswer where WFID = @wfid) = 1
+	declare @UniversityID int = (select top 1 UniversityID from Tbl_CU_QuestionRefer where WFID = @wfid)
+	if (select top 1 OtherOrg from Tbl_CU_QuestionRefer where WFID = @wfid) = 1
 	begin
 		SELECT UniversityID,UniversityName
 		FROM dbo.Tbl_CU_University
@@ -304,7 +294,7 @@ end
 
 
 
-create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]     													
+create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]     --کند اجرا می شود  													
 @PortalUserID bigint,
 @FollowUpCode nvarchar(10),
 @chkFollowUpCodeIfInRelatedWFID bit
@@ -326,6 +316,40 @@ begin
 end
 
 
+--dashboard example
+--select 
+--	FollowUpCode AS FollowCode,
+--	(
+--		SELECT CASE
+--					WHEN T.WorkflowInstanceStatusID = 1
+--						AND StatusID IN ( 638, 649, 660, 672 ) THEN
+--						'Editable'
+--					ELSE
+--						'Readonly'
+--				END
+--		FROM Task.TblWorkflowInstance AS T
+--		WHERE WorkflowInstanceID = SN.WFID
+--					   ) AS WFMode
+--FROM
+--	Tbl_CU_CountriesScholarship_LOG AS SN
+--WHERE
+--	CountriesScholarshipID IN (
+--									select MAX(CountriesScholarshipID) 
+--									FROM Tbl_CU_CountriesScholarship_LOG
+--									WHERE PortalUserID = 1
+--									GROUP BY WFID
+--								) and PortalUserID = 1
+--union all
+--select
+--	FollowUpCode, '' as WFMode
+--from dbo.TBL_CU_StudentAssistant_Log st
+--WHERE st.PortalUserID = 1
+--union all
+--select FollowUpCode, '' as WFMode
+--FROM [dbo].[Tbl_CU_QuestionAnswer] a
+--            WHERE
+--                   PortalUserID = 1
+--                  AND a.StatusID <> 1021
 
 
 ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]   
@@ -504,24 +528,6 @@ BEGIN
     ORDER BY OrderID ASC;
 END;
 
-
-/*چکباکس "ارسال به تذرو" ، فقط برای پشتیبان های سامانه قابل مشاهده و انتخاب است.
-در صورت عدم انتخاب گزینه از میان فیلد های نتیجه بررسی ، انتخاب چکباکس "ارسال به تذرو" اجباری میباشد.*/
-
---create PROCEDURE [dbo].[Sp_Cu_chkSendToTazarv_frm21041]  
---@UserID AS BIGINT   
---AS
---BEGIN   
---    if @userID in (select ExpertID from  dbo.Tbl_Cu_Base_ExpertWF_SaoSupport) 
---		or @userID in(select distinct e.GroupID
---		from  dbo.Tbl_Cu_Base_ExpertWF_SaoSupport e
---			join users.TblUsersGroups ug on ug.GroupId = e.GroupID)
---		select cast(1 as bit) res
---	else
---		select cast(0 as bit) res
---END;
-
-
 -------------------------------------------
 --select * from Workflow.TblWorkflow
 --where name like N'%پشتیبانی سامانه سجاد%'
@@ -542,3 +548,129 @@ END;
 --WHERE     Task.TblTask.TaskStatusID in (1,6) and Task.TblWorkflowActivityInstance.ActivityID=4981242400227183039
 --ORDER BY Task.TblTask.TaskID desc
 -------------------------------------------
+
+ALTER PROCEDURE [dbo].[Sp_Cu_Select_Tbl_Cu_Base_SaoReadyAnswer]
+    @MainSubjectID AS INT,
+    @WFID AS BIGINT,
+	@userID int -- آپدیت
+	
+AS     
+BEGIN
+    DECLARE @WorkflowId AS INT;
+    SELECT @WorkflowId = MainSubjectID
+    FROM [dbo].[Tbl_CU_QuestionAnswer]
+    WHERE WFID = @WFID
+    ORDER BY Id DESC;
+    IF ISNULL(@WorkflowId, -1) != -1
+        SET @MainSubjectID = @WorkflowId; 
+	
+	select   --آپدیت
+		PremadeResponses_ID, RequestType, Response
+	from
+		sp_cu_PremadeResponses	
+	where
+		MainsubjectID = @MainSubjectID
+		and userID = @userID
+		and [status] = 1
+
+    --SELECT ReadSaoAnswerID,
+    --       Title,
+    --       Answer
+    --FROM Tbl_Cu_Base_SaoReadyAnswer
+    --WHERE MainSubjectID = @MainSubjectID
+    --      AND Statuss = 1;
+END;
+---exec Sp_Cu_Select_Tbl_Cu_Base_SaoReadyAnswer @MainSubjectID=N'42'
+
+--select * from Tbl_CU_FollowUpCode
+--where FollowUpCode = '012137891'
+
+
+
+---- add IT expert
+ALTER PROCEDURE [dbo].[Sp_cu_SelectWxpertByMainSubject_SaoSupport]
+@WFID AS BIGINT
+AS
+BEGIN
+	
+		DECLARE @MainSubject AS BIGINT = (
+											 SELECT TOP 1
+												 MainSubjectID
+											 FROM dbo.Tbl_CU_QuestionAnswer
+											 WHERE WFID = @WFID
+											 ORDER BY Id DESC
+										)
+		declare @ExpertUserID as bigint,
+				@GroupID bigint
+
+
+		DECLARE @ProblemType AS BIGINT = (                ---update
+											 SELECT TOP 1
+												 ProblemType
+											 FROM dbo.Tbl_CU_QuestionAnswer
+											 WHERE WFID = @WFID
+											 ORDER BY Id DESC
+										)
+		
+		--update
+		if @ProblemType = 10 --@ProblemType = 10 مشکل فنی
+			begin
+				set @ExpertUserID =  (select top 1 ITExpertID
+				from Tbl_Cu_Base_ExpertWF_SaoSupport
+				where WFID = @MainSubject)
+
+				select @ExpertUserID as ExpertID,
+						0  as GroupID
+			end
+		--end
+
+		else IF EXISTS
+		(
+			SELECT top 1 1
+			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
+			WHERE WFID = @MainSubject and isnull(GroupID, 0)<>0
+		
+		)
+		begin
+			set @GroupID= (SELECT TOP 1 GroupID
+			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
+			WHERE WFID = @MainSubject and isnull(GroupID, 0)<>0)
+
+			SELECT CAST(@ExpertUserID AS BIGINT) AS ExpertID,
+				   cast(@GroupID as bigint) as GroupID
+		end
+
+
+		else IF EXISTS
+		(
+			SELECT ExpertID
+			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
+			WHERE WFID = @MainSubject
+		
+		)
+		BEGIN
+
+			set @ExpertUserID= (SELECT TOP 1 ExpertID
+			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
+			WHERE WFID = @MainSubject)
+
+			update Tbl_CU_QuestionAnswer
+			set sajadExpertUserID=@ExpertUserID
+			WHERE WFID=@WFID
+
+			SELECT CAST(@ExpertUserID AS BIGINT) AS ExpertID,
+				   cast(0 as bigint) as GroupID
+		END;
+		ELSE
+		BEGIN
+      
+		
+			UPDATE Tbl_CU_QuestionAnswer
+			set SajadExpertUserID=6
+			where WFID=@WFID
+			  SELECT CAST(6 AS BIGINT) AS ExpertID,
+					 cast(0 as bigint) as GroupID
+		END;
+
+
+END;
