@@ -294,26 +294,50 @@ end
 
 
 
-create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]     --کند اجرا می شود  													
+alter proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]     --کند اجرا می شود  													
 @PortalUserID bigint,
 @FollowUpCode nvarchar(10),
 @chkFollowUpCodeIfInRelatedWFID bit
 as
 begin
-	declare @temp table  (
-	GUIDID nvarchar(50),	CountriesScholarshipID bigint,	WorkFlowName nvarchar(50),	WFID bigint,
-	FollowCode nvarchar(50),	WFStatus nvarchar(50),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
-	PageID int,	EntryID nvarchar(50),	ShowFRM nvarchar(10),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
-	)
-	insert into @temp
-	exec [Sp_CU_GetDashboard] @PortalUserID
-
-	if @chkFollowUpCodeIfInRelatedWFID = 1 and not exists(select 1 from @temp where FollowCode = @FollowUpCode and WFMode = 'Editable')  --درخواست در کارتابل خود دانشجو نباشد و شماره پیگیری فرآیند مربوطه وجود داشته باشد
+	if @chkFollowUpCodeIfInRelatedWFID = 1 and not exists(select 1 from Tbl_CU_QuestionAnswer where WFID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode) and PortalUserID = @PortalUserID)
 		select cast(1 as bit) TrueEnableCheckbox	
-
 	else
 		select cast(0 as bit) TrueEnableCheckbox
+	--declare @temp table  (
+	--GUIDID nvarchar(50),	CountriesScholarshipID bigint,	WorkFlowName nvarchar(50),	WFID bigint,
+	--FollowCode nvarchar(50),	WFStatus nvarchar(50),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
+	--PageID int,	EntryID nvarchar(50),	ShowFRM nvarchar(10),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
+	--)
+	--insert into @temp
+	--exec [Sp_CU_GetDashboard] @PortalUserID
+
+	--if @chkFollowUpCodeIfInRelatedWFID = 1 and not exists(select 1 from @temp where FollowCode = @FollowUpCode and WFMode = 'Editable')  --درخواست در کارتابل خود دانشجو نباشد و شماره پیگیری فرآیند مربوطه وجود داشته باشد
+	--	select cast(1 as bit) TrueEnableCheckbox	
+
+	--else
+	--	select cast(0 as bit) TrueEnableCheckbox
 end
+
+
+--2nd method
+--if @chkFollowUpCodeIfInRelatedWFID = 1 and not exists(select 1 from Tbl_CU_QuestionAnswer where WFID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode) and PortalUserID = @PortalUserID)
+--	select cast(1 as bit) TrueEnableCheckbox	
+--else
+--	select cast(0 as bit) TrueEnableCheckbox
+
+--3rd method
+--if @chkFollowUpCodeIfInRelatedWFID = 1 and and @PortalUserID not in(
+--select
+--	top 1 t.userid 
+--from
+--	task.TblWorkflowActivityInstance a
+--	join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+--where
+--	a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
+--order by
+--	t.TaskID desc)
+
 
 
 --dashboard example
