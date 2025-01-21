@@ -341,84 +341,8 @@ end
 --	t.TaskID desc)
 
 
---alter PROCEDURE [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]
---@MainSubject int,
---@FollowUpCode nvarchar(50),
---@ProblemType int,
---@PortalUserID bigint
---AS
---BEGIN
---	if @ProblemType = 6
---	begin
---			if (select WorkflowID
---				from Tbl_CU_FollowUpCode f
---					join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
---				where FollowUpCode = @FollowUpCode) = @MainSubject
---			begin
---					if @PortalUserID not in(
---											select
---												top 1 t.userid 
---											from
---												task.TblWorkflowActivityInstance a
---												join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
---											where
---												a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
---											order by
---												t.TaskID desc
---											)
---					begin
---						select cast(1 as bit) res
---					end	
---					else
---						select cast(0 as bit) res
-
---			end
---			else
---				select cast(1 as bit) res
---	end
---	else
---		select cast(1 as bit) res
---END;
 
 
-
-
-
-
---dashboard example
---select 
---	FollowUpCode AS FollowCode,
---	(
---		SELECT CASE
---					WHEN T.WorkflowInstanceStatusID = 1
---						AND StatusID IN ( 638, 649, 660, 672 ) THEN
---						'Editable'
---					ELSE
---						'Readonly'
---				END
---		FROM Task.TblWorkflowInstance AS T
---		WHERE WorkflowInstanceID = SN.WFID
---					   ) AS WFMode
---FROM
---	Tbl_CU_CountriesScholarship_LOG AS SN
---WHERE
---	CountriesScholarshipID IN (
---									select MAX(CountriesScholarshipID) 
---									FROM Tbl_CU_CountriesScholarship_LOG
---									WHERE PortalUserID = 1
---									GROUP BY WFID
---								) and PortalUserID = 1
---union all
---select
---	FollowUpCode, '' as WFMode
---from dbo.TBL_CU_StudentAssistant_Log st
---WHERE st.PortalUserID = 1
---union all
---select FollowUpCode, '' as WFMode
---FROM [dbo].[Tbl_CU_QuestionAnswer] a
---            WHERE
---                   PortalUserID = 1
---                  AND a.StatusID <> 1021
 
 
 ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]   
@@ -550,7 +474,7 @@ as
 			UserID = @userID
 	end
 
-select * from sp_cu_PremadeResponses
+--select * from sp_cu_PremadeResponses
 
 go
 
@@ -812,43 +736,43 @@ create PROCEDURE [dbo].[Sp_Cu_InsertIntoQuestionRefer_IT_Observor]
 @DescInfo nvarchar(1000)
 AS
 BEGIN
-IF NOT EXISTS(SELECT * FROM dbo.Tbl_CU_QuestionRefer
-               WHERE WFID = @WFID)
-			   BEGIN
-INSERT INTO dbo.Tbl_CU_QuestionRefer      
-(
-    ReferId,
-    RegisteredDate,
-    RegisteredTime,
-    SendResult,
-    DesiredOffice,
-    OtherOrg,
-    Result,                    
-	SendToTazarv,     
-	OrganizationId,     
-    ExpertID,
-    WFID,
-    [Des],
-    IsAutomat,
-	InstitudeID,
-	UniversityID
-)
-SELECT @UserID,
-       dbo.MiladiToShamsi(GETDATE()),
-	   substring(CAST(GETDATE() AS NVARCHAR(50)),13,5),
-	   @SendResultInfo,
-	   @DesiredOfficeInfo,
-	   @OtherOrgInfo,
-	   @Result,
-	   @SendToTazarv,
-	   @DesiredUnitInfo,
-	   @ExpertUserIDInfo,
-	   @WFID,
-	   @DescInfo,
-	   @IsAutomat,
-	   @Institude,
-	   @University
-	   END 
+	IF NOT EXISTS(SELECT * FROM dbo.Tbl_CU_QuestionRefer
+				   WHERE WFID = @WFID)
+	BEGIN
+	INSERT INTO dbo.Tbl_CU_QuestionRefer      
+	(
+		ReferId,
+		RegisteredDate,
+		RegisteredTime,
+		SendResult,
+		DesiredOffice,
+		OtherOrg,
+		Result,                    
+		SendToTazarv,     
+		OrganizationId,     
+		ExpertID,
+		WFID,
+		[Des],
+		IsAutomat,
+		InstitudeID,
+		UniversityID
+	)
+	SELECT @UserID,
+		   dbo.MiladiToShamsi(GETDATE()),
+		   substring(CAST(GETDATE() AS NVARCHAR(50)),13,5),
+		   @SendResultInfo,
+		   @DesiredOfficeInfo,
+		   @OtherOrgInfo,
+		   @Result,
+		   @SendToTazarv,
+		   @DesiredUnitInfo,
+		   @ExpertUserIDInfo,
+		   @WFID,
+		   @DescInfo,
+		   @IsAutomat,
+		   @Institude,
+		   @University
+	END 
 END 
 
 
