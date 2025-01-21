@@ -1,16 +1,16 @@
 ﻿USE [SAODB]
 GO
-/****** Object:  StoredProcedure [dbo].[Sp_Cu_Insert_Update_Tbl_Cu_SajadSaoSupport_LOG]    Script Date: 23/10/1403 03:15:00 ب.ظ ******/
+/****** Object:  StoredProcedure [dbo].[Sp_Cu_Insert_Update_Tbl_Cu_SajadSaoSupport_LOG]    Script Date: 02/11/1403 11:45:06 ق.ظ ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
 -- Author:		<Author,,bahreyni>
--- ALTER date: <1403/10/23> (alipour)
+-- ALTER date: <1403/10/23> 
 -- Description:	<Insert And Update Tbl_Cu_DiplomaForeignStudents_LOG>
 -- =============================================
---alter PROCEDURE [dbo].[Sp_Cu_Insert_Update_Tbl_Cu_SajadSaoSupport_LOG]   --در حال حاظر اعمال نشده و هنوز ستونی نیز به جدول لاگ اضافه نکردم
+ALTER PROCEDURE [dbo].[Sp_Cu_Insert_Update_Tbl_Cu_SajadSaoSupport_LOG]   
     @WFID AS BIGINT ,
     @Status AS BIGINT
 AS
@@ -32,10 +32,12 @@ AS
             @FinalDesc AS NVARCHAR(1000) ,
             @GUID AS NVARCHAR(MAX) ,
             @FirstRefer AS BIGINT,
-			@Priority AS INT,
-			@UniReferral bit,  --------------------------جدید
-			@Institude int,
-			@University int
+			@Priority AS INT
+			--,@SendResultInfo bit, --------------------------جدید
+			--@OrganizationReferral bit, 
+			--@UniversityReferral bit  	
+			--,@Institude int
+			--,@University int
 
 	---------------------------------------------------------------------------
         SELECT TOP 1
@@ -60,10 +62,12 @@ AS
                                         INNER JOIN Task.TblWorkflowActivityInstance a ON a.WorkflowActivityInstanceID = b.WorkflowActivityInstaceID
                                 WHERE   a.ActivityID = 5215090122552527259
                                         AND a.WokflowInstanceID = @WFID
-                              ),
-				@UniReferral = Col_5139528391810745165,    -----------------------جدید
-				@Institude = col_5208403737968325202,
-				@University = col_5610076180504582867
+                              )
+				--,@SendResultInfo = col_5581934880622446261, -----------------------جدید	
+				--@OrganizationReferral = col_5319920761961862933,
+				--@UniversityReferral = Col_5139528391810745165   
+				--,@Institude = col_5208403737968325202
+				--,@University = col_5610076180504582867
 
         FROM    dbo.Tbl_frm21041
         WHERE   frm21041Id IN ( SELECT top 1  PKFormID
@@ -108,10 +112,13 @@ AS
                           FinalDesc ,
                           StatusID ,
                           FirstReferID,
-						  PriorityID,
-						  ReferralToUni,  ----------------------جدید
-						  Institude,
-						  University
+						  PriorityID
+						  --,SendResultInfo,  ----------------------جدید
+						  --ReferralToOrganization,
+						  --ReferralToUni
+						  --,Institude,
+						  --University
+						  
                         )
                 VALUES  ( @PkFrm21041ID ,
                           @WFID ,
@@ -131,10 +138,12 @@ AS
                           @FinalDesc ,
                           @Status ,
                           @FirstRefer,
-						  @Priority,
-						  @UniReferral, ----------------------جدید
-						  @Institude,
-						  @University
+						  @Priority
+						  --,@SendResultInfo,   ----------------------جدید
+						  --@OrganizationReferral,
+						  --@UniversityReferral
+						  --,@Institude,
+						  --@University
                         )
             END 
         ELSE
@@ -155,11 +164,14 @@ AS
                         StatusID = @Status ,
                         FirstReferID = @FirstRefer,
 						RegisteredUserId=@UserID,
-						PriorityID=@Priority,
-						ReferralToUni = @UniReferral, ----------------------جدید	
-						Institude = @Institude,
-						University = @University
+						PriorityID=@Priority
+						--,SendResultInfo = @SendResultInfo,  ----------------------جدید
+						--ReferralToOrganization = @OrganizationReferral,
+						--ReferralToUni = @UniversityReferral	
+						--,Institude = @Institude,
+						--University = @University
                 WHERE   WFID = @WFID
             END		
+
     END
 
