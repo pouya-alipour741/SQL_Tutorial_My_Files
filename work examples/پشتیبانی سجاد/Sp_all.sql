@@ -1004,5 +1004,34 @@ END;
 
 
 
+create PROCEDURE [dbo].[Sp_Cu_advancedSearch_frm21041]
+@UserID bigint,
+@mainSubject int
+AS
+BEGIN
+	select wfid
+	from QuestionAnswer q
+	join workflow.workflowinstance i on q.wfid = i.workflowinstanceid
+	where workflowinstancestatusID = 2 
+	and userid = @UserID
+	and @mainSubject != 6
+	union
+	select wfid
+	from followupcode f
+	join QuestionAnswer q on q.wfid = i.workflowinstanceid
+	join workflow.workflowinstance i on f.wfid = i.workflowinstanceid
+	where workflowinstancestatusID != 2 
+	and userid = @UserID
+	and @mainSubject = 6
+	union 
+	select wfid
+	from QuestionAnswer q 
+	join users.usergroups ug q.userid = ug.userid
+	where
+	and userid = @UserID
+	and @mainSubject = 6
+	
+END;
+
 
 
