@@ -1055,16 +1055,25 @@ BEGIN
 		(select fileattach from Tbl_CU_Attachments a where a.WFID = q.WFID) fileattach,
 		Mobile,
 		Email,
-		WorkflowInstanceStatusID,
-		StatusID,
-
-
+		case WorkflowInstanceStatusID
+			when 1 then 'در حال بررسی'
+			when 2 then 'خاتمه یافته'
+			when 3 then 'ابطال شده'
+		end WorkflowInstanceStatus,
+		StatusID
 		
 	from
 		Tbl_CU_QuestionAnswer q
 		join task.TblWorkflowInstance i on q.WFID = i.WorkflowInstanceID
 		join Tbl_Cu_ApplierProfile a on a.UserPortalID = q.PortalUserID
 		join users.TblUsers u on u.UserId = q.RegisteredUserId
+	where
+		(mainsubject = '' or mainsubject = @MainSubject)
+		and (wfid = '' or wfid = @WFNumber)
+		and (followupcode = '' or followupcode = @FollowUpCode)
+		and (RegisteredDate = '' or RegisteredDate >= @FromDate)
+		and (RegisteredDate = '' or RegisteredDate <= @ToDate)
+
 END;
 
 
