@@ -1003,35 +1003,79 @@ END;
 
 
 
+	--select wfid
+	--from QuestionAnswer q
+	--join workflow.workflowinstance i on q.wfid = i.workflowinstanceid
+	--where workflowinstancestatusID = 2 
+	--and userid = @UserID
+	--and @mainSubject != 6
+	--union
+	--select wfid
+	--from followupcode f
+	--join QuestionAnswer q on q.wfid = i.workflowinstanceid
+	--join workflow.workflowinstance i on f.wfid = i.workflowinstanceid
+	--where workflowinstancestatusID != 2 
+	--and userid = @UserID
+	--and @mainSubject = 6
+	--union 
+	--select wfid
+	--from QuestionAnswer q 
+	--join users.usergroups ug q.userid = ug.userid
+	--where
+	--and userid = @UserID
+	--and @mainSubject = 6
 
-create PROCEDURE [dbo].[Sp_Cu_advancedSearch_frm21041]
-@UserID bigint,
-@mainSubject int
+
+create PROCEDURE [dbo].[Sp_Cu_advancedSearch_frm41608]
+@MainSubject int,
+@UserName nvarchar(50),
+@Status int,
+@WFNumber bigint,
+@FollowUpCode bigint,
+@FromDate nvarchar(10),
+@ToDate nvarchar(10)
 AS
 BEGIN
-	select wfid
-	from QuestionAnswer q
-	join workflow.workflowinstance i on q.wfid = i.workflowinstanceid
-	where workflowinstancestatusID = 2 
-	and userid = @UserID
-	and @mainSubject != 6
-	union
-	select wfid
-	from followupcode f
-	join QuestionAnswer q on q.wfid = i.workflowinstanceid
-	join workflow.workflowinstance i on f.wfid = i.workflowinstanceid
-	where workflowinstancestatusID != 2 
-	and userid = @UserID
-	and @mainSubject = 6
-	union 
-	select wfid
-	from QuestionAnswer q 
-	join users.usergroups ug q.userid = ug.userid
-	where
-	and userid = @UserID
-	and @mainSubject = 6
-	
+	select 
+		ROW_NUMBER() over(order by id desc) RowNumber,
+		WFID,
+		case
+			when @MainSubject != 0 then (select Name from Workflow.TblWorkflow where WorkflowId = MainSubjectID) 
+			else 'فراموشی رمز عبور'
+		end as MainSubject,
+		ProblemType,
+		RegisteredDate,
+		RegisteredTime,
+		case
+			when IsAutomat = 1 then a.Name + ' '+ a.LastName
+			else  u.UserId
+		end as name,
+		NationalCode,
+		(select attachment from Tbl_CU_QuestionAnswer_Attachment a where a.WFID = q.WFID) attachment,
+		(select fileattach from Tbl_CU_Attachments a where a.WFID = q.WFID) fileattach,
+		Mobile,
+		Email,
+		WorkflowInstanceStatusID,
+		StatusID,
+
+
+		
+	from
+		Tbl_CU_QuestionAnswer q
+		join task.TblWorkflowInstance i on q.WFID = i.WorkflowInstanceID
+		join Tbl_Cu_ApplierProfile a on a.UserPortalID = q.PortalUserID
+		join users.TblUsers u on u.UserId = q.RegisteredUserId
 END;
+
+
+select * from Tbl_CU_QuestionAnswer
+
+select * from Tbl_CU_Attachments
+
+select * from Tbl_CU_QuestionAnswer_Attachment
+
+
+--15883
 
 
 
