@@ -1,2 +1,16 @@
 https://172.50.0.93/user-tasks/  portal
 https://172.50.0.94/HTMLTBS/Account/Login?ReturnUrl=%2fHTMLTBS%2ffa tbs
+
+
+172.50.0.106
+Administrator    
+Qazxsw@#$%^&*
+
+172.50.0.94
+Administrator
+Ghey#Thue^
+
+
+https://172.50.0.93/wp-login.php
+0077874145         
+12345

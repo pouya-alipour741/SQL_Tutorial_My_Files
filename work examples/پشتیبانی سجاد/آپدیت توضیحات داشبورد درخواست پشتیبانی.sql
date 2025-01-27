@@ -19,10 +19,10 @@ with cte as (
 			CreateDate < '1403/09/09'
 	) 
 		update Tbl_CU_QuestionAnswer 	
-		set StatusID = 1279   --WHEN a.StatusID IN ( 1279, 1021 ,1882) THEN  'خاتمه یافته'
+		set StatusID = 1719   --when a.StatusID = 1719 then 'چنانچه هنوز مشکل شما حل نشده است لطفا مجددا درخواست پشتیبانی ثبت نمایید.'
 		from  cte2
 		where cte2.WorkflowinstanceID = Tbl_CU_QuestionAnswer.WFID
-		and Tbl_CU_QuestionAnswer.PortalUserID = 15883   --برای یک کاربر خاص
+		--and Tbl_CU_QuestionAnswer.PortalUserID = 15883   --برای یک کاربر خاص
 
 	--,Update_Dashboard as(		   
 	--				select 
@@ -33,6 +33,10 @@ with cte as (
 	--					where q.PortalUserID = 15883
 	--					)
 	--select * from Update_Dashboard
+
+--select StatusID from Tbl_CU_QuestionAnswer  --همگی 1719
+--where WFID in (select WorkflowInstanceID from task.TblWorkflowInstance where WorkflowID = 2000045
+--and dbo.MiladiToShamsi(CreateDate) < '1403/09/09' and WorkflowInstanceStatusID != 2)
 	
 
 

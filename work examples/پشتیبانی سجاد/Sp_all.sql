@@ -69,7 +69,9 @@ go
 
 go
 
-alter PROCEDURE [dbo].[Sp_Cu_TaskName_SaoSupport] @WFID AS BIGINT  
+alter PROCEDURE [dbo].[Sp_Cu_TaskName_SaoSupport]
+@WFID AS BIGINT,
+@IsAutomat bit
 AS
 BEGIN
     DECLARE @MainSubject AS NVARCHAR(300) = (
@@ -86,14 +88,25 @@ BEGIN
                                             );
 											
 	declare @regUsername nvarchar(50) = (   
-											select
-												top 1 FullName 											
-											from
-												Tbl_CU_QuestionAnswer l
-												--join users.TblUsers p on l.RegisteredUserId = p.UserId
-												join users.TblProfiles p on l.PortalUserID = p.UserId
-											where
-												WFID = @WFID
+											case 
+												when @IsAutomat = 1 then (
+																			select
+																			top 1 FullName 											
+																			from
+																				Tbl_CU_QuestionAnswer l
+																				join users.TblProfiles p on l.PortalUserID = p.UserId
+																			where
+																				WFID = @WFID
+																			)
+												else
+													(select
+														top 1 FullName 											
+													from
+														Tbl_CU_QuestionAnswer l
+														join users.TblProfiles p on l.RegisteredUserId = p.UserId
+													where
+														WFID = @WFID)
+											end
 										)
 
     SELECT CAST('پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') + '-'+isnull(@MainSubject,'') AS TASKNAME1,
@@ -719,12 +732,12 @@ END;
 
 
 
---QuestionRefer for new sub routes
-create PROCEDURE [dbo].[Sp_Cu_InsertIntoQuestionRefer_IT_Observor]  
+--new QuestionRefer for new sub routes
+create proc [dbo].[Sp_Cu_InsertIntoQuestionRefer_IT_Observor]  
 @WFID AS BIGINT,
 @UserID AS BIGINT,			 --exec Sp_Cu_InsertIntoQuestionRefer_IT_Observor @WorkflowInstanceId, $SecondReferID, $IsAutomat, $SendResult ,
 @IsAutomat AS BIT,            --$DesiredUnit, $ReferralToUniversity, $ResultSecond, $SendToTazarv, $cmbdesiredoffice, $ExpertID,
-@SendResultInfo bit,			--  $institudeID, $universityID, $DescriptionInfo
+@SendResultInfo bit,			--  $institudeID, $universityID, $DescriptionInfo, $txtGroupIDInfo
 @DesiredOfficeInfo bit,
 @OtherOrgInfo bit,
 @Result int,
@@ -733,47 +746,51 @@ create PROCEDURE [dbo].[Sp_Cu_InsertIntoQuestionRefer_IT_Observor]
 @ExpertUserIDInfo int,
 @Institude int,
 @University int,
-@DescInfo nvarchar(1000)
+@DescInfo nvarchar(1000),
+@GroupID bigint
 AS
 BEGIN
-	IF NOT EXISTS(SELECT * FROM dbo.Tbl_CU_QuestionRefer
-				   WHERE WFID = @WFID)
-	BEGIN
-	INSERT INTO dbo.Tbl_CU_QuestionRefer      
-	(
-		ReferId,
-		RegisteredDate,
-		RegisteredTime,
-		SendResult,
-		DesiredOffice,
-		OtherOrg,
-		Result,                    
-		SendToTazarv,     
-		OrganizationId,     
-		ExpertID,
-		WFID,
-		[Des],
-		IsAutomat,
-		InstitudeID,
-		UniversityID
-	)
-	SELECT @UserID,
-		   dbo.MiladiToShamsi(GETDATE()),
-		   substring(CAST(GETDATE() AS NVARCHAR(50)),13,5),
-		   @SendResultInfo,
-		   @DesiredOfficeInfo,
-		   @OtherOrgInfo,
-		   @Result,
-		   @SendToTazarv,
-		   @DesiredUnitInfo,
-		   @ExpertUserIDInfo,
-		   @WFID,
-		   @DescInfo,
-		   @IsAutomat,
-		   @Institude,
-		   @University
-	END 
+IF NOT EXISTS(SELECT * FROM dbo.Tbl_CU_QuestionRefer
+               WHERE WFID = @WFID)
+BEGIN
+INSERT INTO dbo.Tbl_CU_QuestionRefer         
+(
+    ReferId,
+    RegisteredDate,
+    RegisteredTime,
+    SendResult,
+    DesiredOffice,
+    OtherOrg,
+    Result,                    
+	SendToTazarv,     
+	OrganizationId,     
+    ExpertID,
+    WFID,
+    [Des],
+    IsAutomat,
+	InstitudeID,
+	UniversityID,
+	GroupID
+)
+SELECT @UserID,
+       dbo.MiladiToShamsi(GETDATE()),
+	   substring(CAST(GETDATE() AS NVARCHAR(50)),13,5),
+	   @SendResultInfo,
+	   @DesiredOfficeInfo,
+	   @OtherOrgInfo,
+	   @Result,
+	   @SendToTazarv,
+	   @DesiredUnitInfo,
+	   @ExpertUserIDInfo,
+	   @WFID,
+	   @DescInfo,
+	   @IsAutomat,
+	   @Institude,
+	   @University,
+	   @GroupID
+	   END 
 END 
+
 
 
 go
@@ -800,7 +817,8 @@ BEGIN
 			   ExpertID,
 			   [Des],
 			   InstitudeID,
-			   UniversityID  --end
+			   UniversityID,
+			   GroupID  --end
 			   
 
         FROM Tbl_CU_QuestionRefer b
@@ -823,7 +841,8 @@ BEGIN
 			   0 as ExpertID,
 			   '' as [Des],
 			   0 as InstitudeID,
-			   0 as UniversityID  --end
+			   0 as UniversityID,
+			   cast(0 as bigint) as GroupID--end
 
 
         INSERT INTO Tbl_CU_QuestionRefer
@@ -878,6 +897,7 @@ BEGIN
 
 
 END;
+
 
 
 --select * from Tbl_CU_QuestionRefer where wfid=2038048
@@ -998,37 +1018,9 @@ BEGIN
 END;
 
 
---select * from Tbl_CU_QuestionRefer where wfid=2038048
---Sp_Cu_GetValues_From_SaoSupportResult_Log 2038048 ,'اگر در سامانه سجاد اطلاعات شخصي آزمون زبان شما تاييد شده باشد امکان ورود خواهيد داشت. در صورتي که با خطاي ورود به سامانه مواجه مي شويد، از گزينه 'رمزتان را گم کرده ايد' استفاده کنيد و رمز جديد دريافت نماييد' ,'' ,True
-
-
-
-	--select wfid
-	--from QuestionAnswer q
-	--join workflow.workflowinstance i on q.wfid = i.workflowinstanceid
-	--where workflowinstancestatusID = 2 
-	--and userid = @UserID
-	--and @mainSubject != 6
-	--union
-	--select wfid
-	--from followupcode f
-	--join QuestionAnswer q on q.wfid = i.workflowinstanceid
-	--join workflow.workflowinstance i on f.wfid = i.workflowinstanceid
-	--where workflowinstancestatusID != 2 
-	--and userid = @UserID
-	--and @mainSubject = 6
-	--union 
-	--select wfid
-	--from QuestionAnswer q 
-	--join users.usergroups ug q.userid = ug.userid
-	--where
-	--and userid = @UserID
-	--and @mainSubject = 6
-
-
-
 
 --15883
+
 
 
 
