@@ -70,8 +70,7 @@ go
 go
 
 alter PROCEDURE [dbo].[Sp_Cu_TaskName_SaoSupport]
-@WFID AS BIGINT,
-@IsAutomat bit
+@WFID AS BIGINT
 AS
 BEGIN
     DECLARE @MainSubject AS NVARCHAR(300) = (
@@ -86,18 +85,18 @@ BEGIN
                                                     ORDER BY Id DESC
                                                 )
                                             );
-											
+
+	declare @IsAutomat bit = (select IsAutomat from Tbl_CU_QuestionAnswer where WFID = @WFID)
+	declare @PortalUserID bigint = (select PortalUserID from Tbl_CU_QuestionAnswer where WFID = @WFID)
 	declare @regUsername nvarchar(50) = (   
 											case 
-												when @IsAutomat = 1 then (
-																			select
-																			top 1 FullName 											
-																			from
-																				Tbl_CU_QuestionAnswer l
-																				join users.TblProfiles p on l.PortalUserID = p.UserId
-																			where
-																				WFID = @WFID
-																			)
+												when @IsAutomat = 1 then
+														(select top 1 
+															concat(name, ' ', LastName) from Tbl_Cu_ApplierProfile		
+														where
+															UserPortalID = @PortalUserID
+														)
+
 												else
 													(select
 														top 1 FullName 											
