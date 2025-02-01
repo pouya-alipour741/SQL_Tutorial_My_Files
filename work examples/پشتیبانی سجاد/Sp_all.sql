@@ -37,12 +37,16 @@ alter PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
 @ProblemType int
 AS
 BEGIN
+	
 	if @ProblemType = 6
 		begin
-			if (select WorkflowID
+			if (
+				--select WorkflowID
+				select MainSubjectID
 				from Tbl_CU_FollowUpCode f
-					join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
-				where FollowUpCode = @FollowUpCode) = @MainSubject
+					--join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
+					join Tbl_CU_QuestionAnswer q on f.WFID = q.WFID
+				where f.FollowUpCode = @FollowUpCode) = @MainSubject
 
 				select cast(1 as bit) res
 			else
@@ -108,11 +112,11 @@ BEGIN
 											end
 										)
 
-    SELECT CAST('پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'نامعلوم') + '-'+isnull(@MainSubject,'') AS TASKNAME1,
-           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'نامعلوم') +'-'+isnull(@MainSubject,'') AS TASKNAME2,
-           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'نامعلوم') +'-'+isnull(@MainSubject,'') AS TASKNAME3,
-           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'نامعلوم') +'-'+isnull(@MainSubject,'') AS TASKNAME4,
-           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'نامعلوم') +'-'+isnull(@MainSubject,'') AS TASKNAME5;
+    SELECT CAST('پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') + '-'+isnull(@MainSubject,'') AS TASKNAME1,
+           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME2,
+           CAST('پشتیبانی ارجاع شده' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME3,
+           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME4,
+           CAST('مشاهده نتیجه نهایی پشتیبانی' AS NVARCHAR(MAX))+ '-' + isnull(@regUsername,'') +'-'+isnull(@MainSubject,'') AS TASKNAME5;
 
 END;
 
@@ -138,7 +142,7 @@ begin
 		from [Tbl_CU_QuestionAnswer] q		
 		join task.TblWorkflowInstance i on q.WFID = i.WorkflowInstanceID
 		where 
-			i.WorkflowId = @mainSubject
+			MainSubjectID = @mainSubject
 			and WorkflowInstanceStatusID = 1
 			and PortalUserID = @userID
 			)
@@ -170,23 +174,7 @@ go
 
 /*در صورت انتخاب گزینه ارجاع به دانشگاه ها ، در فیلد "نوع دانشگاه" و "نام دانشگاه" ،
 تمامی دانشگاه های دیگر به جز دانشگاه فعلی که در حال بررسی درخواست است ، قابل انتخاب باشد */ 
---create proc Sp_Cu_Select_university_By_institudeID_FRM21041     
---@wfid bigint,
---@institudeID int  
---as
---begin
---	declare @UniversityID int = (select top 1 University from Tbl_CU_QuestionAnswer where WFID = @wfid)
---	if (select top 1 ReferralToUni from Tbl_CU_QuestionAnswer where WFID = @wfid) = 1
---	begin
---		SELECT UniversityID,UniversityName
---		FROM dbo.Tbl_CU_University
---		WHERE InstituteID = @institudeID and UniversityID not in(@UniversityID)
---	end
---	else
---		SELECT UniversityID,UniversityName
---		FROM dbo.Tbl_CU_University
---		WHERE InstituteID = @institudeID 
---end
+
 
 
 alter proc Sp_Cu_Select_university_By_institudeID_FRM21041     
@@ -207,23 +195,6 @@ begin
 		WHERE InstituteID = @institudeID 
 end
 
-
---/*در صورت انتخاب یکی از مقادیر علمی کاربردی ، پیام نور ،
---فرهنگیان و فنی و حرفه ای ، امکان انتخاب نام دانشگاه وجود نخواهد داشت . */
---select * from Tbl_Cu_Institute
---where InstituteID in (6,8,9,2,3,1)
-
-
---create proc Sp_Cu_chkIfInCertainUniversities_FRM21041     
---@InstitudeID int
---as
---begin
---	 if @InstitudeID in(select InstituteID from Tbl_Cu_Institute where InstituteID in (3,2,1,9))
---		select cast(1 as bit) res
---	 else
---		select cast(0 as bit) res
-
---end
 
 
 /* در صورت انتخاب گزینه عدم ارجاع و اعلام نتیجه اعلام نتیجه به متقاضیکاربر در صورت انتخاب گزینه ارجاع به دانشگاه ها ،
@@ -293,7 +264,7 @@ begin
 
 		begin
 			select 
-				Desciption 
+				'وضعیت درخواست شما به شرح زیر میباشد : ' + '<br>' +  Desciption  as Desciption 
 				,case 
 					 when WFMode = 'Editable' then cast(1 as bit) else cast(0 as bit)    --در صورتی که درخواست در کارتابل متقاضی (دانشجو) باشد ، امکان ثبت درخواست وجود نداشته 
 				end as res
@@ -304,7 +275,7 @@ begin
 		end
 end
 
-
+go
 
 alter proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]       													
 @chkIsInOwnCartable bit,
@@ -318,42 +289,11 @@ begin
 		select cast(1 as bit) TrueEnableCheckbox	
 	else
 		select cast(0 as bit) TrueEnableCheckbox
-	--declare @temp table  (
-	--GUIDID nvarchar(50),	CountriesScholarshipID bigint,	WorkFlowName nvarchar(50),	WFID bigint,
-	--FollowCode nvarchar(50),	WFStatus nvarchar(50),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
-	--PageID int,	EntryID nvarchar(50),	ShowFRM nvarchar(10),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
-	--)
-	--insert into @temp
-	--exec [Sp_CU_GetDashboard] @PortalUserID
 
-	--if @chkFollowUpCodeIfInRelatedWFID = 1 and not exists(select 1 from @temp where FollowCode = @FollowUpCode and WFMode = 'Editable')  --درخواست در کارتابل خود دانشجو نباشد و شماره پیگیری فرآیند مربوطه وجود داشته باشد
-	--	select cast(1 as bit) TrueEnableCheckbox	
-
-	--else
-	--	select cast(0 as bit) TrueEnableCheckbox
 end
 
 
---2nd method
---if @chkFollowUpCodeIfInRelatedWFID = 1 and not exists(select 1 from Tbl_CU_QuestionAnswer where WFID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode) and PortalUserID = @PortalUserID)
---	select cast(1 as bit) TrueEnableCheckbox	
---else
---	select cast(0 as bit) TrueEnableCheckbox
-
---3rd method
---if @chkFollowUpCodeIfInRelatedWFID = 1 and and @PortalUserID not in(
---select
---	top 1 t.userid 
---from
---	task.TblWorkflowActivityInstance a
---	join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
---where
---	a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
---order by
---	t.TaskID desc)
-
-
-
+go
 
 
 
@@ -491,38 +431,6 @@ as
 go
 
 
---حذف گزینه ارسال به تذرو از لیست گزینه های فیلد "نتیجه بررسی" در بخش نتیجه بررسی 
---ALTER PROCEDURE [dbo].[Sp_Cu_GetFinalResult_frm20295] @UserID AS BIGINT   --backup_old
---AS
---BEGIN
-
---    IF EXISTS
---    (
---        SELECT *
---        FROM Users.TblUsersGroups
---        WHERE GroupId = 923
---              AND UserId = @UserID
---    )
---       OR (@UserID IN ( 2043, 2045 ))
---    BEGIN
---        SELECT FinalResultID,
---               FinalResult
---        FROM Tbl_Cu_SaoSupportFinalResult
---        ORDER BY OrderID ASC;
---    END;
---    ELSE
---    BEGIN
---        SELECT FinalResultID,
---               FinalResult
---        FROM Tbl_Cu_SaoSupportFinalResult
---        WHERE FinalResultID NOT IN ( 1 )
---        ORDER BY OrderID ASC;
---    END;
-
-
---END;
-
-
 ALTER PROCEDURE [dbo].[Sp_Cu_GetFinalResult_frm20295] @UserID AS BIGINT   
 AS
 BEGIN   
@@ -534,25 +442,8 @@ BEGIN
 END;
 
 -------------------------------------------
---select * from Workflow.TblWorkflow
---where name like N'%پشتیبانی سامانه سجاد%'
 
-
---select *
---from task.TblWorkflowInstance i
---where WorkflowID = 2000045
---order by WorkflowInstanceID desc
-
-
---SELECT    top 1000 Task.TblWorkflowActivityInstance.WokflowInstanceID,Task.TblWorkflowActivityInstance.WorkflowActivityInstanceID, Task.TblWorkflowActivityInstance.ActivityID, Task.TblTask.UserID, Task.TblTask.TaskID, Task.TblTask.TaskName, 
---                      Task.TblTask.GroupID, Task.TblTask.TaskStatusID, Task.TblTask.WorkflowActivityInstaceID, Task.TblTask.FromTaskID, Task.TblTask.TaskPriorityID, Task.TblTask.ResponsibleUserID, 
---                      Task.TblTask.CreateDate, Task.TblTask.ViewDate, Task.TblTask.EndDate, Task.TblTask.IntervalTime, Task.TblTask.FolderId, Task.TblTask.UserID AS Expr1, Task.TblTask.RoleID, 
---                       Task.TblTask.IsSendforAll, Task.TblWorkflowActivityInstance.ResualtConditionID
---FROM         Task.TblTask INNER JOIN
---                      Task.TblWorkflowActivityInstance ON Task.TblTask.WorkflowActivityInstaceID = Task.TblWorkflowActivityInstance.WorkflowActivityInstanceID
---WHERE     Task.TblTask.TaskStatusID in (1,6) and Task.TblWorkflowActivityInstance.ActivityID=4981242400227183039
---ORDER BY Task.TblTask.TaskID desc
--------------------------------------------
+go
 
 ALTER PROCEDURE [dbo].[Sp_Cu_Select_Tbl_Cu_Base_SaoReadyAnswer]
     @MainSubjectID AS INT,
@@ -591,7 +482,7 @@ END;
 --where FollowUpCode = '012137891'
 
 
-
+go
 
 
 ---- add IT expert
@@ -621,95 +512,7 @@ BEGIN
 
 END;
 
-
-
---ALTER PROCEDURE [dbo].[Sp_cu_SelectWxpertByMainSubject_SaoSupport]  --استفاده نشد
---@WFID AS BIGINT
---AS
---BEGIN
-	
---		DECLARE @MainSubject AS BIGINT = (
---											 SELECT TOP 1
---												 MainSubjectID
---											 FROM dbo.Tbl_CU_QuestionAnswer
---											 WHERE WFID = @WFID
---											 ORDER BY Id DESC
---										)
---		declare @ExpertUserID as bigint,
---				@GroupID bigint
-
-
---		DECLARE @ProblemType AS BIGINT = (                ---update
---											 SELECT TOP 1
---												 ProblemType
---											 FROM dbo.Tbl_CU_QuestionAnswer
---											 WHERE WFID = @WFID
---											 ORDER BY Id DESC
---										)
-		
---		--update
---		if @ProblemType = 10 --@ProblemType = 10 مشکل فنی
---			begin
---				set @ExpertUserID =  (select top 1 ITExpertID
---				from Tbl_Cu_Base_ExpertWF_SaoSupport
---				where WFID = @MainSubject)
-
---				select @ExpertUserID as ExpertID,
---						0  as GroupID
---			end
---		--end
-
---		else IF EXISTS
---		(
---			SELECT top 1 1
---			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
---			WHERE WFID = @MainSubject and isnull(GroupID, 0)<>0
-		
---		)
---		begin
---			set @GroupID= (SELECT TOP 1 GroupID
---			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
---			WHERE WFID = @MainSubject and isnull(GroupID, 0)<>0)
-
---			SELECT CAST(@ExpertUserID AS BIGINT) AS ExpertID,
---				   cast(@GroupID as bigint) as GroupID
---		end
-
-
---		else IF EXISTS
---		(
---			SELECT ExpertID
---			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
---			WHERE WFID = @MainSubject
-		
---		)
---		BEGIN
-
---			set @ExpertUserID= (SELECT TOP 1 ExpertID
---			FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
---			WHERE WFID = @MainSubject)
-
---			update Tbl_CU_QuestionAnswer
---			set sajadExpertUserID=@ExpertUserID
---			WHERE WFID=@WFID
-
---			SELECT CAST(@ExpertUserID AS BIGINT) AS ExpertID,
---				   cast(0 as bigint) as GroupID
---		END;
---		ELSE
---		BEGIN
-      
-		
---			UPDATE Tbl_CU_QuestionAnswer
---			set SajadExpertUserID=6
---			where WFID=@WFID
---			  SELECT CAST(6 AS BIGINT) AS ExpertID,
---					 cast(0 as bigint) as GroupID
---		END;
-
-
---END;
-
+go
 
 --چکباکس "ارسال به تذرو" ، فقط برای پشتیبان های سامانه قابل مشاهده و انتخاب است
 create PROCEDURE [dbo].[Sp_Cu_chkSendToTazarv_frm21041]
@@ -729,12 +532,12 @@ else
 
 END;
 
-
+go
 
 --new QuestionRefer for new sub routes
 create proc [dbo].[Sp_Cu_InsertIntoQuestionRefer_IT_Observor]  
 @WFID AS BIGINT,
-@UserID AS BIGINT,			 --exec Sp_Cu_InsertIntoQuestionRefer_IT_Observor @WorkflowInstanceId, $SecondReferID, $IsAutomat, $SendResult ,
+@UserID AS BIGINT,			 --exec Sp_Cu_InsertIntoQuestionRefer_IT_Observor @WorkflowInstanceId, $SecondReferID, $IsAutomat, $SendResultInfo ,
 @IsAutomat AS BIT,            --$DesiredUnit, $ReferralToUniversity, $ResultSecond, $SendToTazarv, $cmbdesiredoffice, $ExpertID,
 @SendResultInfo bit,			--  $institudeID, $universityID, $DescriptionInfo, $txtGroupIDInfo
 @DesiredOfficeInfo bit,
@@ -903,7 +706,7 @@ END;
 --Sp_Cu_GetValues_From_SaoSupportResult_Log 2038048 ,'اگر در سامانه سجاد اطلاعات شخصي آزمون زبان شما تاييد شده باشد امکان ورود خواهيد داشت. در صورتي که با خطاي ورود به سامانه مواجه مي شويد، از گزينه 'رمزتان را گم کرده ايد' استفاده کنيد و رمز جديد دريافت نماييد' ,'' ,True
 
 
-
+go
 --------------------------------
 
 ALTER PROCEDURE [dbo].[Sp_Cu_GetValues_From_SaoSupportResult_Log_Sec] --2032668,'اگر در سامانه سجاد اطلاعات شخصي آزمون زبان شما تاييد شده باشد امکان ورود خواهيد داشت. در صورتي که با خطاي ورود به سامانه مواجه مي شويد، از گزينه "رمزتان را گم کرده ايد" استفاده کنيد و رمز جديد دريافت نماييد','',1
@@ -1017,9 +820,52 @@ BEGIN
 END;
 
 
-
+go
 --15883
 
+
+alter proc sp_cu_chkSendToTazarvMandatoryFRM21041 
+	@cmbResultInfo int,
+	@rbnSendResultInfo bit,
+	@chkSendToTazarvForSupport bit,
+	@chkSendToTazarv bit
+as
+begin
+	if @rbnSendResultInfo = 1
+		begin
+			if (@cmbResultInfo = -1 and @chkSendToTazarvForSupport = 0)
+				select cast(1 as bit) res
+				--اگر کاربر پشتیبانی باشد در صورت خالی بودن فیلد نتیجه نهایی باید چکباکس ارسال به تذرو حتما انتخاب شود.
+			else if (@cmbResultInfo = -1 and @chkSendToTazarvForSupport = 1 and @chkSendToTazarv = 0) 
+				select cast(1 as bit) res
+			else
+				select cast(0 as bit) res
+		end
+	else
+		select cast(0 as bit) res
+end
+
+go
+
+create proc sp_cu_chkSendToTazarvMandatoryforITExpertFRM21041 
+@txtWFFollowUpCode nvarchar(10)
+as
+begin
+	if isnumeric(@txtWFFollowUpCode) = 0
+		select cast(1 as bit) res
+	else
+		select cast(0 as bit) res
+end
+
+go
+
+alter proc sp_cu_portal_userID_FRM31548 
+@UserID int
+as
+begin
+	select ExternalUserId from users.TblMemebrShips
+	where UserId = @UserID
+end
 
 
 
