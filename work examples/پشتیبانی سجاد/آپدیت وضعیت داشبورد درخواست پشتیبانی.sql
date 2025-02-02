@@ -7,7 +7,7 @@ with cte as (
 	from
 		task.TblWorkflowInstance i
 	where
-		WorkflowId = 2000045
+		WorkflowId in( 2000045, 157)
 		and WorkflowInstanceStatusID != 2  --درخواست پشتیبانی بی پاسخ
 	),
 	cte2 as(

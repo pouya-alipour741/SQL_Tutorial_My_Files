@@ -1,9 +1,4 @@
-﻿--SELECT Problem,
---        ProblemTypeID
---FROM Tbl_Cu_Base_ProblemTypeForAskQuestion
---where ProblemTypeID = 6
-
-
+﻿
 create PROCEDURE [dbo].[Sp_Cu_chkProblemTypeID_frm21041]
 @ProblemType int
 AS
@@ -17,40 +12,46 @@ END;
 
 go
 
-----test
 
---select top 1000 FollowUpCode,* from Tbl_CU_QuestionAnswer order by wfid desc
-
---select top 1000 WFID,* from Tbl_CU_FollowUpCode
---where  FollowUpCode = '6452642'
-
---select distinct MainSubjectID from  Tbl_CU_QuestionAnswer
-
---select top 1000 WorkflowInstanceID,*
---from Workflow.TblWorkflow w
---join task.TblWorkflowInstance i on i.WorkflowID = w.WorkflowId
---where Name like N'%فرآیند درخواست پشتیبانی سامانه سجاد%'
 -------------------
 alter PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
 @MainSubject int,
 @FollowUpCode nvarchar(50),
 @ProblemType int
 AS
-BEGIN
-	
-	if @ProblemType = 6
-		begin
-			if (
-				--select WorkflowID
-				select MainSubjectID
-				from Tbl_CU_FollowUpCode f
-					--join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
-					join Tbl_CU_QuestionAnswer q on f.WFID = q.WFID
-				where f.FollowUpCode = @FollowUpCode) = @MainSubject
+BEGIN 
+	declare @wfid int = (select top 1 wfid from Tbl_CU_FollowUpCode where FollowUpCode = @followupcode )
 
-				select cast(1 as bit) res
+	if @ProblemType = 6
+		begin			 
+			if (select top 1 WorkflowID from task.TblWorkflowInstance where WorkflowInstanceID = @wfid) = 2000045
+				begin
+					if (
+						--select WorkflowID
+						select MainSubjectID
+						from Tbl_CU_FollowUpCode f
+							--join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
+							join Tbl_CU_QuestionAnswer q on f.WFID = q.WFID
+						where f.FollowUpCode = @FollowUpCode) = @MainSubject
+
+						select cast(1 as bit) res
+					else
+						select cast(0 as bit) res
+				end
 			else
-				select cast(0 as bit) res
+				begin
+					if (
+						select WorkflowID
+						--select MainSubjectID
+						from Tbl_CU_FollowUpCode f
+							join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID
+							--join Tbl_CU_QuestionAnswer q on f.WFID = q.WFID
+						where f.FollowUpCode = @FollowUpCode) = @MainSubject
+
+						select cast(1 as bit) res
+					else
+						select cast(0 as bit) res
+				end
 		end
 	else
 		select cast(1 as bit) res
@@ -60,16 +61,6 @@ END;
 
 --exec Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041  154,6452646
 
-go
---create PROC [dbo].[Sp_CU_GetNonActiveWorkflow_SajadSupport]  --not used
---AS
---BEGIN
-
---      select WorkFlowID,WorkflowName  FROM dbo.Tbl_Cu_Base_WorkFlowInReqOrder
---	where WorkFlowID not in (153,155,81,66,42,2000564,2000553,84)
---	and IsActive=0 
---	order by OrderId
---END;
 
 go
 
@@ -531,297 +522,12 @@ else
 	select cast(0 as bit) res
 
 END;
-
-go
-
---new QuestionRefer for new sub routes
-create proc [dbo].[Sp_Cu_InsertIntoQuestionRefer_IT_Observor]  
-@WFID AS BIGINT,
-@UserID AS BIGINT,			 --exec Sp_Cu_InsertIntoQuestionRefer_IT_Observor @WorkflowInstanceId, $SecondReferID, $IsAutomat, $SendResultInfo ,
-@IsAutomat AS BIT,            --$DesiredUnit, $ReferralToUniversity, $ResultSecond, $SendToTazarv, $cmbdesiredoffice, $ExpertID,
-@SendResultInfo bit,			--  $institudeID, $universityID, $DescriptionInfo, $txtGroupIDInfo
-@DesiredOfficeInfo bit,
-@OtherOrgInfo bit,
-@Result int,
-@SendToTazarv bit,
-@DesiredUnitInfo int,
-@ExpertUserIDInfo int,
-@Institude int,
-@University int,
-@DescInfo nvarchar(1000),
-@GroupID bigint
-AS
-BEGIN
-IF NOT EXISTS(SELECT * FROM dbo.Tbl_CU_QuestionRefer
-               WHERE WFID = @WFID)
-BEGIN
-INSERT INTO dbo.Tbl_CU_QuestionRefer         
-(
-    ReferId,
-    RegisteredDate,
-    RegisteredTime,
-    SendResult,
-    DesiredOffice,
-    OtherOrg,
-    Result,                    
-	SendToTazarv,     
-	OrganizationId,     
-    ExpertID,
-    WFID,
-    [Des],
-    IsAutomat,
-	InstitudeID,
-	UniversityID,
-	GroupID
-)
-SELECT @UserID,
-       dbo.MiladiToShamsi(GETDATE()),
-	   substring(CAST(GETDATE() AS NVARCHAR(50)),13,5),
-	   @SendResultInfo,
-	   @DesiredOfficeInfo,
-	   @OtherOrgInfo,
-	   @Result,
-	   @SendToTazarv,
-	   @DesiredUnitInfo,
-	   @ExpertUserIDInfo,
-	   @WFID,
-	   @DescInfo,
-	   @IsAutomat,
-	   @Institude,
-	   @University,
-	   @GroupID
-	   END 
-END 
-
-
-
-go
-				
-
-
--------بازیابی اطلاعات
-ALTER PROCEDURE [dbo].[Sp_Cu_GetValues_From_SaoSupportResult_Log] --2032668,'اگر در سامانه سجاد اطلاعات شخصي آزمون زبان شما تاييد شده باشد امکان ورود خواهيد داشت. در صورتي که با خطاي ورود به سامانه مواجه مي شويد، از گزينه "رمزتان را گم کرده ايد" استفاده کنيد و رمز جديد دريافت نماييد','',1
-    @WFID AS BIGINT,
-    @Attachment AS NVARCHAR(4000),
-    @IsAutomat AS BIT
-AS
-BEGIN
-    IF EXISTS (SELECT top 1 1 FROM Tbl_CU_QuestionRefer b WHERE b.WFID = @WFID)
-    BEGIN
-        PRINT 1;
-        SELECT top 1 SendResult,
-               DesiredOffice,
-               OtherOrg,
-               Result,
-               OrganizationId,
-               OfficeId,
-			   SendToTazarv,  --update
-			   ExpertID,
-			   [Des],
-			   InstitudeID,
-			   UniversityID,
-			   GroupID  --end
-			   
-
-        FROM Tbl_CU_QuestionRefer b
-        WHERE b.WFID = @WFID
-        ORDER BY b.Id DESC;
-
-
-
-    END;
-    ELSE
-    BEGIN
-        PRINT 2;
-        SELECT cast(1 as bit)  AS SendResult,
-               0 AS DesiredOffice,
-               0 AS OtherOrg,
-               3 AS Result,
-               -1 AS OrganizationId,
-               -1 AS OfficeId
-			   ,0 as SendToTazarv,  --update
-			   0 as ExpertID,
-			   '' as [Des],
-			   0 as InstitudeID,
-			   0 as UniversityID,
-			   cast(0 as bigint) as GroupID--end
-
-
-        INSERT INTO Tbl_CU_QuestionRefer
-        (
-            ReferId,
-            PKFormId,
-            RegisteredDate,
-            RegisteredTime,
-            SendResult,
-            DesiredOffice,
-            OtherOrg,
-            Result,
-            OrganizationId,
-            OfficeId,
-            UserId,
-            WFID,
-            [GUID],
-            [Des],
-            Attachment,
-            StatusID,
-            GroupID,
-            IsAutomat
-        )
-        SELECT ReferId,
-               PKFormId,
-               dbo.MiladiToShamsi(GETDATE()),
-               SUBSTRING(CAST(GETDATE() AS NVARCHAR(50)), 13, 5),
-               SendResult,
-               DesiredOffice,
-               OtherOrg,
-               Result,
-               OrganizationId,
-               OfficeId,
-               UserId,
-               @WFID,
-               [GUID],
-               (
-                   SELECT TOP 1
-                       FinalDesc
-                   FROM Tbl_CU_QuestionAnswer
-                   WHERE WFID = @WFID
-                   ORDER BY Id DESC
-               ),
-               @Attachment,
-               StatusID,
-               GroupID,
-               @IsAutomat
-        FROM Tbl_CU_QuestionRefer b
-        WHERE WFID = @WFID;
-    END;
-
-
-
-END;
-
-
-
---select * from Tbl_CU_QuestionRefer where wfid=2038048
---Sp_Cu_GetValues_From_SaoSupportResult_Log 2038048 ,'اگر در سامانه سجاد اطلاعات شخصي آزمون زبان شما تاييد شده باشد امکان ورود خواهيد داشت. در صورتي که با خطاي ورود به سامانه مواجه مي شويد، از گزينه 'رمزتان را گم کرده ايد' استفاده کنيد و رمز جديد دريافت نماييد' ,'' ,True
-
+			
 
 go
 --------------------------------
 
-ALTER PROCEDURE [dbo].[Sp_Cu_GetValues_From_SaoSupportResult_Log_Sec] --2032668,'اگر در سامانه سجاد اطلاعات شخصي آزمون زبان شما تاييد شده باشد امکان ورود خواهيد داشت. در صورتي که با خطاي ورود به سامانه مواجه مي شويد، از گزينه "رمزتان را گم کرده ايد" استفاده کنيد و رمز جديد دريافت نماييد','',1
-    @WFID AS BIGINT
-AS
-BEGIN
-    DECLARE @IsAutomat AS BIT = (
-                                    SELECT TOP 1
-                                        X.IsAutomat
-                                    FROM Tbl_CU_QuestionAnswer X
-                                    WHERE X.WFID = @WFID
-                                    ORDER BY X.Id DESC
-                                );
-    DECLARE @Attachment AS NVARCHAR(4000) = (
-                                                SELECT TOP 1
-                                                    X.Attachment
-                                                FROM Tbl_CU_QuestionRefer X
-                                                WHERE X.WFID = @WFID
-                                                ORDER BY X.Id DESC
-                                            );
-    IF EXISTS (SELECT TOP 1 1 FROM Tbl_CU_QuestionRefer b WHERE b.WFID = @WFID)
-    BEGIN
-        PRINT 1;
-        SELECT TOP 1
-            SendResult,
-            DesiredOffice,
-            OtherOrg,
-            Result,
-            OrganizationId,
-            OfficeId
-			,SendToTazarv,  --update
-			ExpertID,
-			[Des],
-			InstitudeID,
-			UniversityID --end
-        FROM Tbl_CU_QuestionRefer b
-        WHERE b.WFID = @WFID
-        ORDER BY b.Id DESC;
 
-
-
-    END;
-    ELSE
-    BEGIN
-        PRINT 2;
-        SELECT CAST(1 AS BIT) AS SendResult,
-               0 AS DesiredOffice,
-               0 AS OtherOrg,
-               3 AS Result,
-               -1 AS OrganizationId,
-               -1 AS OfficeId
-			   ,0 as SendToTazarv,  --update
-			   0 as ExpertID,
-			   '' as [Des],
-			   0 as InstitudeID,
-			   0 as UniversityID  --end
-			   
-
-
-        INSERT INTO Tbl_CU_QuestionRefer
-        (
-            ReferId,
-            PKFormId,
-            RegisteredDate,
-            RegisteredTime,
-            SendResult,
-            DesiredOffice,
-            OtherOrg,
-            Result,
-            OrganizationId,
-            OfficeId,
-            UserId,
-            WFID,
-            [GUID],
-            [Des],
-            Attachment,
-            StatusID,
-            GroupID,
-            IsAutomat
-        )
-        SELECT ReferId,
-               PKFormId,
-               dbo.MiladiToShamsi(GETDATE()),
-               SUBSTRING(CAST(GETDATE() AS NVARCHAR(50)), 13, 5),
-               SendResult,
-               DesiredOffice,
-               OtherOrg,
-               Result,
-               OrganizationId,
-               OfficeId,
-               UserId,
-               @WFID,
-               [GUID],
-               (
-                   SELECT TOP 1
-                       FinalDesc
-                   FROM Tbl_CU_QuestionAnswer
-                   WHERE WFID = @WFID
-                   ORDER BY Id DESC
-               ),
-               @Attachment,
-               StatusID,
-               GroupID,
-               @IsAutomat
-        FROM Tbl_CU_QuestionRefer b
-        WHERE WFID = @WFID;
-    END;
-
-
-
-END;
-
-
-go
---15883
 
 
 alter proc sp_cu_chkSendToTazarvMandatoryFRM21041 
@@ -867,5 +573,31 @@ begin
 	where UserId = @UserID
 end
 
+go
 
+create proc sp_cu_chk_IsMainSubjectEmpty 
+@cmbMainSubject int
+as
+begin
+	if (@cmbMainSubject = '' or @cmbMainSubject = -1)
+		select cast(1 as bit) res
+	else
+		select cast(0 as bit) res
+end
 
+go
+
+ALTER proc sp_cu_RecoveredMainSubject 
+@MainSubject int
+as
+begin
+	select
+		(select ISNULL(Name , '') from Workflow.TblWorkflow w2 where w2.WorkflowId=w1.WorkflowId) Name
+	from 
+		Workflow.TblWorkflow w1
+	where 
+		WorkflowId = @MainSubject
+
+end
+
+go

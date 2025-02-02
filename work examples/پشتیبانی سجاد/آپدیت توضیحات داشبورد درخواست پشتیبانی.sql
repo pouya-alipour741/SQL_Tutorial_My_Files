@@ -7,7 +7,7 @@ with cte as (
 	from
 		task.TblWorkflowInstance i
 	where
-		WorkflowId = 2000045   
+		WorkflowId In( 2000045, 157)   
 		and WorkflowInstanceStatusID != 2  --درخواست پشتیبانی بی پاسخ
 	),
 	cte2 as(
@@ -16,7 +16,7 @@ with cte as (
 		from
 			cte
 		where
-			CreateDate < '1403/09/09'
+			CreateDate < '1403/09/09'   --2024/11/29
 	) 
 		update Tbl_CU_QuestionAnswer 	
 		set StatusID = 1921   --when a.StatusID = 1921 then 'چنانچه هنوز مشکل شما حل نشده است لطفا مجددا درخواست پشتیبانی ثبت نمایید.'
