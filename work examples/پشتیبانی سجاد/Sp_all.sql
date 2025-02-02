@@ -24,7 +24,7 @@ BEGIN
 
 	if @ProblemType = 6
 		begin			 
-			if (select top 1 WorkflowID from task.TblWorkflowInstance where WorkflowInstanceID = @wfid) = 2000045
+			if (select top 1 WorkflowID from task.TblWorkflowInstance where WorkflowInstanceID = @wfid) = 2000045   --درخواست پشتیبانی
 				begin
 					if (
 						--select WorkflowID
@@ -38,7 +38,7 @@ BEGIN
 					else
 						select cast(0 as bit) res
 				end
-			else
+			else  --غیر از درخواست پشتیبانی
 				begin
 					if (
 						select WorkflowID
@@ -469,8 +469,6 @@ BEGIN
 END;
 ---exec Sp_Cu_Select_Tbl_Cu_Base_SaoReadyAnswer @MainSubjectID=N'42'
 
---select * from Tbl_CU_FollowUpCode
---where FollowUpCode = '012137891'
 
 
 go
