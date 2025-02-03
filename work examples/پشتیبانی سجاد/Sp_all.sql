@@ -85,13 +85,25 @@ BEGIN
 	declare @PortalUserID bigint = (select PortalUserID from Tbl_CU_QuestionAnswer where WFID = @WFID)
 	declare @regUsername nvarchar(50) = (   
 											case 
-												when @IsAutomat = 1 then
-														(select top 1 
-															concat(name, ' ', LastName) from Tbl_Cu_ApplierProfile		
-														where
-															UserPortalID = @PortalUserID
-														)
-
+												when 
+													@IsAutomat = 1
+													and exists	(select 1 from Tbl_Cu_ApplierProfile where UserPortalID = @PortalUserID)
+													then
+															(select top 1 
+																concat(name, ' ', LastName) from Tbl_Cu_ApplierProfile		
+															where
+																UserPortalID = @PortalUserID
+															)
+												when 
+													@IsAutomat = 1
+													and exists	(select 1 from tbl_cu_govinfo_log where UserID = @PortalUserID)
+												then
+													(select top 1 
+															concat(firstName, ' ', LastName) from tbl_cu_govinfo_log		
+													where
+														UserID = @PortalUserID
+													)
+																										
 												else
 													(select
 														top 1 FullName 											
@@ -509,11 +521,9 @@ create PROCEDURE [dbo].[Sp_Cu_chkSendToTazarv_frm21041]
 AS
 BEGIN
 	
-if @UserID in  (select isnull(ITExpertID,0)  as SupportUserID
-				from Tbl_Cu_Base_ExpertWF_SaoSupport
-				union
-				select isnull(ExpertID,0) as SupportUserID 
-				from Tbl_Cu_Base_ExpertWF_SaoSupport
+if @UserID in  (
+					select isnull(ExpertID,0) as SupportUserID 
+					from Tbl_Cu_Base_ExpertWF_SaoSupport
 				)
 	select cast(1 as bit) res
 else
@@ -599,3 +609,37 @@ begin
 end
 
 go
+
+alter proc sp_cu_UpdateFirstReferID_IT  
+@wfid bigint
+as
+begin
+		declare @FirstReferID bigint = (
+		select
+			t.UserID
+		from 
+			task.TblTask t
+			join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
+		where 
+			a.WokflowInstanceID = @wfid
+			and a.ActivityID = 5625006272480608290)  --بررسی کارشناس IT
+			
+		update Tbl_CU_QuestionAnswer
+		set	FirstReferID = @FirstReferID
+		where WFID = @wfid
+
+end
+
+
+go
+
+
+create PROCEDURE [dbo].[Sp_Cu_GetWFStatus_SearchQuestionAnswer_frm41608]
+AS
+BEGIN
+
+	SELECT 1 AS ID , 'در حال بررسی' AS TITLE
+	UNION
+	SELECT 2 AS ID , 'خاتمه یافته' AS TITLE
+
+END
