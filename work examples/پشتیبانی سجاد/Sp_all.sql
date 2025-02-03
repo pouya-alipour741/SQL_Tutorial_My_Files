@@ -610,7 +610,7 @@ end
 
 go
 
-alter proc sp_cu_UpdateFirstReferID_IT  
+create proc sp_cu_UpdateFirstReferID_IT  
 @wfid bigint
 as
 begin
@@ -633,6 +633,27 @@ end
 
 go
 
+create proc sp_cu_UpdateFirstReferID_Observor  
+@wfid bigint
+as
+begin
+		declare @FirstReferID bigint = (
+		select
+			t.UserID
+		from 
+			task.TblTask t
+			join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
+		where 
+			a.WokflowInstanceID = @wfid
+			and a.ActivityID = )  --بررسی کاربر مشاهده کننده
+			
+		update Tbl_CU_QuestionAnswer
+		set	FirstReferID = @FirstReferID
+		where WFID = @wfid
+
+end
+
+go
 
 create PROCEDURE [dbo].[Sp_Cu_GetWFStatus_SearchQuestionAnswer_frm41608]
 AS
