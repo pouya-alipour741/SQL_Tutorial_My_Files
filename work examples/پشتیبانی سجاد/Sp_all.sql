@@ -325,7 +325,7 @@ BEGIN
 		if @cmbMainSubject = 154   --گروه های تعریف شده در فرآیند لغو تعهد
 			set @GROUPID =          
 				( 
-					select GroupID
+					select GroupID , *
 					from Tbl_Cu_UniversityGroupDiploma    
 					where UniversityID = @cmbUniversity
 				)
@@ -336,6 +336,8 @@ BEGIN
 		--			from     
 		--			where UniversityID = @cmbUniversity
 		--		)
+
+		
 	 
     END;
 
@@ -414,6 +416,7 @@ alter proc sp_cu_gvPremadeResponses_frm41606
 as
 	begin
 		select
+			ROW_NUMBER() over(order by PremadeResponses_ID) rn,
 			PremadeResponses_ID,
 			MainSubject,
 			RequestType,
@@ -427,6 +430,8 @@ as
 		where
 			(MainSubjectID = @mainSubject) and
 			UserID = @userID
+		order by PremadeResponses_ID
+			
 	end
 
 --select * from sp_cu_PremadeResponses
@@ -450,18 +455,18 @@ go
 
 ALTER PROCEDURE [dbo].[Sp_Cu_Select_Tbl_Cu_Base_SaoReadyAnswer]
     @MainSubjectID AS INT,
-    @WFID AS BIGINT,
-	@userID int -- آپدیت
+    --@WFID AS BIGINT,  -- آپدیت
+	@userID int   -- آپدیت
 	
 AS     
 BEGIN
-    DECLARE @WorkflowId AS INT;
-    SELECT @WorkflowId = MainSubjectID
-    FROM [dbo].[Tbl_CU_QuestionAnswer]
-    WHERE WFID = @WFID
-    ORDER BY Id DESC;
-    IF ISNULL(@WorkflowId, -1) != -1
-        SET @MainSubjectID = @WorkflowId; 
+    --DECLARE @WorkflowId AS INT;
+    --SELECT @WorkflowId = MainSubjectID
+    --FROM [dbo].[Tbl_CU_QuestionAnswer]
+    --WHERE WFID = @WFID
+    --ORDER BY Id DESC;
+    --IF ISNULL(@WorkflowId, -1) != -1
+    --    SET @MainSubjectID = @WorkflowId; 
 	
 	select   --آپدیت
 		PremadeResponses_ID, RequestType, Response
@@ -536,15 +541,22 @@ go
 --------------------------------
 
 
-
-
 alter proc sp_cu_chkSendToTazarvMandatoryFRM21041 
 	@cmbResultInfo int,
 	@rbnSendResultInfo bit,
-	@chkSendToTazarvForSupport bit,
+	@userid int,
 	@chkSendToTazarv bit
 as
 begin
+	declare @chkSendToTazarvForSupport bit
+	if @UserID in  (
+					select isnull(ExpertID,0) as SupportUserID 
+					from Tbl_Cu_Base_ExpertWF_SaoSupport
+					)
+		set @chkSendToTazarvForSupport = 1
+	else
+		set @chkSendToTazarvForSupport = 0
+
 	if @rbnSendResultInfo = 1
 		begin
 			if (@cmbResultInfo = -1 and @chkSendToTazarvForSupport = 0)
@@ -583,14 +595,14 @@ end
 
 go
 
-create proc sp_cu_chk_IsMainSubjectEmpty 
+alter proc sp_cu_chk_IsMainSubjectEmpty 
 @cmbMainSubject int
 as
 begin
 	if (@cmbMainSubject = '' or @cmbMainSubject = -1)
-		select cast(1 as bit) res
-	else
 		select cast(0 as bit) res
+	else
+		select cast(1 as bit) res
 end
 
 go
@@ -645,7 +657,30 @@ begin
 			join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
 		where 
 			a.WokflowInstanceID = @wfid
-			and a.ActivityID = )  --بررسی کاربر مشاهده کننده
+			and a.ActivityID = 5012698392437218490)  --بررسی کاربر مشاهده کننده
+			
+		update Tbl_CU_QuestionAnswer
+		set	FirstReferID = @FirstReferID
+		where WFID = @wfid
+
+end
+
+go
+
+
+create proc sp_cu_UpdateFirstReferID 
+@wfid bigint
+as
+begin
+		declare @FirstReferID bigint = (
+		select
+			t.UserID
+		from 
+			task.TblTask t
+			join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
+		where 
+			a.WokflowInstanceID = @wfid
+			and a.ActivityID = 5215090122552527259)  --بررسی درخواست پشتیبانی سامانه سجاد
 			
 		update Tbl_CU_QuestionAnswer
 		set	FirstReferID = @FirstReferID
