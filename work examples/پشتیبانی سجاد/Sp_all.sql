@@ -645,7 +645,7 @@ end
 
 go
 
-create proc sp_cu_UpdateFirstReferID_Observor  
+create proc sp_cu_UpdateFirstReferID_Group  
 @wfid bigint
 as
 begin
@@ -657,7 +657,7 @@ begin
 			join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
 		where 
 			a.WokflowInstanceID = @wfid
-			and a.ActivityID = 5012698392437218490)  --بررسی کاربر مشاهده کننده
+			and a.ActivityID = 4981242400227183039)  -- کاربر مشاهده کنندهبررسی گروهی درخواست پشتیبانی سامانه سجاد
 			
 		update Tbl_CU_QuestionAnswer
 		set	FirstReferID = @FirstReferID
