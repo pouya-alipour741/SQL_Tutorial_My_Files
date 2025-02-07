@@ -14,7 +14,7 @@ go
 
 
 -------------------
-alter PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
+create PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
 @MainSubject int,
 @FollowUpCode nvarchar(50),
 @ProblemType int
@@ -135,7 +135,28 @@ go
 --where wfid = 154
 
 
-alter proc sp_cu_chk_NoRepeatedReqestPerUser_frm21041  
+--alter proc sp_cu_chk_NoRepeatedReqestPerUser_frm21041  
+--@userID int,
+--@mainSubject int
+--as
+--begin
+--	if exists(
+--		select 1
+--		from [Tbl_CU_QuestionAnswer] q		
+--		join task.TblWorkflowInstance i on q.WFID = i.WorkflowInstanceID
+--		where 
+--			MainSubjectID = @mainSubject
+--			and WorkflowInstanceStatusID = 1
+--			and PortalUserID = @userID
+--			)
+--		begin
+--			select cast(1 as bit) res
+--		end
+--	else
+--		select cast(0 as bit) res
+--end
+
+create proc sp_cu_chk_NoRepeatedReqestPerUser_frm21041  
 @userID int,
 @mainSubject int
 as
@@ -143,10 +164,10 @@ begin
 	if exists(
 		select 1
 		from [Tbl_CU_QuestionAnswer] q		
-		join task.TblWorkflowInstance i on q.WFID = i.WorkflowInstanceID
+		join Tbl_CU_QuestionRefer r on r.WFID = q.WFID
 		where 
 			MainSubjectID = @mainSubject
-			and WorkflowInstanceStatusID = 1
+			and isnull(ّFinalDesc, '') = ''
 			and PortalUserID = @userID
 			)
 		begin
@@ -155,6 +176,7 @@ begin
 	else
 		select cast(0 as bit) res
 end
+
 
 --exec sp_cu_chk_NoRepeatedReqestPerUser_frm21041 64505,6452647
 
@@ -180,7 +202,7 @@ go
 
 
 
-alter proc Sp_Cu_Select_university_By_institudeID_FRM21041     
+create proc Sp_Cu_Select_university_By_institudeID_FRM21041     
 @wfid bigint,
 @institudeID int  
 as
@@ -204,7 +226,7 @@ end
 دانشگاه  مورد نظر (یکی دیگر از دانشگاه ها) را انتخاب می نماید و توضیحات خود را در فیلد توضیحات درج و سپس نسبت به تایید اقدام می نماید.
 (در صورت انتخاب یکی از مقادیر علمی کاربردی ، پیام نور ، فرهنگیان و فنی و حرفه ای ، امکان انتخاب نام دانشگاه وجود نخواهد داشت .)     */
 
-alter proc Sp_Cu_chkIfInCertainUniversities_FRM21041     
+create proc Sp_Cu_chkIfInCertainUniversities_FRM21041     
 @InstitudeID int,@UniReferral bit
 as
 begin
@@ -218,7 +240,7 @@ end
 
 go
 
-ALTER PROCEDURE [dbo].[Sp_cu_SelectObservors_SaoSupport]
+create PROCEDURE [dbo].[Sp_cu_SelectObservors_SaoSupport]
 @WFID AS BIGINT
 AS
 BEGIN
@@ -251,7 +273,7 @@ END;
 go
 
 -----------------
-ALTER proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]  --exec [sp_cu_getStatusFromDashboard_frm31548] 15883,6452657   
+create proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]  --exec [sp_cu_getStatusFromDashboard_frm31548] 15883,6452657   
 															--exec [Sp_CU_GetDashboard] 64505   >> followupcode: 6452504,6452642
 @PortalUserID bigint,
 @FollowUpCode nvarchar(10)
@@ -280,7 +302,7 @@ end
 
 go
 
-alter proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]       													
+create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]       													
 @chkIsInOwnCartable bit,
 @chkFollowUpCodeIfInRelatedWFID bit,
 @chkIsResponseFollowUp bit
@@ -410,7 +432,7 @@ create table sp_cu_PremadeResponses
 
 go
 
-alter proc sp_cu_gvPremadeResponses_frm41606
+create proc sp_cu_gvPremadeResponses_frm41606
 @mainSubject int,
 @userID int
 as
@@ -541,7 +563,7 @@ go
 --------------------------------
 
 
-alter proc sp_cu_chkSendToTazarvMandatoryFRM21041 
+create proc sp_cu_chkSendToTazarvMandatoryFRM21041 
 	@cmbResultInfo int,
 	@rbnSendResultInfo bit,
 	@userid int,
@@ -585,7 +607,7 @@ end
 
 go
 
-alter proc sp_cu_portal_userID_FRM31548 
+create proc sp_cu_portal_userID_FRM31548 
 @UserID int
 as
 begin
@@ -595,7 +617,7 @@ end
 
 go
 
-alter proc sp_cu_chk_IsMainSubjectEmpty 
+create proc sp_cu_chk_IsMainSubjectEmpty 
 @cmbMainSubject int
 as
 begin
@@ -607,7 +629,7 @@ end
 
 go
 
-ALTER proc sp_cu_RecoveredMainSubject 
+create proc sp_cu_RecoveredMainSubject 
 @MainSubject int
 as
 begin
