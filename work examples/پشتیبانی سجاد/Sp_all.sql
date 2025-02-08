@@ -167,7 +167,7 @@ begin
 		join Tbl_CU_QuestionRefer r on r.WFID = q.WFID
 		where 
 			MainSubjectID = @mainSubject
-			and isnull(ّFinalDesc, '') = ''
+			and ISNULL(FinalDesc , '') = ''
 			and PortalUserID = @userID
 			)
 		begin
@@ -207,8 +207,8 @@ create proc Sp_Cu_Select_university_By_institudeID_FRM21041
 @institudeID int  
 as
 begin
-	declare @UniversityID int = (select top 1 UniversityID from Tbl_CU_QuestionRefer where WFID = @wfid)
-	if (select top 1 OtherOrg from Tbl_CU_QuestionRefer where WFID = @wfid) = 1
+	declare @UniversityID int = (select top 1 UniversityID from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc)
+	if (select top 1 OtherOrg from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc) = 1
 	begin
 		SELECT UniversityID,UniversityName
 		FROM dbo.Tbl_CU_University
@@ -230,7 +230,7 @@ create proc Sp_Cu_chkIfInCertainUniversities_FRM21041
 @InstitudeID int,@UniReferral bit
 as
 begin
-	 if (@InstitudeID not in(select InstituteID from Tbl_Cu_Institute where InstituteID in (3,2,1,9))
+	 if (@InstitudeID not in(3,2,1,9)
 		and @UniReferral = 1)
 		select cast(1 as bit) res
 	 else
@@ -345,25 +345,28 @@ BEGIN
     ELSE IF (@rbnOtherOrg = 1)
     BEGIN		
 		if @cmbMainSubject = 154   --گروه های تعریف شده در فرآیند لغو تعهد
-			set @GROUPID =          
-				( 
-					select GroupID , *
-					from Tbl_Cu_UniversityGroupDiploma    
-					where UniversityID = @cmbUniversity
-				)
-		--else if @cmbMainSubject = 156		--گروه های تعریف شده در فرآیند تایید مدارک دانشجویان داخل و غیرایرانی-جدید	
-		--	set @GROUPID =          
-		--		( 
-		--			select GroupID
-		--			from     
-		--			where UniversityID = @cmbUniversity
-		--		)
+			begin
+				set @GROUPID =          
+					( 
+						select GroupID , *
+						from Tbl_Cu_UniversityGroupDiploma    
+						where UniversityID = @cmbUniversity
+					)				
+			end
+		else if @cmbMainSubject = 104
+			
+							
+		else if @cmbMainSubject = 2000569
+			exec Sp_Cu_GetUniExpert_StudentGetCertificateCode_Support @cmbUniversity, @GROUPID output
 
+		else if @cmbMainSubject = 154
+			exec Sp_Cu_Get_Group_ForUni_CommitmentCancellationGroup_Support @cmbUniversity,@GROUPID output
 		
+			
 	 
-    END;
+    END
 
-    SELECT @GROUPID AS GROUPID;
+    SELECT @GROUPID AS GROUPID
 
 
 END;
@@ -372,47 +375,63 @@ go
 
 /*لیست مقادیر فیلد "موضوع اصلی" برای کارشناسان پشتیبان فرایند ها ،
 لیست فرایند هایی میباشد که دسترسی آنها در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد تعریف شده است .*/
+--create PROCEDURE [dbo].[Sp_Cu_GetMainSubject_frm41606] @UserId INT   
+--AS
+--BEGIN
+--    IF @UserId = 2085
+--    BEGIN
+--        PRINT 'سخاوت';
+--        SELECT WorkflowId,
+--               [Name]
+--        FROM Workflow.TblWorkflow
+--        WHERE WorkflowId IN ( 80, 68, 94, 100, 96, 2000040, 62, 60, 59 );
+--    END;
+--	else if @UserId IN (6,1)
+--	begin
+--	SELECT WorkflowId,
+--               [Name]
+--        FROM Workflow.TblWorkflow
+--        WHERE WorkflowId IN ( 37, 40,  154, 46, 49, 61, 62, 63, 65, 66, 67, 68, 70, 73, 78, 80, 81, 82, 85, 88, 89,
+--                              90, 91, 93, 94, 95, 96, 97, 98, 100, 103, 104, 107, 84, 2000044, 134, 125, 120, 121, 114,
+--                              113, 110, 109, 126, 127, 128, 129, 130, 159, 122, 2000556, 2000040, 62, 59, 60, 43, 57,
+--                              2000047, 2000559,2000558,2000567,2000566,2000573
+--                            )
+--							union all
+--							SELECT 1000 as WorkflowId,
+--              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
+
+--	end
+--	else
+--	    BEGIN
+--        PRINT 'به جز سخاوت';
+--        SELECT WorkflowId,
+--               [Name]
+--        FROM Workflow.TblWorkflow
+--		where WorkflowId IN
+--		(SELECT WFID
+--        FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
+--		where ExpertID = @UserID  --فقط فرآیندهای تعریف شده برای آن کاربر در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد 
+--		)OR WorkflowId = 57
+--		union all
+--							SELECT 1000 as WorkflowId,
+--              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
+--    END;
+--END;
+
+--فقط فرآیندهای تعریف شده برای آن کاربر در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد 
 create PROCEDURE [dbo].[Sp_Cu_GetMainSubject_frm41606] @UserId INT   
 AS
 BEGIN
-    IF @UserId = 2085
-    BEGIN
-        PRINT 'سخاوت';
-        SELECT WorkflowId,
-               [Name]
-        FROM Workflow.TblWorkflow
-        WHERE WorkflowId IN ( 80, 68, 94, 100, 96, 2000040, 62, 60, 59 );
-    END;
-	else if @UserId IN (6,1)
-	begin
-	SELECT WorkflowId,
-               [Name]
-        FROM Workflow.TblWorkflow
-        WHERE WorkflowId IN ( 37, 40,  154, 46, 49, 61, 62, 63, 65, 66, 67, 68, 70, 73, 78, 80, 81, 82, 85, 88, 89,
-                              90, 91, 93, 94, 95, 96, 97, 98, 100, 103, 104, 107, 84, 2000044, 134, 125, 120, 121, 114,
-                              113, 110, 109, 126, 127, 128, 129, 130, 159, 122, 2000556, 2000040, 62, 59, 60, 43, 57,
-                              2000047, 2000559,2000558,2000567,2000566,2000573
-                            )
-							union all
-							SELECT 1000 as WorkflowId,
-              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
-
-	end
-	else
-	    BEGIN
-        PRINT 'به جز سخاوت';
-        SELECT WorkflowId,
-               [Name]
-        FROM Workflow.TblWorkflow
-		where WorkflowId IN
-		(SELECT WFID
-        FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
-		where ExpertID = @UserID  --فقط فرآیندهای تعریف شده برای آن کاربر در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد 
-		)OR WorkflowId = 57
-		union all
-							SELECT 1000 as WorkflowId,
-              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
-    END;
+		select
+			WorkFlowID,WorkflowName
+		FROM
+			dbo.Tbl_Cu_Base_WorkFlowInReqOrder
+		where
+			WorkFlowID not in (153,155,81,66,42,2000564,2000553,84)
+			and IsActive=1 
+			and WorkflowId IN (SELECT WFID FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport where ExpertID = @UserID or ITExpertID = @UserID)  		
+		order by
+			OrderId
 END;
 
 go
@@ -721,3 +740,53 @@ BEGIN
 	SELECT 2 AS ID , 'خاتمه یافته' AS TITLE
 
 END
+
+go
+
+create proc sp_cu_NoUniForCertainMainSubjects_frm21041
+@MainSubject int
+as
+begin
+	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
+		select cast(1 as bit) res
+	else
+		select cast(0 as bit) res
+end
+
+go 
+
+create proc sp_cu_IsCertainInstitude
+@wfid int
+as
+begin
+	declare @institudeID int = (select top 1 InstitudeID from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc)
+	if @institudeID in(3,2,1,9)
+		select cast(1 as bit) IsCertainInstitude
+	else
+		select cast(0 as bit) IsCertainInstitude
+end
+
+go
+
+create proc sp_cu_UpdateStatus_Support
+@wfid int,
+@status int
+as
+begin
+	if not exists(select 1 from Tbl_CU_QuestionAnswer where WFID = @wfid)
+		begin
+			print 'insert'
+			insert into Tbl_CU_QuestionAnswer(StatusID)
+			values(@status)
+		end
+	else
+		begin
+			print 'update'
+			update Tbl_CU_QuestionAnswer
+			set StatusID = @status
+			where WFID = @wfid
+		end
+end
+
+go
+
