@@ -321,12 +321,12 @@ end
 go
 
 
-
 ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]   
     @rbnDesiredOffice AS BIT,
     @rbnOtherOrg AS BIT,
     @OrganUnitID AS BIGINT,
     @cmbUniversity AS BIGINT,
+	@cmbInstitute int,
 	@cmbMainSubject int
 AS
 BEGIN
@@ -339,84 +339,125 @@ BEGIN
             SELECT GroupID
             FROM Tbl_Cu_Base_OrganizationalUnit
             WHERE OrganizationalUnitID = @OrganUnitID
-        );
+        )
+		SELECT @GROUPID AS GROUPID
     END;
 
     ELSE IF (@rbnOtherOrg = 1)
-    BEGIN		
-		if @cmbMainSubject = 154   --گروه های تعریف شده در فرآیند لغو تعهد
+    BEGIN
+		if @cmbInstitute in(1,2,3,9)  --علمی کاربردی ، پیام نور ، فرهنگیان و فنی و حرفه ای 
 			begin
-				set @GROUPID =          
-					( 
-						select GroupID , *
-						from Tbl_Cu_UniversityGroupDiploma    
-						where UniversityID = @cmbUniversity
-					)				
+				if @cmbInstitute = 1  --فرهنگیان
+					set @GROUPID = (select top 1 GroupId
+					from users.TblUsersGroups 
+					where UserId in(select UserId from users.TblUsers where UserName like N'%dv_6000%')
+					order by groupid desc)
+
+				else if @cmbInstitute = 2  --پیام نور
+					set @GROUPID = (select 923 as GroupId)
+					
+				else if @cmbInstitute = 3  --علمی کاربردی
+					set @GROUPID = (select 923 as GroupId)
+
+				else if @cmbInstitute = 9  --فنی حرفه ای
+					set @GROUPID = (select top 1 GroupId
+					from users.TblUsersGroups 
+					where UserId in(select UserId from users.TblUsers where UserName like N'%dv_5000%')
+					order by groupid desc)
 			end
-		else if @cmbMainSubject = 104
-			
-							
-		else if @cmbMainSubject = 2000569
-			exec Sp_Cu_GetUniExpert_StudentGetCertificateCode_Support @cmbUniversity, @GROUPID output
+		else
+			begin
+				if @cmbMainSubject = 154   --گروه های تعریف شده در فرآیند لغو تعهد
+					begin
+						set @GROUPID =          
+							( 
+								select GroupID 
+								from Tbl_Cu_UniversityGroupDiploma    
+								where UniversityID = @cmbUniversity
+							)	
+						SELECT @GROUPID AS GROUPID
+					end
+								
+				else if @cmbMainSubject = 2000569
+					begin
+						exec Sp_Cu_GetUniExpert_StudentGetCertificateCode_Support @cmbUniversity, @GROUPID output
+						--SELECT @GROUPID AS GROUPID
+					end
 
-		else if @cmbMainSubject = 154
-			exec Sp_Cu_Get_Group_ForUni_CommitmentCancellationGroup_Support @cmbUniversity,@GROUPID output
-		
-			
-	 
+				else if @cmbMainSubject = 154
+					begin
+						exec Sp_Cu_Get_Group_ForUni_CommitmentCancellationGroup_Support @cmbUniversity,@GROUPID output
+						--SELECT @GROUPID AS GROUPID
+					end
+
+				else if @cmbMainSubject = 156
+					begin
+						declare @temp table(GroupID int)
+						insert into @temp
+						exec Sp_Cu_Select_Group_ForUni_VerificationDocuments_New_Support @cmbUniversity
+
+						set @GROUPID = (select GroupID from @temp)
+					end
+				else if @cmbMainSubject = 65
+					set @GROUPID = (SELECT TOP 1
+						DoctoraResearchOppExpertGroupID
+					FROM
+						dbo.Tbl_Cu_UniversityGroupDiploma
+					WHERE
+						UniversityID = @cmbUniversity)
+
+				else if @cmbMainSubject = 68
+					begin
+						set @GROUPID = (SELECT TOP 1
+							DoctoraResearchOppExpertGroupID
+						FROM  
+							dbo.Tbl_Cu_UniversityGroupDiploma
+						WHERE
+							UniversityID = @cmbUniversity)
+					end
+				else if @cmbMainSubject = 90
+					begin
+						set @GROUPID = (SELECT TOP 1
+							UniversityEducationalSpecialistGroupID
+						FROM
+							dbo.Tbl_Cu_UniversityGroupDiploma
+						WHERE
+							UniversityID = @cmbUniversity)
+					end
+				else if @cmbMainSubject = 141
+					begin
+						set @GROUPID = (SELECT TOP 1
+							TransmissionAndGuestGroupID 
+						from
+							dbo.Tbl_Cu_UniversityGroupDiploma
+						where
+							UniversityID = @cmbUniversity)
+					end
+				else if @cmbMainSubject = 103
+					begin
+						set @GROUPID = (SELECT TOP 1
+							[BodyHealthGroupID] 
+						FROM
+							dbo.Tbl_Cu_UniversityGroupDiploma
+						WHERE
+							UniversityID = @cmbUniversity)
+					end
+				else if @cmbMainSubject = 104
+					begin
+						declare @temp2 table(GroupID int, MentalHealthGroup5 int, MentalHealthGroup6 int)
+						insert into @temp2
+						exec Sp_Cu_Select_Group_ForMentalHealth @cmbUniversity
+						set @GROUPID = (select GroupID from @temp2)
+					end
+			end
+
     END
-
-    SELECT @GROUPID AS GROUPID
-
+	SELECT @GROUPID AS GROUPID
 
 END;
 
 go
 
-/*لیست مقادیر فیلد "موضوع اصلی" برای کارشناسان پشتیبان فرایند ها ،
-لیست فرایند هایی میباشد که دسترسی آنها در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد تعریف شده است .*/
---create PROCEDURE [dbo].[Sp_Cu_GetMainSubject_frm41606] @UserId INT   
---AS
---BEGIN
---    IF @UserId = 2085
---    BEGIN
---        PRINT 'سخاوت';
---        SELECT WorkflowId,
---               [Name]
---        FROM Workflow.TblWorkflow
---        WHERE WorkflowId IN ( 80, 68, 94, 100, 96, 2000040, 62, 60, 59 );
---    END;
---	else if @UserId IN (6,1)
---	begin
---	SELECT WorkflowId,
---               [Name]
---        FROM Workflow.TblWorkflow
---        WHERE WorkflowId IN ( 37, 40,  154, 46, 49, 61, 62, 63, 65, 66, 67, 68, 70, 73, 78, 80, 81, 82, 85, 88, 89,
---                              90, 91, 93, 94, 95, 96, 97, 98, 100, 103, 104, 107, 84, 2000044, 134, 125, 120, 121, 114,
---                              113, 110, 109, 126, 127, 128, 129, 130, 159, 122, 2000556, 2000040, 62, 59, 60, 43, 57,
---                              2000047, 2000559,2000558,2000567,2000566,2000573
---                            )
---							union all
---							SELECT 1000 as WorkflowId,
---              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
-
---	end
---	else
---	    BEGIN
---        PRINT 'به جز سخاوت';
---        SELECT WorkflowId,
---               [Name]
---        FROM Workflow.TblWorkflow
---		where WorkflowId IN
---		(SELECT WFID
---        FROM dbo.Tbl_Cu_Base_ExpertWF_SaoSupport
---		where ExpertID = @UserID  --فقط فرآیندهای تعریف شده برای آن کاربر در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد 
---		)OR WorkflowId = 57
---		union all
---							SELECT 1000 as WorkflowId,
---              'پایگاه اطلاعات و مدارک تحصیلی کشور'  as [Name]
---    END;
---END;
 
 --فقط فرآیندهای تعریف شده برای آن کاربر در فرم ورود اطلاعات پایه درخواست پشتیبانی سامانه سجاد 
 create PROCEDURE [dbo].[Sp_Cu_GetMainSubject_frm41606] @UserId INT   
@@ -494,43 +535,6 @@ END;
 
 go
 
-ALTER PROCEDURE [dbo].[Sp_Cu_Select_Tbl_Cu_Base_SaoReadyAnswer]
-    @MainSubjectID AS INT,
-    --@WFID AS BIGINT,  -- آپدیت
-	@userID int   -- آپدیت
-	
-AS     
-BEGIN
-    --DECLARE @WorkflowId AS INT;
-    --SELECT @WorkflowId = MainSubjectID
-    --FROM [dbo].[Tbl_CU_QuestionAnswer]
-    --WHERE WFID = @WFID
-    --ORDER BY Id DESC;
-    --IF ISNULL(@WorkflowId, -1) != -1
-    --    SET @MainSubjectID = @WorkflowId; 
-	
-	select   --آپدیت
-		PremadeResponses_ID, RequestType, Response
-	from
-		sp_cu_PremadeResponses	
-	where
-		MainsubjectID = @MainSubjectID
-		and userID = @userID
-		and [status] = 1
-
-    --SELECT ReadSaoAnswerID,
-    --       Title,
-    --       Answer
-    --FROM Tbl_Cu_Base_SaoReadyAnswer
-    --WHERE MainSubjectID = @MainSubjectID
-    --      AND Statuss = 1;
-END;
----exec Sp_Cu_Select_Tbl_Cu_Base_SaoReadyAnswer @MainSubjectID=N'42'
-
-
-
-go
-
 
 ---- add IT expert
 create PROCEDURE [dbo].[Sp_cu_Select_ITExpert_SaoSupport]
@@ -570,6 +574,9 @@ BEGIN
 if @UserID in  (
 					select isnull(ExpertID,0) as SupportUserID 
 					from Tbl_Cu_Base_ExpertWF_SaoSupport
+					union
+					select isnull(ITExpertID,0) as SupportUserID 
+					from Tbl_Cu_Base_ExpertWF_SaoSupport
 				)
 	select cast(1 as bit) res
 else
@@ -580,8 +587,6 @@ END;
 
 go
 --------------------------------
-
-
 create proc sp_cu_chkSendToTazarvMandatoryFRM21041 
 	@cmbResultInfo int,
 	@rbnSendResultInfo bit,
@@ -592,6 +597,9 @@ begin
 	declare @chkSendToTazarvForSupport bit
 	if @UserID in  (
 					select isnull(ExpertID,0) as SupportUserID 
+					from Tbl_Cu_Base_ExpertWF_SaoSupport
+					union
+					select isnull(ITExpertID,0) as SupportUserID 
 					from Tbl_Cu_Base_ExpertWF_SaoSupport
 					)
 		set @chkSendToTazarvForSupport = 1
@@ -744,27 +752,29 @@ END
 go
 
 create proc sp_cu_NoUniForCertainMainSubjects_frm21041
-@MainSubject int
+@MainSubject int,
+@User int
 as
 begin
 	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
+		--and @User not in(select UserId from users.TblUsersGroups where GroupId=852)
 		select cast(1 as bit) res
 	else
 		select cast(0 as bit) res
 end
 
-go 
+--go 
 
-create proc sp_cu_IsCertainInstitude
-@wfid int
-as
-begin
-	declare @institudeID int = (select top 1 InstitudeID from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc)
-	if @institudeID in(3,2,1,9)
-		select cast(1 as bit) IsCertainInstitude
-	else
-		select cast(0 as bit) IsCertainInstitude
-end
+--create proc sp_cu_IsCertainInstitude
+--@wfid int
+--as
+--begin
+--	declare @institudeID int = (select top 1 InstitudeID from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc)
+--	if @institudeID in(3,2,1,9)
+--		select cast(1 as bit) IsCertainInstitude
+--	else
+--		select cast(0 as bit) IsCertainInstitude
+--end
 
 go
 

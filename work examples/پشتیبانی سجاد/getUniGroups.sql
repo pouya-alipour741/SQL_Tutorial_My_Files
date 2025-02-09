@@ -54,8 +54,168 @@ BEGIN
   --select userID as ExpertID from users.TblUsers where UserName='al_'+cast(@UniversityCode as nvarchar(50))
 END;
 
+---------تاييد مدارک دانشگاهي جهت ترجمه رسمي
+create PROCEDURE [dbo].[Sp_Cu_Select_Group_ForUni_VerificationDocuments_New_Support] --2020,1748447  
+    @UniID AS INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @GroupID AS BIGINT;
+    DECLARE @UniTypeID AS INT,
+            @ProvinceID AS INT;
+
+    BEGIN
+
+        SELECT @UniTypeID = InstituteID,
+               @ProvinceID = ProvinceID
+        FROM dbo.Tbl_CU_University
+        WHERE UniversityID = @UniID;
+
+        PRINT @UniTypeID;
+        PRINT @ProvinceID;
+
+        if @uniid=2944
+		SET @GroupID = 39547;
+
+        ELSE IF @UniID in( 3036,15,1859,1873)--پیام نور
+                AND @UniTypeID = 2
+            SET @GroupID = 26753;
+
+      ELSE IF @UniID = 1858----موسسه غیرانتفاعی کیش
+                AND @UniTypeID = 7
+            SET @GroupID = 26864;---دانشگاه صنعتي شريف - تهران_تایید مدرک دانشجویان داخل
+
+
+        ELSE IF @UniID = 2036
+               -- OR @UniTypeID = 7
+            SET @GroupID = 36620;
+
+        --*****************  استثنا آقای محمدی
+		else if @uniid=3001
+		set @GroupID=877
+		--=================
+		  --*****************  استثنا آقای موذنی
+		else if @uniid=2017
+		set @GroupID=36621
+		--=================
+        --ELSE
+        --    IF @UniID = 2961
+        --        SET @GroupID = CAST(36614 AS BIGINT); 
+
+        ELSE IF @UniTypeID = 1
+            SET @GroupID = 36753;
+
+        ELSE IF @ProvinceID = 8
+                AND @UniTypeID = 3
+        BEGIN
+            IF EXISTS
+            (
+                SELECT *
+                FROM dbo.Tbl_CU_University
+                WHERE UniversityID = @UniID
+                      AND ISNULL(IsWestTehran, 0) = 1
+            )
+                SET @GroupID = CAST(36613 AS BIGINT);
+            ELSE IF EXISTS
+            (
+                SELECT *
+                FROM dbo.Tbl_CU_University
+                WHERE UniversityID = @UniID
+                      AND ISNULL(IsEastTehran, 0) = 1
+            )
+                SET @GroupID = CAST(36614 AS BIGINT);
+            ELSE
+                SET @GroupID = CAST(35481 AS BIGINT);
+        END;
+        ELSE IF @ProvinceID <> 8
+                AND @UniTypeID = 3
+        BEGIN
+            SET @GroupID = ISNULL(
+                           (
+                               SELECT TOP 1
+                                   GroupId
+                               FROM Users.TblUsersGroups
+                               WHERE UserId =
+                               (
+                                   SELECT TOP 1
+                                       UserId
+                                   FROM Users.TblUsers
+                                   WHERE UserName = ('DV_uast' +
+                                                     (
+                                                         SELECT TOP 1
+                                                             CAST(UniProvinceCode AS NVARCHAR(20))
+                                                         FROM dbo.Tbl_Cu_UniversityProvince
+                                                         WHERE UniProvinceID = @ProvinceID
+                                                     )
+                                                    )
+                               )
+                               ORDER BY GroupId DESC
+                           ),
+                           0
+                                 );
+        END;
+        ELSE IF @ProvinceID <> 8
+                AND @UniTypeID = 2
+        BEGIN
+            SET @GroupID = ISNULL(
+                           (
+                               SELECT TOP 1
+                                   GroupId
+                               FROM Users.TblUsersGroups
+                               WHERE UserId =
+                               (
+                                   SELECT TOP 1
+                                       UserId
+                                   FROM Users.TblUsers
+                                   WHERE UserName = ('DV_PNU' +
+                                                     (
+                                                         SELECT TOP 1
+                                                             CAST(UniProvinceCode AS NVARCHAR(20))
+                                                         FROM dbo.Tbl_Cu_UniversityProvince
+                                                         WHERE UniProvinceID = @ProvinceID
+                                                     )
+                                                    )
+                               )
+                               ORDER BY GroupId DESC
+                           ),
+                           0
+                                 );
+        END;
+		else if @UniTypeID=10
+            SET @GroupID = ISNULL(
+                           (
+                               SELECT TOP 1
+                                   VerificationDocumentsGroupID
+                               FROM dbo.Tbl_Cu_UniversityGroupDiploma
+                               WHERE UniversityID = @UniID
+                           ),
+                           873
+                                 )
+        ELSE 
+		begin
+		print 'else' 
+            SET @GroupID = ISNULL(
+                           (
+                               SELECT TOP 1
+                                   VerificationDocumentsGroupID
+                               FROM dbo.Tbl_Cu_UniversityGroupDiploma
+                               WHERE UniversityID = @UniID
+                           ),
+                           0
+                                 )
+     end 								 ;
+    END;
+    PRINT @GroupID;
+    IF @GroupID <= 0
+        SELECT CAST(35481 AS BIGINT) AS GroupID;
+    ELSE
+        SELECT @GroupID AS GroupID;
+END;
+
+
+
 ---فرآیند لغو تعهد آموزش رايگان
-create PROCEDURE [dbo].[Sp_Cu_Get_Group_ForUni_CommitmentCancellationGroup_Support]  ----------------------------------
+create PROCEDURE [dbo].[Sp_Cu_Get_Group_ForUni_CommitmentCancellationGroup_Support]  
     @UniID AS BIGINT,
 	@group int output
 AS
@@ -72,110 +232,38 @@ AS
         PRINT @UniID
         IF @UniID NOT IN ( 170, 218, 226, 228, 232 )
             BEGIN
-                DECLARE @GroupID AS BIGINT
-                SET @GroupID = ISNULL(( SELECT TOP 1   
-                                                CommitmentCancellationGroup
-                                        FROM    dbo.Tbl_Cu_UniversityGroupDiploma
-                                        WHERE   UniversityID = @UniID
-                                      ), 680)
-                SELECT  @GroupID AS GroupID
+				select
+					top 1 @group = isnull(CommitmentCancellationGroup, 680)
+					FROM    dbo.Tbl_Cu_UniversityGroupDiploma
+					WHERE   UniversityID = @UniID
+                --DECLARE @GroupID AS BIGINT
+                --SET @GroupID = ISNULL(( SELECT TOP 1   
+                --                                CommitmentCancellationGroup
+                --                        FROM    dbo.Tbl_Cu_UniversityGroupDiploma
+                --                        WHERE   UniversityID = @UniID
+                --                      ), 680)
+                --SELECT  @GroupID AS GroupID
             END
         ELSE
             BEGIN
-
-                SET @GroupID = ISNULL(( SELECT TOP 1  
-                                                GroupID
-                                        FROM    dbo.Tbl_Cu_UniversityGroupDiploma
-                                        WHERE   UniversityID = @UniID
-                                      ), 680)
-                SELECT @GroupID AS GroupID
+				select
+					top 1 @group =  isnull(GroupID, 680)
+					FROM    dbo.Tbl_Cu_UniversityGroupDiploma
+					WHERE   UniversityID = @UniID
+                --SET @GroupID = ISNULL(( SELECT TOP 1  
+                --                                GroupID
+                --                        FROM    dbo.Tbl_Cu_UniversityGroupDiploma
+                --                        WHERE   UniversityID = @UniID
+                --                      ), 680)
+                --SELECT @GroupID AS GroupID
             END
        
     END
 ------------------فرصت تحقيقاتي دانشجويان دکتري
+Sp_Cu_Select_Group_ForUn_Forsat_Support
 
-create PROCEDURE [dbo].[Sp_Cu_Select_Group_ForUn_Forsat_Support] --260631   ----------------------------------
-    @PortalUserID AS BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    DECLARE @GroupID AS BIGINT,
-            @GroupID_Financial AS BIGINT,
-            @UniID AS INT,
-            @UniKind AS INT;
-
-    SET @UniKind =
-    (
-        SELECT TOP 1
-            UniversityTypeID
-        FROM dbo.Tbl_Cu_ApplierEducation
-        WHERE UserPortalID = @PortalUserID
-              AND EduGradeID IN ( 4, 5, 9 )
-              AND EducationStatusID = 1
-              AND InSideCountry = 1
-              AND [UniversityTypeID] != 4
-        ORDER BY ApplierEducationID DESC
-    );
-    PRINT @UniKind;
-    PRINT @PortalUserID;
-    IF @UniKind <> 2
-    BEGIN
-        SET @UniID =
-        (
-            SELECT TOP 1
-                UniversityID
-            FROM dbo.Tbl_Cu_ApplierEducation
-            WHERE UserPortalID = @PortalUserID
-                  AND EduGradeID IN ( 4, 5, 9 )
-                  AND EducationStatusID = 1
-                  AND InSideCountry = 1
-                  AND [UniversityTypeID] != 4
-            ORDER BY ApplierEducationID DESC
-        );
-        PRINT @UniID;
-        SET @GroupID = ISNULL(
-                       (
-                           SELECT TOP 1
-                               DoctoraResearchOppExpertGroupID
-                           FROM dbo.Tbl_Cu_UniversityGroupDiploma
-                           WHERE UniversityID = @UniID
-                       ),
-                       0
-                             );
-        SET @GroupID_Financial = ISNULL(
-                                 (
-                                     SELECT TOP 1
-                                         DoctoraResearchOppExpertGroupID_Financial
-                                     FROM dbo.Tbl_Cu_UniversityGroupDiploma
-                                     WHERE UniversityID = @UniID
-                                 ),
-                                 0
-                                       );
-
-        PRINT @GroupID;
-    END;
-
-
-    ELSE
-    BEGIN
-	print 'پشتیبانی'
-        SET @GroupID = 35481;
-        SET @GroupID_Financial = 35481;
-
-    END;
-    IF NOT EXISTS
-    (
-        SELECT TOP 1
-            GroupId
-        FROM Users.TblUsersGroups
-        WHERE GroupId = @GroupID
-    )
-        SELECT CAST(680 AS BIGINT) AS GroupID,
-               CAST(680 AS BIGINT) AS GroupID_Financial;
-    ELSE
-        SELECT @GroupID AS GroupID,
-               @GroupID_Financial AS GroupID_Financial;
-END;
+------تسويه فرصت تحقيقاتي دانشجويان دکتري
+Sp_Cu_Select_Group_ForExpert_Forsat
 
 
 -----------------کميسيون موارد خاص دانشجويان داخل
@@ -246,10 +334,10 @@ AS
 							 WHEN @DestinationUniversityID_1 = 225 
 				             THEN CAST(1062 AS BIGINT)
 							 WHEN ISNULL(@DestinationUniversityID_1, 0) != 0
-                             THEN isnull( ( SELECT TOP 1
-                                            TransmissionAndGuestGroupID 
-                                    FROM    dbo.Tbl_Cu_UniversityGroupDiploma
-                                    WHERE   UniversityID = @DestinationUniversityID_1
+                             --THEN isnull( ( SELECT TOP 1
+                             --               TransmissionAndGuestGroupID 
+                             --       FROM    dbo.Tbl_Cu_UniversityGroupDiploma
+                             --       WHERE   UniversityID = @DestinationUniversityID_1
                                   ),680 )
                              WHEN ISNULL(@DocShariyati1, 0) != 0
                              THEN isnull(( SELECT TOP 1
@@ -270,10 +358,10 @@ AS
                                     WHERE   UniversityID = @DestinationUniversityID_2
                                   ),680)
                              WHEN ISNULL(@DocShariyati2, 0) != 0
-                             THEN isnull ( ( SELECT TOP 1
-                                           TransmissionAndGuestGroupID 
-                                    FROM    dbo.Tbl_Cu_UniversityGroupDiploma
-                                    WHERE   UniversityID = @DocShariyati2
+                             --THEN isnull ( ( SELECT TOP 1
+                             --              TransmissionAndGuestGroupID 
+                             --       FROM    dbo.Tbl_Cu_UniversityGroupDiploma
+                             --       WHERE   UniversityID = @DocShariyati2
                                   ),680)
                              ELSE 680
                         END AS DestinationUniversityID_2 ,----------------------------------------------
@@ -289,36 +377,12 @@ AS
 
 
 ---فرآيند کارنامه سلامت جسم دانشجويان
-select  top 1 fphUniversityName
-from [dbo].[Tbl_CU_HealthBodyAssessmentForEntranceStudents_LOG]
-where wfid=@WorkflowInstanceId
+Sp_Cu_Select_Group_ForBodyHealth
+
 
 
 ----کارنامه سلامت روان دانشجويان
-ALTER PROCEDURE [dbo].[Sp_Cu_GetUniversityID_MentalHealth]
-    @WFID AS BIGINT ,
-    @PortalLogID AS BIGINT
-AS
-    BEGIN
-        SET NOCOUNT ON;
-        IF ISNULL(@PortalLogID, 0) <= 1
-            SELECT  0 AS UniversityID
-        ELSE
-            BEGIN	
-                DECLARE @jSon AS NVARCHAR(MAX) = '';
-                SET @jSon = dbo.FN_CU_GetJsonForPortalLogID(@PortalLogID);   
-                IF @jSon = ''
-                    RETURN;
-
-                PRINT @jSon;
-                CREATE TABLE #tb_MentalHealthUniversityID ( Tazarv_ID INT );
-                EXEC dbo.Sp_GenerateJsonTable '#tb_MentalHealthUniversityID',
-                    @jSon;
-                SELECT  CAST(fmhUniversityName AS INT) AS UniversityID
-                FROM    #tb_MentalHealthUniversityID
-                DROP TABLE #tb_MentalHealthUniversityID
-            END
-    END 
+Sp_Cu_Select_Group_ForMentalHealth
 
 
 ---فرآيند دانشجويان سرآمد
