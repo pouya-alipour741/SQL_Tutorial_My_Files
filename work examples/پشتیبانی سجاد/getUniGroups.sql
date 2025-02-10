@@ -8,14 +8,6 @@ BEGIN
       DECLARE @ExpertID AS BIGINT,
             @GroupID AS BIGINT;
 
-    --DECLARE @UniID AS BIGINT = (
-    --                                    SELECT TOP 1
-    --                                        reqUniIDGetCC
-    --                                    FROM Tbl_Cu_StudentGetCertificateCode_Log X
-    --                                   WHERE X.WFID = @WFID
-				--					   order by StudentGetCertificateCodeID desc
-    --                                )
-				--					print @UniID
     DECLARE @ProvinceCode AS BIGINT 
 	 DECLARE @UniversityCode AS BIGINT
 	
