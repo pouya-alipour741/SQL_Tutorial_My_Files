@@ -967,6 +967,20 @@ begin
 		select cast(0 as bit) res
 end
 
+
+--alter proc sp_cu_NoUniForCertainMainSubjects_frm21041
+--@WFID int,
+--@MainSubject int,
+--@User int
+--as
+--begin
+--	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
+--		and (select top 1 ActivityID  from task.activityInstance a where a.wokflowinstanceID = @WFID order by ActivityID desc) != 498234982
+--		select cast(1 as bit) res
+--	else
+--		select cast(0 as bit) res
+--end
+
 --go 
 
 --create proc sp_cu_IsCertainInstitude
