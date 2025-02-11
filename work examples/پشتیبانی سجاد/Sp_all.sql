@@ -1,4 +1,13 @@
-﻿
+﻿alter table  Tbl_CU_QuestionAnswer
+add UserChosenFollowupCode nvarchar(10)
+
+alter table Tbl_CU_QuestionRefer
+add InstituteID int, UniversityID int, SendToTazarv bit 
+
+alter table Tbl_Cu_Base_ExpertWF_SaoSupport
+add ITExpertID bigint  
+
+
 create PROCEDURE [dbo].[Sp_Cu_chkProblemTypeID_frm21041]
 @ProblemType int
 AS
@@ -125,33 +134,6 @@ END;
 go
 
 
---select * from users.TblProfiles
---where UserId =64505
-
---select top 1000 * from [Tbl_CU_QuestionAnswer]
---where wfid = 154
-
-
---alter proc sp_cu_chk_NoRepeatedReqestPerUser_frm21041  
---@userID int,
---@mainSubject int
---as
---begin
---	if exists(
---		select 1
---		from [Tbl_CU_QuestionAnswer] q		
---		join task.TblWorkflowInstance i on q.WFID = i.WorkflowInstanceID
---		where 
---			MainSubjectID = @mainSubject
---			and WorkflowInstanceStatusID = 1
---			and PortalUserID = @userID
---			)
---		begin
---			select cast(1 as bit) res
---		end
---	else
---		select cast(0 as bit) res
---end
 
 create proc sp_cu_chk_NoRepeatedReqestPerUser_frm21041  
 @userID int,
@@ -161,7 +143,7 @@ begin
 	if exists(
 		select 1
 		from [Tbl_CU_QuestionAnswer] q		
-		join Tbl_CU_QuestionRefer r on r.WFID = q.WFID
+		--join Tbl_CU_QuestionRefer r on r.WFID = q.WFID
 		where 
 			MainSubjectID = @mainSubject
 			and ISNULL(FinalDesc , '') = ''
@@ -189,7 +171,7 @@ go
 
 create proc Sp_Cu_Select_university_By_institudeID_FRM21041     
 @wfid bigint,
-@institudeID int  
+@instituteID int  
 as
 begin
 	declare @UniversityID int = (select top 1 UniversityID from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc)
@@ -197,12 +179,12 @@ begin
 	begin
 		SELECT UniversityID,UniversityName
 		FROM dbo.Tbl_CU_University
-		WHERE InstituteID = @institudeID and UniversityID not in(@UniversityID)
+		WHERE InstituteID = @instituteID and UniversityID not in(@UniversityID)
 	end
 	else
 		SELECT UniversityID,UniversityName
 		FROM dbo.Tbl_CU_University
-		WHERE InstituteID = @institudeID 
+		WHERE InstituteID = @instituteID 
 end
 
 go
@@ -212,10 +194,10 @@ go
 (در صورت انتخاب یکی از مقادیر علمی کاربردی ، پیام نور ، فرهنگیان و فنی و حرفه ای ، امکان انتخاب نام دانشگاه وجود نخواهد داشت .)     */
 
 create proc Sp_Cu_chkIfInCertainUniversities_FRM21041     
-@InstitudeID int,@UniReferral bit
+@InstituteID int,@UniReferral bit
 as
 begin
-	 if (@InstitudeID not in(3,2,1,9)
+	 if (@InstituteID not in(3,2,1,9)
 		and @UniReferral = 1)
 		select cast(1 as bit) res
 	 else
@@ -289,13 +271,11 @@ go
 
 create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]       													
 @chkIsInOwnCartable bit,
-@chkFollowUpCodeIfInRelatedWFID bit,
-@chkIsResponseFollowUp bit
+@chkFollowUpCodeIfInRelatedWFID bit
 as
 begin
 	if @chkFollowUpCodeIfInRelatedWFID = 1  --درخواست در کارتابل خود دانشجو نباشد و شماره پیگیری فرآیند مربوطه وجود داشته باشد
 		and @chkIsInOwnCartable = 0  
-		and @chkIsResponseFollowUp = 1
 		select cast(1 as bit) TrueEnableCheckbox	
 	else
 		select cast(0 as bit) TrueEnableCheckbox
@@ -843,17 +823,17 @@ begin
 		select cast(0 as bit) res
 end
 
-go
+--go
 
-create proc sp_cu_chkSendToTazarvMandatoryforITExpertFRM21041 
-@txtWFFollowUpCode nvarchar(10)
-as
-begin
-	if isnumeric(@txtWFFollowUpCode) = 0
-		select cast(1 as bit) res
-	else
-		select cast(0 as bit) res
-end
+--create proc sp_cu_chkIsFollowUpCodeNumeric_FRM21041 
+--@txtWFFollowUpCode nvarchar(10)
+--as
+--begin
+--	if isnumeric(@txtWFFollowUpCode) = 0
+--		select cast(1 as bit) res
+--	else
+--		select cast(0 as bit) res
+--end
 
 go
 
@@ -974,13 +954,14 @@ END
 
 go
 
-create proc sp_cu_NoUniForCertainMainSubjects_frm21041
+alter proc sp_cu_NoUniForCertainMainSubjects_frm21041
+@WFID int,
 @MainSubject int,
 @User int
 as
 begin
 	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
-		--and @User not in(select UserId from users.TblUsersGroups where GroupId=852)
+		and @WFID != -1
 		select cast(1 as bit) res
 	else
 		select cast(0 as bit) res
@@ -992,8 +973,8 @@ end
 --@wfid int
 --as
 --begin
---	declare @institudeID int = (select top 1 InstitudeID from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc)
---	if @institudeID in(3,2,1,9)
+--	declare @instituteID int = (select top 1 InstituteID from Tbl_CU_QuestionRefer where WFID = @wfid order by Id desc)
+--	if @instituteID in(3,2,1,9)
 --		select cast(1 as bit) IsCertainInstitude
 --	else
 --		select cast(0 as bit) IsCertainInstitude

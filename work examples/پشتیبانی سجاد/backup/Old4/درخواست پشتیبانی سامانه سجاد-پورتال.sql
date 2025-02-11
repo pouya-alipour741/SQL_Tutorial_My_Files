@@ -1,8 +1,8 @@
  SET IDENTITY_INSERT Workflow.TblWorkflow ON 
 GO
  IF NOT EXISTS (SELECT * FROM Workflow.TblWorkflow WHERE WorkflowId = 2000579) 
- INSERT INTO Workflow.TblWorkflow(WorkflowId,Name,IsActive,IsInternal,IsStartByCall,Description,Icon,Resource,IsPublished,WorkflowAdmin,IsOptional,CanReturn,IsSubWorkflow,GUID,LastModifiedDate,WorkflowAdminGroupId,WorkflowAdminRoleId,AnonymousAccess ) VALUES (2000579, N'درخواست پشتیبانی سامانه سجاد-پورتال',1,0,0, N'',NULL,NULL,1,NULL,1,1,0,'ec6e25db-23e9-418c-92fe-422aa85e651d', '1403/11/23 11:54:50', NULL,NULL,1) 
- ELSE UPDATE Workflow.TblWorkflow SET Name = N'درخواست پشتیبانی سامانه سجاد-پورتال',IsActive = 1,IsInternal = 0,IsStartByCall = 0,Description = N'',Icon = NULL , Resource = NULL , IsPublished = 1,WorkflowAdmin = NULL , IsOptional = 1,CanReturn = 1,IsSubWorkflow = 0,GUID = 'ec6e25db-23e9-418c-92fe-422aa85e651d', LastModifiedDate = '1403/11/23 11:54:50', WorkflowAdminGroupId = NULL , WorkflowAdminRoleId = NULL , AnonymousAccess = 1 WHERE WorkflowId = 2000579
+ INSERT INTO Workflow.TblWorkflow(WorkflowId,Name,IsActive,IsInternal,IsStartByCall,Description,Icon,Resource,IsPublished,WorkflowAdmin,IsOptional,CanReturn,IsSubWorkflow,GUID,LastModifiedDate,WorkflowAdminGroupId,WorkflowAdminRoleId,AnonymousAccess ) VALUES (2000579, N'درخواست پشتیبانی سامانه سجاد-پورتال',1,0,0, N'',NULL,NULL,1,NULL,1,1,0,'ec6e25db-23e9-418c-92fe-422aa85e651d', '1403/11/10 14:12:08', NULL,NULL,1) 
+ ELSE UPDATE Workflow.TblWorkflow SET Name = N'درخواست پشتیبانی سامانه سجاد-پورتال',IsActive = 1,IsInternal = 0,IsStartByCall = 0,Description = N'',Icon = NULL , Resource = NULL , IsPublished = 1,WorkflowAdmin = NULL , IsOptional = 1,CanReturn = 1,IsSubWorkflow = 0,GUID = 'ec6e25db-23e9-418c-92fe-422aa85e651d', LastModifiedDate = '1403/11/10 14:12:08', WorkflowAdminGroupId = NULL , WorkflowAdminRoleId = NULL , AnonymousAccess = 1 WHERE WorkflowId = 2000579
 GO
 ----------
  SET IDENTITY_INSERT Workflow.TblWorkflow OFF 
@@ -36,7 +36,7 @@ GO
       <ConnectionNumber>1</ConnectionNumber>
       <ConnectionOrientation>None</ConnectionOrientation>
       <IsFirstActivity>false</IsFirstActivity>
-      <Content>&lt;TZUCStartActivity DesignerItemStatuseStatus="None" SmallImage="{assembly:Null}" OverSmallImage="{assembly:Null}" xmlns="clr-namespace:ITS.Workflow.Activities;assembly=ITS.Workflow.Activities" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:av="http://schemas.microsoft.com/winfx/2006/xaml/presentation"&gt;&lt;av:Grid Width="100" Height="70"&gt;&lt;av:Grid /&gt;&lt;/av:Grid&gt;&lt;/TZUCStartActivity&gt;</Content>
+      <Content>&lt;TZUCStartActivity DesignerItemStatuseStatus="None" SmallImage="{x:Null}" OverSmallImage="{x:Null}" xmlns="clr-namespace:ITS.Workflow.Activities;assembly=ITS.Workflow.Activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:av="http://schemas.microsoft.com/winfx/2006/xaml/presentation"&gt;&lt;av:Grid Width="100" Height="70"&gt;&lt;av:Grid /&gt;&lt;/av:Grid&gt;&lt;/TZUCStartActivity&gt;</Content>
       <DataContext>&lt;TZStartActivity Value="-1☼4827913538206183691" Description="" ID="4652411545724252904" Title="" BusinessActivity="" xmlns="clr-namespace:ITS.Workflow.Activities;assembly=ITS.Workflow.Activities" /&gt;</DataContext>
     </DesignerItem>
     <DesignerItem>
@@ -154,15 +154,19 @@ GO
     &lt;FormId&gt;31548&lt;/FormId&gt;
   &lt;/Validation&gt;
   &lt;Validation&gt;
-    &lt;ValidationId&gt;5399638861972903409&lt;/ValidationId&gt;
-    &lt;FormId&gt;31548&lt;/FormId&gt;
-  &lt;/Validation&gt;
-  &lt;Validation&gt;
     &lt;ValidationId&gt;4730218701630974631&lt;/ValidationId&gt;
     &lt;FormId&gt;31548&lt;/FormId&gt;
   &lt;/Validation&gt;
   &lt;Validation&gt;
     &lt;ValidationId&gt;5664613290973684370&lt;/ValidationId&gt;
+    &lt;FormId&gt;31548&lt;/FormId&gt;
+  &lt;/Validation&gt;
+  &lt;Validation&gt;
+    &lt;ValidationId&gt;5399638861972903409&lt;/ValidationId&gt;
+    &lt;FormId&gt;31548&lt;/FormId&gt;
+  &lt;/Validation&gt;
+  &lt;Validation&gt;
+    &lt;ValidationId&gt;5523724959094556207&lt;/ValidationId&gt;
     &lt;FormId&gt;31548&lt;/FormId&gt;
   &lt;/Validation&gt;
 &lt;/DataGridValidations&gt;</Validation>
@@ -252,8 +256,8 @@ GO
       <ID>31548</ID>
     </Form>
   </Forms>
-</Workflow>','1403/11/23 11:54:51',  N'<BPMS_Workflow>
-  <GUID>ff0958a0-4f4a-4a02-a271-d1f45a173de0</GUID>
+</Workflow>','1403/11/10 14:12:09',  N'<BPMS_Workflow>
+  <GUID>dd4e23eb-9374-4959-ab80-5b2ba41be3b2</GUID>
   <BPMS_WorkflowId>-1</BPMS_WorkflowId>
   <BPMS_WorkflowName />
   <IsOptional>false</IsOptional>
@@ -273,8 +277,8 @@ GO
  SET IDENTITY_INSERT Workflow.TblParameterComponent ON 
 GO
  IF NOT EXISTS (SELECT * FROM Workflow.TblParameterComponent WHERE  ParameterId = 5378563347654705495 AND WorkflowId = 2000579 AND ComponentId = 4685558585417077630 AND FormId = 31548 ) 
- INSERT INTO Workflow.TblParameterComponent(ParameterComponenetId,ParameterId,WorkflowId,ComponentId,FormId ) VALUES (200357336,5378563347654705495,2000579,4685558585417077630,31548) 
- ELSE UPDATE Workflow.TblParameterComponent SET ParameterId = 5378563347654705495,WorkflowId = 2000579,ComponentId = 4685558585417077630,FormId = 31548 WHERE ParameterComponenetId = 200357336
+ INSERT INTO Workflow.TblParameterComponent(ParameterComponenetId,ParameterId,WorkflowId,ComponentId,FormId ) VALUES (200353949,5378563347654705495,2000579,4685558585417077630,31548) 
+ ELSE UPDATE Workflow.TblParameterComponent SET ParameterId = 5378563347654705495,WorkflowId = 2000579,ComponentId = 4685558585417077630,FormId = 31548 WHERE ParameterComponenetId = 200353949
 GO
 ----------
  SET IDENTITY_INSERT Workflow.TblParameterComponent OFF 
@@ -318,8 +322,8 @@ GO
  SET IDENTITY_INSERT Workflow.TblActivityAccessPermission ON 
 GO
  IF NOT EXISTS (SELECT * FROM Workflow.TblActivityAccessPermission WHERE  WorkflowId = 2000579 AND PermissionId = 4852109228624382393 AND UserId = 1 AND ISNULL(RoleId,'') = '' AND ISNULL(GroupId,'') = '' AND ISNULL(ParameterId,'') = '' AND IsAssignToAll = 0 AND IsStartActivityAccessPermission = 1 AND Kind = 0 AND Version = N'5' AND ISNULL(IsPublished , '0') = '0'  ) 
- INSERT INTO Workflow.TblActivityAccessPermission(ActivityAccessPermissionId,WorkflowId,PermissionId,UserId,RoleId,GroupId,ParameterId,IsAssignToAll,IsStartActivityAccessPermission,Kind,Version,IsPublished ) VALUES (200243836,2000579,4852109228624382393,1,NULL,NULL,NULL,0,1,0, N'5',NULL) 
- ELSE UPDATE Workflow.TblActivityAccessPermission SET WorkflowId = 2000579,PermissionId = 4852109228624382393,UserId = 1,RoleId = NULL , GroupId = NULL , ParameterId = NULL , IsAssignToAll = 0,IsStartActivityAccessPermission = 1,Kind = 0,Version = N'5',IsPublished = NULL WHERE ActivityAccessPermissionId = 200243836
+ INSERT INTO Workflow.TblActivityAccessPermission(ActivityAccessPermissionId,WorkflowId,PermissionId,UserId,RoleId,GroupId,ParameterId,IsAssignToAll,IsStartActivityAccessPermission,Kind,Version,IsPublished ) VALUES (200242627,2000579,4852109228624382393,1,NULL,NULL,NULL,0,1,0, N'5',NULL) 
+ ELSE UPDATE Workflow.TblActivityAccessPermission SET WorkflowId = 2000579,PermissionId = 4852109228624382393,UserId = 1,RoleId = NULL , GroupId = NULL , ParameterId = NULL , IsAssignToAll = 0,IsStartActivityAccessPermission = 1,Kind = 0,Version = N'5',IsPublished = NULL WHERE ActivityAccessPermissionId = 200242627
 GO
 ----------
  SET IDENTITY_INSERT Workflow.TblActivityAccessPermission OFF 
