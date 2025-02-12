@@ -2,7 +2,7 @@
 add UserChosenFollowupCode nvarchar(10)
 
 alter table Tbl_CU_QuestionRefer
-add InstituteID int, UniversityID int, SendToTazarv bit 
+add InstituteID int, UniversityID int, SendToTazarv bit , UniversityUserID int
 
 alter table Tbl_Cu_Base_ExpertWF_SaoSupport
 add ITExpertID bigint  
@@ -271,11 +271,13 @@ go
 
 create proc [dbo].[sp_cu_IfNotInOwnCartableAndIfRelated_frm31548]       													
 @chkIsInOwnCartable bit,
-@chkFollowUpCodeIfInRelatedWFID bit
+@chkFollowUpCodeIfInRelatedWFID bit,
+@chkIsResponseFollowUp bit
 as
 begin
-	if @chkFollowUpCodeIfInRelatedWFID = 1  --درخواست در کارتابل خود دانشجو نباشد و شماره پیگیری فرآیند مربوطه وجود داشته باشد
-		and @chkIsInOwnCartable = 0  
+	if @chkFollowUpCodeIfInRelatedWFID = 1  --  شماره پیگیری فرآیند مربوطه وجود داشته باشد
+		and @chkIsInOwnCartable = 0    --درخواست در کارتابل خود دانشجو نباشد
+		and @chkIsResponseFollowUp = 1   --فقط برای گزینه پیگیری پاسخ روشن شود
 		select cast(1 as bit) TrueEnableCheckbox	
 	else
 		select cast(0 as bit) TrueEnableCheckbox
@@ -533,7 +535,7 @@ ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]
 	@cmbMainSubject int
 AS
 BEGIN
-    DECLARE @GROUPID AS BIGINT;
+    DECLARE @GROUPID AS BIGINT, @USERID bigint
 
     IF (@rbnDesiredOffice = 1)
     BEGIN
@@ -570,7 +572,7 @@ BEGIN
 			end
 		else
 			begin
-				if @cmbMainSubject = 154   --گروه های تعریف شده در فرآیند لغو تعهد
+				if @cmbMainSubject = 42   --گروه های تعریف شده در فرآیند لغو تعهد قدیمی
 					begin
 						set @GROUPID =          
 							( 
@@ -587,7 +589,7 @@ BEGIN
 						--SELECT @GROUPID AS GROUPID
 					end
 
-				else if @cmbMainSubject = 154
+				else if @cmbMainSubject = 154     --گروه های تعریف شده در فرآیند لغو تعهد جدید
 					begin
 						exec Sp_Cu_Get_Group_ForUni_CommitmentCancellationGroup_Support @cmbUniversity,@GROUPID output
 						--SELECT @GROUPID AS GROUPID
@@ -652,10 +654,13 @@ BEGIN
 						exec Sp_Cu_Select_Group_ForMentalHealth @cmbUniversity
 						set @GROUPID = (select GroupID from @temp2)
 					end
+				else if @cmbMainSubject = 2000573  --فرآیند همیار دانشجو
+					set @USERID = (select UserId from  users.TblUsers
+					where UserName like '%' + 'hamyar_' + cast((select UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
 			end
 
     END
-	SELECT @GROUPID AS GROUPID
+	SELECT @GROUPID AS GROUPID, @USERID as USERID
 
 END;
 
@@ -954,20 +959,6 @@ END
 
 go
 
-alter proc sp_cu_NoUniForCertainMainSubjects_frm21041
-@WFID int,
-@MainSubject int,
-@User int
-as
-begin
-	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
-		and @WFID != -1
-		select cast(1 as bit) res
-	else
-		select cast(0 as bit) res
-end
-
-
 --alter proc sp_cu_NoUniForCertainMainSubjects_frm21041
 --@WFID int,
 --@MainSubject int,
@@ -975,11 +966,26 @@ end
 --as
 --begin
 --	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
---		and (select top 1 ActivityID  from task.activityInstance a where a.wokflowinstanceID = @WFID and a.ActivityType = 'TZHumanActivity' order by ActivityID desc) != 498234982
+--		and @WFID != -1
 --		select cast(1 as bit) res
 --	else
 --		select cast(0 as bit) res
 --end
+
+
+create proc sp_cu_NoUniForCertainMainSubjects_frm21041
+@WFID int,
+@MainSubject int,
+@User int
+as
+begin
+	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
+		and (select top 1 ActivityID  from task.TblWorkflowActivityInstance a
+		where a.wokflowinstanceID = @WFID and a.ActivityType = 'TZHumanActivity' order by ActivityID) != 5753723988987375715  --فرم درخواست پشتیبانی سامانه سجاد
+		select cast(1 as bit) res
+	else
+		select cast(0 as bit) res
+end
 
 --go 
 
@@ -1018,3 +1024,17 @@ end
 
 go
 
+
+create PROCEDURE [dbo].[SP_CU_GetGroupOrUserName_QuestionRefer]
+@WFID AS BIGINT
+AS
+    BEGIN
+
+        SELECT TOP 1
+                GroupID, UniversityUserID
+        FROM    dbo.Tbl_CU_QuestionRefer
+        WHERE   WFID = @WFID
+        ORDER BY Id DESC
+
+
+    END
