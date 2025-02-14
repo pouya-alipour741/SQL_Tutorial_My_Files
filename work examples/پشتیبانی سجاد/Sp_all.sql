@@ -574,13 +574,14 @@ BEGIN
 			begin
 				if @cmbMainSubject = 42   --گروه های تعریف شده در فرآیند لغو تعهد قدیمی
 					begin
-						set @GROUPID =          
-							( 
-								select GroupID 
-								from Tbl_Cu_UniversityGroupDiploma    
-								where UniversityID = @cmbUniversity
-							)	
-						SELECT @GROUPID AS GROUPID
+						exec Sp_Cu_Get_Group_ForUni_CommitmentCancellationGroup_Support @cmbUniversity,@GROUPID output
+						--set @GROUPID =          
+						--	( 
+						--		select GroupID 
+						--		from Tbl_Cu_UniversityGroupDiploma    
+						--		where UniversityID = @cmbUniversity
+						--	)	
+						--SELECT @GROUPID AS GROUPID
 					end
 								
 				else if @cmbMainSubject = 2000569
@@ -771,7 +772,7 @@ BEGIN
 
 END;
 
-go
+go 
 
 --چکباکس "ارسال به تذرو" ، فقط برای پشتیبان های سامانه قابل مشاهده و انتخاب است
 create PROCEDURE [dbo].[Sp_Cu_chkSendToTazarv_frm21041]
