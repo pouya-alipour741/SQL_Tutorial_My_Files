@@ -39,6 +39,34 @@ with cte as (
 --and dbo.MiladiToShamsi(CreateDate) < '1403/09/09' and WorkflowInstanceStatusID != 2)
 	
 
+--update
+update
+	Tbl_CU_QuestionAnswer
+set
+	StatusID = 1920
+where
+	RegDate <= 1403/09/09
+	and ISNULL(FinalDesc, '') = ''
+
+
+with cte as(
+	select
+		*
+	from 
+		task.TblWorkflowInstance i 
+		join Tbl_CU_QuestionAnswer q on q.WFID = i.WorkflowInstanceID
+	where
+		ISNULL(FinalDesc, '') = ''
+		and RegisteredDate <= '1403/09/09'
+	)
+	update
+		task.TblWorkflowInstance
+	set
+		WorkflowInstanceStatusID = 3
+	from cte
+	where
+		cte.WFID = task.TblWorkflowInstance.WorkflowInstanceID
+
 
 
 
