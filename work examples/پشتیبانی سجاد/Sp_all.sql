@@ -142,12 +142,13 @@ as
 begin
 	if exists(
 		select 1
-		from [Tbl_CU_QuestionAnswer] q		
-		--join Tbl_CU_QuestionRefer r on r.WFID = q.WFID
+			from [Tbl_CU_QuestionAnswer] q		
+			join task.TblWorkflowInstance i on i.WorkflowInstanceID = q.WFID
 		where 
 			MainSubjectID = @mainSubject
 			and ISNULL(FinalDesc , '') = ''
 			and PortalUserID = @userID
+			and WorkflowInstanceStatusID = 1
 			)
 		begin
 			select cast(1 as bit) res
