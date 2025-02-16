@@ -67,7 +67,7 @@ end
 go 
 
 
---جدول فرم مدیریت کاربران دانشگاه
+--جدول فرم مدیریت کاربران دانشگاه    --note:what if @GroupTypeID = -1
 create proc sp_cu_GetUserinfo_frm   ---rename
 @UserID int,
 @GroupTypeID int
@@ -175,10 +175,36 @@ create proc sp_cu_ChangePassTo_123_frm  --rename
 @User int
 as
 begin
-	select * from users.TblMemebrShips
+	declare @old_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
+
 	update users.TblMemebrShips
-	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='
+	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='  --password: 123
 	where UserId = @User
+
+	declare @new_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
+	select @old_password as old_password, @new_password as new_password
+end
+
+go
+
+create table tbl_cu_ChangePassTo_123
+(
+	UserID int,
+	old_password nvarchar(100),
+	new_password nvarchar(100)
+)
+
+go
+
+create proc sp_cu_ChangePassTo_123_log   --not done
+@UserID int,
+@old_password nvarchar(100),
+@new_password nvarchar(100)
+as
+begin
+	insert into tbl_cu_ChangePassTo_123
+	values(@UserID, @old_password, @new_password)
+
 end
 
 go
@@ -218,7 +244,8 @@ begin
 	update users.TblUsers
 	set 
 		UserName = @UserName
-	where UserId = @User
+	where
+		UserId = @User
 
 	update users.TblProfiles
 	set
@@ -237,8 +264,9 @@ begin
  end 
  
 
-create table Tbl_Cu_DefineNewUser_Log
+create table Tbl_Cu_DefineNewUser
 (
+	UserID int,
 	RegDate nvarchar(10),
 	RegTime nvarchar(5),
 	RegUser int,
@@ -251,8 +279,9 @@ create table Tbl_Cu_DefineNewUser_Log
 )
 
  --log
-create proc sp_cu_DisableUser
-@UserId int,
+create proc sp_cu_DefineNewUser_Log
+@primary_UserID int,
+@RegUser int,
 @UserTypeID int,
 @NationalCode int,
 @FullName nvarchar(50),
@@ -262,7 +291,7 @@ create proc sp_cu_DisableUser
 as
 begin
 	insert into Tbl_Cu_DefineNewUser_Log
-	(	
+	(	UserID,
 		RegDate,
 		RegTime,
 		RegUser,
@@ -274,9 +303,10 @@ begin
 		UnitName
 	)
 	select 
-		(dbo.miladitoshamsi(getdate())) RegDate,
-		cast(convert(time,getdate())as nvarchar(5)) RegTime,
-		@UserId,
+		@primary_UserID,
+		(dbo.miladitoshamsi(getdate())),
+		cast(convert(time,getdate())as nvarchar(5)),
+		@RegUser,
 		@UserTypeID,
 		@NationalCode,
 		@FullName,
