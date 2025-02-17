@@ -229,7 +229,8 @@ BEGIN
 			join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
 		where
 			a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
-			and a.ActivityType = 'TZHumanActivity'
+			--and a.ActivityType = 'TZHumanActivity'
+			and isnull(userid,0)<>2
 		order by
 			t.TaskID desc
 		
@@ -655,6 +656,11 @@ BEGIN
 						insert into @temp2
 						exec Sp_Cu_Select_Group_ForMentalHealth @cmbUniversity
 						set @GROUPID = (select GroupID from @temp2)
+					end
+				else if @cmbMainSubject = 2000578 --فرآیند دانشجویان سرآمد
+					begin
+						set @USERID = (select UserId from  users.TblUsers
+						where UserName like '%' + 'saramad_' + cast((select UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
 					end
 				else if @cmbMainSubject = 2000573  --فرآیند همیار دانشجو
 					set @USERID = (select UserId from  users.TblUsers
