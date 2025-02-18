@@ -1,4 +1,15 @@
-﻿
+﻿--exec sp_cu_GetUserinfo_frm41611 Admin_1091, 1
+
+
+--exec SP_CU_TemporaryResetPassword 'Admin_1091'
+
+--select * from users.TblUsers
+--where UserName = 'Admin_1091'
+
+--insert into
+--	form.TblSearchFormAccessPermission(FormId, UserId)
+--values
+--	(41611, 1)
 --exec SP_CU_TemporaryResetPassword '0059697326'
 --select * from users.TblUsers where userid=2058
 --select * from users.TblUsersGroups where GroupId=852
@@ -26,7 +37,8 @@
 دانشگاه فرهنگيان - پرديس آزادگان نير _کارنامه سلامت روان  chc1_6001
 */
 
-select * from Tbl_Cu_Base_GroupType_Symbol
+--select * from Tbl_Cu_Base_GroupType_Symbol
+
 create table Tbl_Cu_Base_GroupType_Symbol
 (
 	GroupTypeID int primary key identity(1,1),
@@ -53,7 +65,7 @@ values
 go
 
 --group type
-create proc sp_cu_UserType_frm   ---rename
+create proc sp_cu_UserType_frm41611   
 as
 begin
 	
@@ -68,26 +80,64 @@ go
 
 
 --جدول فرم مدیریت کاربران دانشگاه    --note:what if @GroupTypeID = -1
-create proc sp_cu_GetUserinfo_frm   ---rename
+alter proc sp_cu_GetUserinfo_frm41611   --change like to =
 @UserID int,
 @GroupTypeID int
 as
 begin
+	declare @UserName nvarchar(30) = (select UserName from users.TblUsers where UserId = @UserID)
+	
 	declare @SymbolicUser nvarchar(30) = (
 						select 
-							Group_Symbol + cast(@UserID as nvarchar(20))
+							case
+								when charindex('_', @UserName) > 0 then
+									Group_Symbol + substring(cast(@UserName as nvarchar(50)), charindex('_', @UserName) + 1, len(@UserName)) 
+								else
+									Group_Symbol + cast(@UserID as nvarchar(50) )
+							end
 						from
 							Tbl_Cu_Base_GroupType_Symbol
 						where
 							GroupTypeID = @GroupTypeID
 					   )
-	select
-		UserName, FullName
-	from
-		users.TblProfiles p
-		join users.TblUsers u on u.UserId = p.UserId
-	where
-		UserName like @SymbolicUser
+	
+	declare @User nvarchar(30) = (
+						select 
+							case
+								when charindex('_', @UserName) > 0 then
+									substring(cast(@UserName as nvarchar(50)), charindex('_', @UserName) + 1, len(@UserName)) 
+								else
+									@UserID 
+							end
+					   )
+	if @GroupTypeID != -1
+		begin
+			select
+				p.UserId,UserName, FullName
+			from
+				users.TblProfiles p
+				join users.TblUsers u on u.UserId = p.UserId
+			where
+				UserName like '%' + @SymbolicUser + '%'
+		end
+	else
+		begin
+			select
+				p.UserId, UserName, FullName
+			from
+				users.TblProfiles p
+				join users.TblUsers u on u.UserId = p.UserId
+			where
+				UserName like '%' + 'DV_'+ @User + '%'
+				or UserName like '%' + 'FE_'+ @User + '%'
+				or UserName like '%' + 'AL_'+ @User + '%'
+				or UserName like '%' + 'ALPR_'+ @User + '%'
+				or UserName like '%' + 'SCEDU_'+ @User + '%'
+				or UserName like '%' + 'SCE_'+ @User + '%'  
+				or UserName like '%' + 'SCS_'+ @User + '%'
+				or UserName like '%' + 'Chh1_'+ @User + '%'
+				or UserName like '%' + 'chc1_'+ @User + '%'   
+		end
 		
 end
 
@@ -95,16 +145,16 @@ end
 go	
 
 
-select * from users.TblMemebrShips  --comment, cellphone
+--select * from users.TblMemebrShips  --comment, cellphone
 
-select * from users.TblProfiles  --fullname, unitName, NationalCode
+--select * from users.TblProfiles  --fullname, unitName, NationalCode
 
-select * from users.TblUsers --UserName   
+--select * from users.TblUsers --UserName   
 
 
 
 --جدول فرم تعریف کاربر
-create proc sp_cu_DefineNewUser_frm --rename --not done yet
+create proc sp_cu_DefineNewUser_frm41611 --not done yet
 @UserId int,
 @UserTypeID int,
 @NationalCode int,
@@ -171,7 +221,7 @@ go
 --mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==
 
 --تغییر پسورد به 123
-create proc sp_cu_ChangePassTo_123_frm  --rename
+create proc sp_cu_ChangePassTo_123_frm41611  
 @User int
 as
 begin
@@ -185,33 +235,13 @@ begin
 	select @old_password as old_password, @new_password as new_password
 end
 
-go
 
-create table tbl_cu_ChangePassTo_123
-(
-	UserID int,
-	old_password nvarchar(100),
-	new_password nvarchar(100)
-)
-
-go
-
-create proc sp_cu_ChangePassTo_123_log   --not done
-@UserID int,
-@old_password nvarchar(100),
-@new_password nvarchar(100)
-as
-begin
-	insert into tbl_cu_ChangePassTo_123
-	values(@UserID, @old_password, @new_password)
-
-end
 
 go
 
 
 --غیر فعال سازی
-create proc sp_cu_DisableUser
+create proc sp_cu_DisableUser_frm41611
 @user int
 as
 begin
@@ -220,9 +250,10 @@ begin
 	where UserId = @User
 end
 
+go
 
 --ویرایش
-create proc sp_cu_UpdateUser_frm --rename 
+create proc sp_cu_UpdateUser_frm41611 
 @User int, --table selected row user id
 @UserId int,
 @UserTypeID int,
@@ -263,8 +294,9 @@ begin
 		UserId = @User
  end 
  
+go
 
-create table Tbl_Cu_DefineNewUser
+create table Tbl_Cu_UniversityUsersManagement_log
 (
 	UserID int,
 	RegDate nvarchar(10),
@@ -278,29 +310,33 @@ create table Tbl_Cu_DefineNewUser
 	UnitName nvarchar(50)
 )
 
- --log
-create proc sp_cu_DefineNewUser_Log
+go
+
+--log
+create proc sp_cu_Tbl_Cu_UniversityUsersManagement_Log
 @primary_UserID int,
 @RegUser int,
 @UserTypeID int,
-@NationalCode int,
-@FullName nvarchar(50),
-@MobileNo nvarchar(11),
-@Comment nvarchar(50), --شماره تلفن ثابت اداری
-@UnitName nvarchar(50) --پست سازمانی
+@ActionType int, 
+@OldNationalCode int,
+@OldFullName nvarchar(50),
+@OldMobileNo nvarchar(11),
+@OldComment nvarchar(50), --شماره تلفن ثابت اداری
+@OldUnitName nvarchar(100) --پست سازمانی
 as
 begin
-	insert into Tbl_Cu_DefineNewUser_Log
+	insert into Tbl_Cu_UniversityUsersManagement_log
 	(	UserID,
 		RegDate,
 		RegTime,
 		RegUser,
 		UserTypeID,
-		NationalCode,
-		FullName,
-		MobileNo,
-		Comment,
-		UnitName
+		ActionType,  --1: add 2:disable 3:change pass 4:update
+		OldNationalCode,
+		OldFullName,
+		OldMobileNo,
+		OldComment,
+		OldUnitName
 	)
 	select 
 		@primary_UserID,
@@ -308,12 +344,33 @@ begin
 		cast(convert(time,getdate())as nvarchar(5)),
 		@RegUser,
 		@UserTypeID,
-		@NationalCode,
-		@FullName,
-		@MobileNo,
-		@Comment,
-		@UnitName		
+		@ActionType,
+		@OldNationalCode,
+		@OldFullName,
+		@OldMobileNo,
+		@OldComment,
+		@OldUnitName		
 end
 
 --RegDate, RegTime, User
- 
+ --go
+
+--create table tbl_cu_ChangePassTo_123
+--(
+--	UserID int,
+--	old_password nvarchar(100),
+--	new_password nvarchar(100)
+--)
+
+--go
+
+--create proc sp_cu_ChangePassTo_123_log   --not done
+--@UserID int,
+--@old_password nvarchar(100),
+--@new_password nvarchar(100)
+--as
+--begin
+--	insert into tbl_cu_ChangePassTo_123
+--	values(@UserID, @old_password, @new_password)
+
+--end
