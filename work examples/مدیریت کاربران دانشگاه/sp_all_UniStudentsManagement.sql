@@ -154,14 +154,14 @@ go
 
 
 --جدول فرم تعریف کاربر
-create proc sp_cu_DefineNewUser_frm41611 --not done yet
+create proc sp_cu_DefineNewUser_frm41611 
 @UserId int,
 @UserTypeID int,
 @NationalCode int,
 @FullName nvarchar(50),
 @MobileNo nvarchar(11),
 @Comment nvarchar(50), --شماره تلفن ثابت اداری
-@UnitName nvarchar(50) --پست سازمانی
+@UnitName nvarchar(100) --پست سازمانی
 as
 begin
 	declare @UserName nvarchar(30) = (
@@ -220,81 +220,6 @@ go
 --123
 --mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==
 
---تغییر پسورد به 123
-create proc sp_cu_ChangePassTo_123_frm41611  
-@User int
-as
-begin
-	declare @old_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
-
-	update users.TblMemebrShips
-	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='  --password: 123
-	where UserId = @User
-
-	declare @new_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
-	select @old_password as old_password, @new_password as new_password
-end
-
-
-
-go
-
-
---غیر فعال سازی
-create proc sp_cu_DisableUser_frm41611
-@user int
-as
-begin
-	update users.TblProfiles
-	set Enabled = 0
-	where UserId = @User
-end
-
-go
-
---ویرایش
-create proc sp_cu_UpdateUser_frm41611 
-@User int, --table selected row user id
-@UserId int,
-@UserTypeID int,
-@NationalCode int,
-@FullName nvarchar(50),
-@MobileNo nvarchar(11),
-@Comment nvarchar(50), --شماره تلفن ثابت اداری
-@UnitName nvarchar(50) --پست سازمانی
-as
-begin
-	declare @UserName nvarchar(30) = (
-										select
-											Group_Symbol + cast(@UserId as nvarchar(30))
-										from
-											Tbl_Cu_Base_GroupType_Symbol
-										where
-											GroupTypeID = @UserTypeID
-									 )
-	update users.TblUsers
-	set 
-		UserName = @UserName
-	where
-		UserId = @User
-
-	update users.TblProfiles
-	set
-		FullName = @FullName,
-		UnitName = @UnitName,
-		NationalCode = @NationalCode
-	where
-		UserId = @User
-
-	update users.tblmemebrships
-	set
-        CellPhone = @MobileNo,
-        Comment = @Comment
-	where
-		UserId = @User
- end 
- 
-go
 
 create table Tbl_Cu_UniversityUsersManagement_log
 (
@@ -303,6 +228,7 @@ create table Tbl_Cu_UniversityUsersManagement_log
 	RegTime nvarchar(5),
 	RegUser int,
 	UserTypeID int,
+	ActionType int,
 	NationalCode nvarchar(10),
 	FullName nvarchar(50),
 	MobileNo nvarchar(11),
@@ -313,11 +239,10 @@ create table Tbl_Cu_UniversityUsersManagement_log
 go
 
 --log
-create proc sp_cu_Tbl_Cu_UniversityUsersManagement_Log
+create proc sp_cu_Tbl_Cu_UniversityUsersManagement_DefineNewUser_Log
 @primary_UserID int,
 @RegUser int,
 @UserTypeID int,
-@ActionType int, 
 @OldNationalCode int,
 @OldFullName nvarchar(50),
 @OldMobileNo nvarchar(11),
@@ -344,13 +269,209 @@ begin
 		cast(convert(time,getdate())as nvarchar(5)),
 		@RegUser,
 		@UserTypeID,
-		@ActionType,
+		1, --کاربر جدید
 		@OldNationalCode,
 		@OldFullName,
 		@OldMobileNo,
 		@OldComment,
 		@OldUnitName		
 end
+
+go
+
+--تغییر پسورد به 123
+create proc sp_cu_ChangePassTo_123_frm41611  
+@User int
+as
+begin
+	--declare @old_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
+
+	update users.TblMemebrShips
+	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='  --password: 123
+	where UserId = @User
+
+	--declare @new_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
+	--select @old_password as old_password, @new_password as new_password
+end
+
+go
+
+
+create proc sp_cu_Tbl_Cu_InsertInto_UniversityUsersManagement_ChangePass_Log
+@primary_UserID int,
+@RegUser int,
+@UserTypeID int,
+@NationalCode int,
+@FullName nvarchar(50),
+@MobileNo nvarchar(11),
+@Comment nvarchar(50), --شماره تلفن ثابت اداری
+@UnitName nvarchar(100) --پست سازمانی
+as
+begin
+	insert into Tbl_Cu_UniversityUsersManagement_log
+	(	UserID,
+		RegDate,
+		RegTime,
+		RegUser,
+		UserTypeID,
+		ActionType,  --1: add 2:disable 3:change pass 4:update
+		NationalCode,
+		FullName,
+		MobileNo,
+		Comment,
+		UnitName
+	)
+	select 
+		@primary_UserID,
+		(dbo.miladitoshamsi(getdate())),
+		cast(convert(time,getdate())as nvarchar(5)),
+		@RegUser,
+		@UserTypeID,
+		4, --تغییر رمز
+		@NationalCode,
+		@FullName,
+		@MobileNo,
+		@Comment,
+		@UnitName		
+end
+
+
+go
+
+
+--غیر فعال سازی
+create proc sp_cu_DisableUser_frm41611
+@user int
+as
+begin
+	update users.TblProfiles
+	set Enabled = 0
+	where UserId = @User
+end
+
+go
+
+--ویرایش
+create proc sp_cu_UpdateUser_frm41611 
+@User int, --table selected row user id
+@UserId int,
+@UserTypeID int,
+@NationalCode nvarchar(10),
+@FullName nvarchar(50),
+@MobileNo nvarchar(11),
+@Comment nvarchar(50), --شماره تلفن ثابت اداری
+@UnitName nvarchar(100) --پست سازمانی
+as
+begin
+	declare @UserName nvarchar(30) = (
+										select
+											Group_Symbol + cast(@UserId as nvarchar(30))
+										from
+											Tbl_Cu_Base_GroupType_Symbol
+										where
+											GroupTypeID = @UserTypeID
+									 )
+
+	declare @OldUserName nvarchar(30)  = (select UserName from users.TblUsers where UserId = @User)
+	declare @oldFullName nvarchar(50) = (select FullName from users.TblProfiles where UserId = @User)
+	declare @OldUnitName nvarchar(100) = (select UnitName from users.TblProfiles where UserId = @User)
+	declare @OldNationalCode nvarchar(10) = (select NationalCode from users.TblProfiles where UserId = @User)
+	declare @OldCellPhone nvarchar(11) = (select CellPhone from users.tblmemebrships where UserId = @User)
+	declare @OldComment nvarchar(50) = (select Comment from users.tblmemebrships where UserId = @User)
+
+	update users.TblUsers
+	set 
+		UserName = @UserName
+	where
+		UserId = @User
+
+	update users.TblProfiles
+	set
+		FullName = @FullName,
+		UnitName = @UnitName,
+		NationalCode = @NationalCode
+	where
+		UserId = @User
+
+	update users.tblmemebrships
+	set
+        CellPhone = @MobileNo,
+        Comment = @Comment
+	where
+		UserId = @User
+
+	insert into Tbl_Cu_UniversityUsersManagement_log
+	(	UserID,
+		RegDate,
+		RegTime,
+		RegUser,
+		UserTypeID,
+		ActionType,  --1: add 2:disable 3:change pass 4:update
+		NationalCode,
+		FullName,
+		MobileNo,
+		Comment,
+		UnitName
+	)
+	select 
+		@User,
+		(dbo.miladitoshamsi(getdate())),
+		cast(convert(time,getdate())as nvarchar(5)),
+		@UserId,
+		@UserTypeID,
+		2, --ویرایش
+		@OldNationalCode,
+		@OldFullName,
+		@OldCellPhone,
+		@OldComment,
+		@OldUnitName	
+ end 
+ 
+go
+
+
+--create proc sp_cu_Tbl_Cu_UniversityUsersManagement_UpdateUser_Log 
+--@primary_UserID int,
+--@RegUser int,
+--@UserTypeID int,
+--@OldNationalCode int,
+--@OldFullName nvarchar(50),
+--@OldMobileNo nvarchar(11),
+--@OldComment nvarchar(50), --شماره تلفن ثابت اداری
+--@OldUnitName nvarchar(100) --پست سازمانی
+--as
+--begin
+--	insert into Tbl_Cu_UniversityUsersManagement_log
+--	(	UserID,
+--		RegDate,
+--		RegTime,
+--		RegUser,
+--		UserTypeID,
+--		ActionType,  --1: add 2:disable 3:change pass 4:update
+--		OldNationalCode,
+--		OldFullName,
+--		OldMobileNo,
+--		OldComment,
+--		OldUnitName
+--	)
+--	select 
+--		@primary_UserID,
+--		(dbo.miladitoshamsi(getdate())),
+--		cast(convert(time,getdate())as nvarchar(5)),
+--		@RegUser,
+--		@UserTypeID,
+--		2, --ویرایش
+--		@OldNationalCode,
+--		@OldFullName,
+--		@OldMobileNo,
+--		@OldComment,
+--		@OldUnitName		
+--end
+
+
+--go
+
+
 
 --RegDate, RegTime, User
  --go
