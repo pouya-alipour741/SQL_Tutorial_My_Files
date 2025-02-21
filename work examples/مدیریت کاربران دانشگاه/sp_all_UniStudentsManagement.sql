@@ -79,8 +79,8 @@ end
 go 
 
 
---جدول فرم مدیریت کاربران دانشگاه    --note:what if @GroupTypeID = -1
-alter proc sp_cu_GetUserinfo_frm41611   --change like to =
+--جدول فرم مدیریت کاربران دانشگاه    
+create proc sp_cu_GetUserinfo_frm41611   --change like to =
 @UserID int,
 @GroupTypeID int
 as
@@ -105,11 +105,12 @@ begin
 						select 
 							case
 								when charindex('_', @UserName) > 0 then
-									substring(cast(@UserName as nvarchar(50)), charindex('_', @UserName) + 1, len(@UserName)) 
+									substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
 								else
 									@UserID 
 							end
 					   )
+	
 	if @GroupTypeID != -1
 		begin
 			select
@@ -151,10 +152,27 @@ go
 
 --select * from users.TblUsers --UserName   
 
+create table Tbl_Cu_UniversityUsersManagement_log
+(
+	UserID int,
+	RegDate nvarchar(10),
+	RegTime nvarchar(5),
+	RegUser int,
+	UserTypeID int,
+	ActionType int,
+	NationalCode nvarchar(10),
+	FullName nvarchar(50),
+	MobileNo nvarchar(11),
+	Comment nvarchar(50),
+	UnitName nvarchar(100)
+)
+
+go
+
 
 
 --جدول فرم تعریف کاربر
-create proc sp_cu_DefineNewUser_frm41611 
+create proc sp_cu_DefineNewUser_frm41611_and_Log  --ایدی بعد از سمبول چی باشد؟
 @UserId int,
 @UserTypeID int,
 @NationalCode int,
@@ -208,11 +226,36 @@ begin
 			'',
 			0,
 			0,
-			0) 
+			0)
+			
+	insert into Tbl_Cu_UniversityUsersManagement_log
+	(	UserID,
+		RegDate,
+		RegTime,
+		RegUser,
+		UserTypeID,
+		ActionType,  
+		NationalCode,
+		FullName,
+		MobileNo,
+		Comment,
+		UnitName
+	)
+	select 
+		@identity,
+		(dbo.miladitoshamsi(getdate())),
+		cast(convert(time,getdate())as nvarchar(5)),
+		@UserId,
+		@UserTypeID,
+		1, --کاربر جدید
+		@NationalCode,
+		@FullName,
+		@MobileNo,
+		@Comment,
+		@UnitName		
 
 end
 
-go
 
 --12345
 --MVSo5JS1ZlkmOHwCisl6x2Vd+lT7h0fpTVrYwWhoX23xUnZzfbT+eu9eWhYJuskHIZ2WBBkINcd8BVX/aydn4g==
@@ -221,84 +264,51 @@ go
 --mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==
 
 
-create table Tbl_Cu_UniversityUsersManagement_log
-(
-	UserID int,
-	RegDate nvarchar(10),
-	RegTime nvarchar(5),
-	RegUser int,
-	UserTypeID int,
-	ActionType int,
-	NationalCode nvarchar(10),
-	FullName nvarchar(50),
-	MobileNo nvarchar(11),
-	Comment nvarchar(50),
-	UnitName nvarchar(50)
-)
-
-go
 
 --log
-create proc sp_cu_Tbl_Cu_UniversityUsersManagement_DefineNewUser_Log
-@primary_UserID int,
-@RegUser int,
-@UserTypeID int,
-@OldNationalCode int,
-@OldFullName nvarchar(50),
-@OldMobileNo nvarchar(11),
-@OldComment nvarchar(50), --شماره تلفن ثابت اداری
-@OldUnitName nvarchar(100) --پست سازمانی
-as
-begin
-	insert into Tbl_Cu_UniversityUsersManagement_log
-	(	UserID,
-		RegDate,
-		RegTime,
-		RegUser,
-		UserTypeID,
-		ActionType,  --1: add 2:disable 3:change pass 4:update
-		OldNationalCode,
-		OldFullName,
-		OldMobileNo,
-		OldComment,
-		OldUnitName
-	)
-	select 
-		@primary_UserID,
-		(dbo.miladitoshamsi(getdate())),
-		cast(convert(time,getdate())as nvarchar(5)),
-		@RegUser,
-		@UserTypeID,
-		1, --کاربر جدید
-		@OldNationalCode,
-		@OldFullName,
-		@OldMobileNo,
-		@OldComment,
-		@OldUnitName		
-end
+--create proc sp_cu_Tbl_Cu_UniversityUsersManagement_DefineNewUser_Log
+--@primary_UserID int,
+--@RegUser int,
+--@UserTypeID int,
+--@OldNationalCode int,
+--@OldFullName nvarchar(50),
+--@OldMobileNo nvarchar(11),
+--@OldComment nvarchar(50), --شماره تلفن ثابت اداری
+--@OldUnitName nvarchar(100) --پست سازمانی
+--as
+--begin
+--	insert into Tbl_Cu_UniversityUsersManagement_log
+--	(	UserID,
+--		RegDate,
+--		RegTime,
+--		RegUser,
+--		UserTypeID,
+--		ActionType,  
+--		OldNationalCode,
+--		OldFullName,
+--		OldMobileNo,
+--		OldComment,
+--		OldUnitName
+--	)
+--	select 
+--		@primary_UserID,
+--		(dbo.miladitoshamsi(getdate())),
+--		cast(convert(time,getdate())as nvarchar(5)),
+--		@RegUser,
+--		@UserTypeID,
+--		1, --کاربر جدید
+--		@OldNationalCode,
+--		@OldFullName,
+--		@OldMobileNo,
+--		@OldComment,
+--		@OldUnitName		
+--end
 
 go
 
 --تغییر پسورد به 123
-create proc sp_cu_ChangePassTo_123_frm41611  
-@User int
-as
-begin
-	--declare @old_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
-
-	update users.TblMemebrShips
-	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='  --password: 123
-	where UserId = @User
-
-	--declare @new_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
-	--select @old_password as old_password, @new_password as new_password
-end
-
-go
-
-
-create proc sp_cu_Tbl_Cu_InsertInto_UniversityUsersManagement_ChangePass_Log
-@primary_UserID int,
+create proc sp_cu_ChangePassTo_123_frm41611_And_Log  
+@User int,
 @RegUser int,
 @UserTypeID int,
 @NationalCode int,
@@ -308,13 +318,19 @@ create proc sp_cu_Tbl_Cu_InsertInto_UniversityUsersManagement_ChangePass_Log
 @UnitName nvarchar(100) --پست سازمانی
 as
 begin
+	--declare @old_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
+
+	update users.TblMemebrShips
+	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='  --password: 123
+	where UserId = @User
+
 	insert into Tbl_Cu_UniversityUsersManagement_log
 	(	UserID,
 		RegDate,
 		RegTime,
 		RegUser,
 		UserTypeID,
-		ActionType,  --1: add 2:disable 3:change pass 4:update
+		ActionType,  
 		NationalCode,
 		FullName,
 		MobileNo,
@@ -322,7 +338,7 @@ begin
 		UnitName
 	)
 	select 
-		@primary_UserID,
+		@User,
 		(dbo.miladitoshamsi(getdate())),
 		cast(convert(time,getdate())as nvarchar(5)),
 		@RegUser,
@@ -332,27 +348,104 @@ begin
 		@FullName,
 		@MobileNo,
 		@Comment,
-		@UnitName		
-end
+		@UnitName	
 
+	--declare @new_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
+	--select @old_password as old_password, @new_password as new_password
+end
 
 go
 
 
+--create proc sp_cu_Tbl_Cu_InsertInto_UniversityUsersManagement_ChangePass_Log
+--@primary_UserID int,
+--@RegUser int,
+--@UserTypeID int,
+--@NationalCode int,
+--@FullName nvarchar(50),
+--@MobileNo nvarchar(11),
+--@Comment nvarchar(50), --شماره تلفن ثابت اداری
+--@UnitName nvarchar(100) --پست سازمانی
+--as
+--begin
+--	insert into Tbl_Cu_UniversityUsersManagement_log
+--	(	UserID,
+--		RegDate,
+--		RegTime,
+--		RegUser,
+--		UserTypeID,
+--		ActionType,  
+--		NationalCode,
+--		FullName,
+--		MobileNo,
+--		Comment,
+--		UnitName
+--	)
+--	select 
+--		@primary_UserID,
+--		(dbo.miladitoshamsi(getdate())),
+--		cast(convert(time,getdate())as nvarchar(5)),
+--		@RegUser,
+--		@UserTypeID,
+--		4, --تغییر رمز
+--		@NationalCode,
+--		@FullName,
+--		@MobileNo,
+--		@Comment,
+--		@UnitName		
+--end
+
+
+--go
+
+
 --غیر فعال سازی
-create proc sp_cu_DisableUser_frm41611
-@user int
+create proc sp_cu_DisableUser_frm41611_And_Log 
+@user int,
+@UserId int,
+@UserTypeID int,
+@NationalCode nvarchar(10),
+@FullName nvarchar(50),
+@MobileNo nvarchar(11),
+@Comment nvarchar(50), --شماره تلفن ثابت اداری
+@UnitName nvarchar(100) --پست سازمانی
 as
 begin
 	update users.TblProfiles
 	set Enabled = 0
 	where UserId = @User
+
+	insert into Tbl_Cu_UniversityUsersManagement_log
+	(	UserID,
+		RegDate,
+		RegTime,
+		RegUser,
+		UserTypeID,
+		ActionType,  
+		NationalCode,
+		FullName,
+		MobileNo,
+		Comment,
+		UnitName
+	)
+	select 
+		@User,
+		(dbo.miladitoshamsi(getdate())),
+		cast(convert(time,getdate())as nvarchar(5)),
+		@UserId,
+		@UserTypeID,
+		3, --غیر فعال سازی
+		@NationalCode,
+		@FullName,
+		@MobileNo,
+		@Comment,
+		@UnitName	
 end
 
 go
 
 --ویرایش
-create proc sp_cu_UpdateUser_frm41611 
+create proc sp_cu_UpdateUser_frm41611   --ایدی بعد از سمبول چی باشد؟
 @User int, --table selected row user id
 @UserId int,
 @UserTypeID int,
@@ -406,7 +499,7 @@ begin
 		RegTime,
 		RegUser,
 		UserTypeID,
-		ActionType,  --1: add 2:disable 3:change pass 4:update
+		ActionType,  
 		NationalCode,
 		FullName,
 		MobileNo,
@@ -429,6 +522,48 @@ begin
  
 go
 
+
+create proc sp_cu_ActionTypes_frm41611 
+as
+begin
+	select 1 as id, 'کاربر جدید' as title
+	union
+	select 2 as id, 'ویرایش' as title
+	union
+	select 3 as id, 'غیر فعال سازی' as title
+	union
+	select 4 as id, 'تغییر رمز به 123' as title
+
+end
+
+go
+
+create proc sp_cu_ReadLog_frm41611 
+@ActionType int
+as
+begin
+			select
+				(select UserName from users.TblUsers where UserId = u.UserID) UserName,
+				RegDate,
+				RegTime,
+				(select FullName from users.TblProfiles where UserId = RegUser) RegUser,
+				case 
+					when ActionType = 1 then 'کاربر جدید'
+					when ActionType = 2 then 'ویرایش'
+					when ActionType = 3 then 'غیر فعال سازی'
+					when ActionType = 4 then 'تغییر رمز به 123'
+				end,
+				NationalCode,
+				FullName,
+				MobileNo,
+				Comment,
+				UnitName
+			from 
+				Tbl_Cu_UniversityUsersManagement_log u
+			where
+				(@ActionType = -1 or ActionType = @ActionType)
+
+end
 
 --create proc sp_cu_Tbl_Cu_UniversityUsersManagement_UpdateUser_Log 
 --@primary_UserID int,
