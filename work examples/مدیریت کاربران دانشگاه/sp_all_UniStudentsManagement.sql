@@ -101,7 +101,7 @@ begin
 							GroupTypeID = @GroupTypeID
 					   )
 	
-	declare @User nvarchar(30) = (
+	declare @Subbed_User nvarchar(30) = (
 						select 
 							case
 								when charindex('_', @UserName) > 0 then
@@ -111,7 +111,7 @@ begin
 							end
 					   )
 	
-	if @GroupTypeID != -1
+	if @GroupTypeID not in (-1, '')
 		begin
 			select
 				p.UserId,UserName, FullName
@@ -129,15 +129,15 @@ begin
 				users.TblProfiles p
 				join users.TblUsers u on u.UserId = p.UserId
 			where
-				UserName like '%' + 'DV_'+ @User + '%'
-				or UserName like '%' + 'FE_'+ @User + '%'
-				or UserName like '%' + 'AL_'+ @User + '%'
-				or UserName like '%' + 'ALPR_'+ @User + '%'
-				or UserName like '%' + 'SCEDU_'+ @User + '%'
-				or UserName like '%' + 'SCE_'+ @User + '%'  
-				or UserName like '%' + 'SCS_'+ @User + '%'
-				or UserName like '%' + 'Chh1_'+ @User + '%'
-				or UserName like '%' + 'chc1_'+ @User + '%'   
+				UserName like '%' + 'DV_'+ @Subbed_User + '%'
+				or UserName like '%' + 'FE_'+ @Subbed_User + '%'
+				or UserName like '%' + 'AL_'+ @Subbed_User + '%'
+				or UserName like '%' + 'ALPR_'+ @Subbed_User + '%'
+				or UserName like '%' + 'SCEDU_'+ @Subbed_User + '%'
+				or UserName like '%' + 'SCE_'+ @Subbed_User + '%'  
+				or UserName like '%' + 'SCS_'+ @Subbed_User + '%'
+				or UserName like '%' + 'Chh1_'+ @Subbed_User + '%'
+				or UserName like '%' + 'chc1_'+ @Subbed_User + '%'   
 		end
 		
 end
@@ -172,87 +172,105 @@ go
 
 
 --جدول فرم تعریف کاربر
-create proc sp_cu_DefineNewUser_frm41611_and_Log  --ایدی بعد از سمبول چی باشد؟
+create proc sp_cu_DefineNewUser_frm41611_and_Log  
 @UserId int,
 @UserTypeID int,
-@NationalCode int,
+@NationalCode nvarchar(10),
 @FullName nvarchar(50),
 @MobileNo nvarchar(11),
 @Comment nvarchar(50), --شماره تلفن ثابت اداری
 @UnitName nvarchar(100) --پست سازمانی
 as
 begin
-	declare @UserName nvarchar(30) = (
+	declare @UserName nvarchar(30) = (select UserName from users.TblUsers where UserId = @UserID)
+
+
+	declare @Subbed_User nvarchar(30) = (
+						select 
+							case
+								when charindex('_', @UserName) > 0 then
+									substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
+								else
+									@UserID 
+							end
+					   )
+
+
+	declare @SymbolicUserName nvarchar(30) = (
 										select
-											Group_Symbol + cast(@UserId as nvarchar(30))
+											Group_Symbol + @Subbed_User
 										from
 											Tbl_Cu_Base_GroupType_Symbol
 										where
 											GroupTypeID = @UserTypeID
 									 )
 
+	if not exists(select 1 from users.TblUsers where UserName = @SymbolicUserName)
+		begin
+			insert into users.TblUsers(UserName, GUID)
+			values(@SymbolicUserName, NEWID())
 
-	insert into users.TblUsers(UserName, GUID)
-	values(@UserName, NEWID())
+			declare @identity int = @@identity
 
-	declare @identity int = @@identity
+			insert into users.TblProfiles(UserId,FullName, UnitName, NationalCode, [Enabled])
+			values(@identity,@FullName, @UnitName, @NationalCode, 1)
 
-	insert into users.TblProfiles(UserId,FullName, UnitName, NationalCode, [Enabled])
-	values(@identity,@FullName, @UnitName, @NationalCode, 1)
-
-	insert into users.tblmemebrships
-            (userid,
-             cellphone,
-             comment,
-             [password],
-             passwordformat,
-             passwordsalt,
-             createdate,
-             lastlogindate,
-             lastpasswordchangeddate,
-             lastlogoutdate,
-             islockedout,
-             failedpasswordattemptcount,
-             failedpasswordanswerattemptcount)
-	values  (@identity,
-            @MobileNo,
-            @Comment,
-			'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==',  --password: 12345
-			0,
-			'',
-			Getdate(),
-			'',
-			'',
-			'',
-			0,
-			0,
-			0)
+			insert into users.tblmemebrships
+					(userid,
+					 cellphone,
+					 comment,
+					 [password],
+					 passwordformat,
+					 passwordsalt,
+					 createdate,
+					 lastlogindate,
+					 lastpasswordchangeddate,
+					 lastlogoutdate,
+					 islockedout,
+					 failedpasswordattemptcount,
+					 failedpasswordanswerattemptcount,
+					 IsLoged)
+			values  (@identity,
+					@MobileNo,
+					@Comment,
+					'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==',  --password: 12345
+					0,
+					'',
+					Getdate(),
+					'',
+					'',
+					'',
+					0,
+					0,
+					0,
+					1)
 			
-	insert into Tbl_Cu_UniversityUsersManagement_log
-	(	UserID,
-		RegDate,
-		RegTime,
-		RegUser,
-		UserTypeID,
-		ActionType,  
-		NationalCode,
-		FullName,
-		MobileNo,
-		Comment,
-		UnitName
-	)
-	select 
-		@identity,
-		(dbo.miladitoshamsi(getdate())),
-		cast(convert(time,getdate())as nvarchar(5)),
-		@UserId,
-		@UserTypeID,
-		1, --کاربر جدید
-		@NationalCode,
-		@FullName,
-		@MobileNo,
-		@Comment,
-		@UnitName		
+			insert into Tbl_Cu_UniversityUsersManagement_log
+			(	UserID,
+				RegDate,
+				RegTime,
+				RegUser,
+				UserTypeID,
+				ActionType,  
+				NationalCode,
+				FullName,
+				MobileNo,
+				Comment,
+				UnitName
+			)
+			select 
+				@identity,
+				(dbo.miladitoshamsi(getdate())),
+				cast(convert(time,getdate())as nvarchar(5)),
+				@UserId,
+				@UserTypeID,
+				1, --کاربر جدید
+				@NationalCode,
+				@FullName,
+				@MobileNo,
+				@Comment,
+				@UnitName
+		end
 
 end
 
@@ -445,7 +463,7 @@ end
 go
 
 --ویرایش
-create proc sp_cu_UpdateUser_frm41611   --ایدی بعد از سمبول چی باشد؟
+create proc sp_cu_UpdateUser_frm41611   
 @User int, --table selected row user id
 @UserId int,
 @UserTypeID int,
@@ -456,9 +474,32 @@ create proc sp_cu_UpdateUser_frm41611   --ایدی بعد از سمبول چی �
 @UnitName nvarchar(100) --پست سازمانی
 as
 begin
-	declare @UserName nvarchar(30) = (
+	--declare @UserName nvarchar(30) = (
+	--									select
+	--										Group_Symbol + cast(@UserId as nvarchar(30))
+	--									from
+	--										Tbl_Cu_Base_GroupType_Symbol
+	--									where
+	--										GroupTypeID = @UserTypeID
+	--								 )
+
+	declare @UserName nvarchar(30) = (select UserName from users.TblUsers where UserId = @UserID)
+
+
+	declare @Subbed_User nvarchar(30) = (
+						select 
+							case
+								when charindex('_', @UserName) > 0 then
+									substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
+								else
+									@UserID 
+							end
+					   )
+
+
+	declare @SymbolicUserName nvarchar(30) = (
 										select
-											Group_Symbol + cast(@UserId as nvarchar(30))
+											Group_Symbol + cast(@Subbed_User as nvarchar(30))
 										from
 											Tbl_Cu_Base_GroupType_Symbol
 										where
@@ -474,7 +515,7 @@ begin
 
 	update users.TblUsers
 	set 
-		UserName = @UserName
+		UserName = @SymbolicUserName
 	where
 		UserId = @User
 
@@ -538,11 +579,12 @@ end
 
 go
 
-create proc sp_cu_ReadLog_frm41611 
+alter proc sp_cu_ReadLog_frm41611 
 @ActionType int
 as
 begin
 			select
+				row_number() over(order by RegDate, RegTime desc) rownumber,
 				(select UserName from users.TblUsers where UserId = u.UserID) UserName,
 				RegDate,
 				RegTime,
@@ -552,7 +594,7 @@ begin
 					when ActionType = 2 then 'ویرایش'
 					when ActionType = 3 then 'غیر فعال سازی'
 					when ActionType = 4 then 'تغییر رمز به 123'
-				end,
+				end ActionType,
 				NationalCode,
 				FullName,
 				MobileNo,
@@ -561,7 +603,7 @@ begin
 			from 
 				Tbl_Cu_UniversityUsersManagement_log u
 			where
-				(@ActionType = -1 or ActionType = @ActionType)
+				(@ActionType in (-1, '') or ActionType = @ActionType)
 
 end
 
