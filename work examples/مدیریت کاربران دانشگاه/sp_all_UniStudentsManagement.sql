@@ -89,12 +89,13 @@ begin
 	
 	declare @SymbolicUser nvarchar(30) = (
 						select 
-							case
-								when charindex('_', @UserName) > 0 then
-									Group_Symbol + substring(cast(@UserName as nvarchar(50)), charindex('_', @UserName) + 1, len(@UserName)) 
-								else
-									Group_Symbol + cast(@UserID as nvarchar(50) )
-							end
+							Group_Symbol + substring(@UserName, charindex('_', @UserName) + 1, len(@UserName)) 
+							--case
+							--	when charindex('_', @UserName) > 0 then
+							--		Group_Symbol + substring(cast(@UserName as nvarchar(50)), charindex('_', @UserName) + 1, len(@UserName)) 
+							--	else
+							--		Group_Symbol + cast(@UserID as nvarchar(50) )
+							--end
 						from
 							Tbl_Cu_Base_GroupType_Symbol
 						where
@@ -102,14 +103,16 @@ begin
 					   )
 	
 	declare @Subbed_User nvarchar(30) = (
-						select 
-							case
-								when charindex('_', @UserName) > 0 then
-									substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
-								else
-									@UserID 
-							end
-					   )
+						select  
+							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))							
+										)
+							--case
+							--	when charindex('_', @UserName) > 0 then
+							--		substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
+							--	else
+							--		@UserID 
+							--end
+					  -- )
 	
 	if @GroupTypeID not in (-1, '')
 		begin
@@ -187,12 +190,13 @@ begin
 
 	declare @Subbed_User nvarchar(30) = (
 						select 
-							case
-								when charindex('_', @UserName) > 0 then
-									substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
-								else
-									@UserID 
-							end
+							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))
+							--case
+							--	when charindex('_', @UserName) > 0 then
+							--		substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
+							--	else
+							--		@UserID 
+							--end
 					   )
 
 
@@ -205,7 +209,7 @@ begin
 											GroupTypeID = @UserTypeID
 									 )
 
-	if not exists(select 1 from users.TblUsers where UserName = @SymbolicUserName)
+	if not exists(select 1 from users.TblUsers where UserName like @SymbolicUserName)
 		begin
 			insert into users.TblUsers(UserName, GUID)
 			values(@SymbolicUserName, NEWID())
@@ -488,18 +492,19 @@ begin
 
 	declare @Subbed_User nvarchar(30) = (
 						select 
-							case
-								when charindex('_', @UserName) > 0 then
-									substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
-								else
-									@UserID 
-							end
+							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))
+							--case
+							--	when charindex('_', @UserName) > 0 then
+							--		substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
+							--	else
+							--		@UserID 
+							--end
 					   )
 
 
 	declare @SymbolicUserName nvarchar(30) = (
 										select
-											Group_Symbol + cast(@Subbed_User as nvarchar(30))
+											Group_Symbol + @Subbed_User 
 										from
 											Tbl_Cu_Base_GroupType_Symbol
 										where
@@ -579,7 +584,7 @@ end
 
 go
 
-alter proc sp_cu_ReadLog_frm41611 
+create proc sp_cu_ReadLog_frm41611 
 @ActionType int
 as
 begin
