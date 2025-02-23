@@ -64,6 +64,25 @@ values
 
 go
 
+
+create table Tbl_Cu_UniversityUsersManagement_log
+(
+	UserID int,
+	RegDate nvarchar(10),
+	RegTime nvarchar(5),
+	RegUser int,
+	UserTypeID int,
+	ActionType int,
+	NationalCode nvarchar(10),
+	FullName nvarchar(50),
+	MobileNo nvarchar(11),
+	Comment nvarchar(50),
+	UnitName nvarchar(100)
+)
+
+
+go
+
 --group type
 create proc sp_cu_UserType_frm41611   
 as
@@ -155,23 +174,6 @@ go
 
 --select * from users.TblUsers --UserName   
 
-create table Tbl_Cu_UniversityUsersManagement_log
-(
-	UserID int,
-	RegDate nvarchar(10),
-	RegTime nvarchar(5),
-	RegUser int,
-	UserTypeID int,
-	ActionType int,
-	NationalCode nvarchar(10),
-	FullName nvarchar(50),
-	MobileNo nvarchar(11),
-	Comment nvarchar(50),
-	UnitName nvarchar(100)
-)
-
-go
-
 
 
 --جدول فرم تعریف کاربر
@@ -226,28 +228,48 @@ begin
 					 [password],
 					 passwordformat,
 					 passwordsalt,
+					 PasswordQuestion,
+					 PasswordAnswer,
 					 createdate,
+					 IsLoged,
 					 lastlogindate,
 					 lastpasswordchangeddate,
 					 lastlogoutdate,
 					 islockedout,
 					 failedpasswordattemptcount,
 					 failedpasswordanswerattemptcount,
-					 IsLoged)
+					 SessionCount
+					 )
 			values  (@identity,
 					@MobileNo,
 					@Comment,
-					'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==',  --password: 12345
+					--'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==',  
+					'MVSo5JS1ZlkmOHwCisl6x2Vd+lT7h0fpTVrYwWhoX23xUnZzfbT+eu9eWhYJuskHIZ2WBBkINcd8BVX/aydn4g==',  --password: 12345
 					0,
+					'',
+					'',
 					'',
 					Getdate(),
-					'',
-					'',
-					'',
+					1,
+					Getdate(),
+					Getdate(),
+					Getdate(),
 					0,
 					0,
 					0,
-					1)
+					100
+					)
+
+			INSERT  INTO [Users].[TblApplicationModuleTrustee]
+                ( [UserId] ,
+                  [GroupId] ,
+                  [RoleId] ,
+                  [ApplicationModuleId]
+                )
+                SELECT  @identity ,
+                        NULL ,
+                        NULL ,
+                        22
 			
 			insert into Tbl_Cu_UniversityUsersManagement_log
 			(	UserID,
@@ -332,12 +354,12 @@ go
 create proc sp_cu_ChangePassTo_123_frm41611_And_Log  
 @User int,
 @RegUser int,
-@UserTypeID int,
-@NationalCode int,
-@FullName nvarchar(50),
-@MobileNo nvarchar(11),
-@Comment nvarchar(50), --شماره تلفن ثابت اداری
-@UnitName nvarchar(100) --پست سازمانی
+@UserTypeID int
+--@NationalCode int,
+--@FullName nvarchar(50),
+--@MobileNo nvarchar(11),
+--@Comment nvarchar(50), --شماره تلفن ثابت اداری
+--@UnitName nvarchar(100) --پست سازمانی
 as
 begin
 	--declare @old_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
@@ -345,6 +367,12 @@ begin
 	update users.TblMemebrShips
 	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='  --password: 123
 	where UserId = @User
+
+	declare @oldFullName nvarchar(50) = (select FullName from users.TblProfiles where UserId = @User)
+	declare @OldUnitName nvarchar(100) = (select UnitName from users.TblProfiles where UserId = @User)
+	declare @OldNationalCode nvarchar(10) = (select NationalCode from users.TblProfiles where UserId = @User)
+	declare @OldCellPhone nvarchar(11) = (select CellPhone from users.tblmemebrships where UserId = @User)
+	declare @OldComment nvarchar(50) = (select Comment from users.tblmemebrships where UserId = @User)
 
 	insert into Tbl_Cu_UniversityUsersManagement_log
 	(	UserID,
@@ -366,11 +394,11 @@ begin
 		@RegUser,
 		@UserTypeID,
 		4, --تغییر رمز
-		@NationalCode,
-		@FullName,
-		@MobileNo,
-		@Comment,
-		@UnitName	
+		@OldNationalCode,
+		@oldFullName,
+		@OldCellPhone,
+		@OldComment,
+		@OldUnitName	
 
 	--declare @new_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
 	--select @old_password as old_password, @new_password as new_password
@@ -425,17 +453,29 @@ go
 create proc sp_cu_DisableUser_frm41611_And_Log 
 @user int,
 @UserId int,
-@UserTypeID int,
-@NationalCode nvarchar(10),
-@FullName nvarchar(50),
-@MobileNo nvarchar(11),
-@Comment nvarchar(50), --شماره تلفن ثابت اداری
-@UnitName nvarchar(100) --پست سازمانی
+@UserTypeID int
+--@NationalCode nvarchar(10),
+--@FullName nvarchar(50),
+--@MobileNo nvarchar(11),
+--@Comment nvarchar(50), --شماره تلفن ثابت اداری
+--@UnitName nvarchar(100) --پست سازمانی
 as
 begin
 	update users.TblProfiles
 	set Enabled = 0
 	where UserId = @User
+
+
+	update users.TblMemebrShips
+	set IsLockedOut = 1
+	where UserId = @User
+
+	--declare @OldUserName nvarchar(30)  = (select UserName from users.TblUsers where UserId = @User)
+	declare @oldFullName nvarchar(50) = (select FullName from users.TblProfiles where UserId = @User)
+	declare @OldUnitName nvarchar(100) = (select UnitName from users.TblProfiles where UserId = @User)
+	declare @OldNationalCode nvarchar(10) = (select NationalCode from users.TblProfiles where UserId = @User)
+	declare @OldCellPhone nvarchar(11) = (select CellPhone from users.tblmemebrships where UserId = @User)
+	declare @OldComment nvarchar(50) = (select Comment from users.tblmemebrships where UserId = @User)
 
 	insert into Tbl_Cu_UniversityUsersManagement_log
 	(	UserID,
@@ -457,11 +497,11 @@ begin
 		@UserId,
 		@UserTypeID,
 		3, --غیر فعال سازی
-		@NationalCode,
-		@FullName,
-		@MobileNo,
-		@Comment,
-		@UnitName	
+		@OldNationalCode,
+		@oldFullName,
+		@OldCellPhone,
+		@OldComment,
+		@OldUnitName	
 end
 
 go
@@ -518,11 +558,11 @@ begin
 	declare @OldCellPhone nvarchar(11) = (select CellPhone from users.tblmemebrships where UserId = @User)
 	declare @OldComment nvarchar(50) = (select Comment from users.tblmemebrships where UserId = @User)
 
-	update users.TblUsers
-	set 
-		UserName = @SymbolicUserName
-	where
-		UserId = @User
+	--update users.TblUsers
+	--set 
+	--	UserName = @SymbolicUserName
+	--where
+	--	UserId = @User
 
 	update users.TblProfiles
 	set
@@ -584,12 +624,21 @@ end
 
 go
 
-create proc sp_cu_ReadLog_frm41611 
+create proc sp_cu_ReadLog_frm41611
+@UserID int,
 @ActionType int
 as
 begin
-			select
-				row_number() over(order by RegDate, RegTime desc) rownumber,
+	    declare @UserName nvarchar(30) = (select UserName from users.TblUsers where UserId = @UserID)
+
+
+	    declare @Subbed_User nvarchar(30) = (
+						select 
+							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))
+										);
+
+		with cte as(
+			select top 1000			
 				(select UserName from users.TblUsers where UserId = u.UserID) UserName,
 				RegDate,
 				RegTime,
@@ -609,8 +658,107 @@ begin
 				Tbl_Cu_UniversityUsersManagement_log u
 			where
 				(@ActionType in (-1, '') or ActionType = @ActionType)
-
+				)
+			select
+				row_number() over(order by RegDate desc, RegTime desc) rownumber,
+				*
+			from cte
+			where UserName like '%' + @Subbed_User + '%'
 end
+
+go
+
+create proc sp_cu_chkValidateDefineUser_frm41611 
+@cmbUserType int
+as
+begin
+	if @cmbUserType in( -1, '')
+		select cast(1 as bit) res
+	else
+		select cast(0 as bit) res
+end
+
+go
+
+create PROC [dbo].[SP_CU_CheckValidNationalCode_Frm41611]
+@NationalCode NVARCHAR(10)
+AS
+BEGIN
+	IF ((select [dbo].[Is_A_Valid_National_ID] (@NationalCode)) = 0)
+		SELECT 1 AS Res
+	ELSE
+		SELECT 0 AS Res
+END
+
+
+go
+
+
+create PROC [dbo].[SP_CU_CheckValidNationalCode_Frm41611]
+@NationalCode NVARCHAR(10)
+AS
+BEGIN
+	IF ((select [dbo].[Is_A_Valid_National_ID] (@NationalCode)) = 0)
+		SELECT 1 AS Res
+	ELSE
+		SELECT 0 AS Res
+END
+
+go
+
+
+create PROC [dbo].[SP_CU_CheckValidMobilePhone_Frm41611]
+@PhoneNumber NVARCHAR(11)
+AS
+BEGIN
+	IF (@PhoneNumber LIKE '09[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]' or @PhoneNumber = '')
+		SELECT 0 AS Res
+	ELSE
+		SELECT 1 AS Res
+END
+
+go
+
+create PROC [dbo].[SP_CU_CheckRepeatedUser_Frm41611]
+@UserID int,
+@UserTypeID int
+AS
+BEGIN
+	declare @UserName nvarchar(30) = (select UserName from users.TblUsers where UserId = @UserID)
+
+
+	declare @Subbed_User nvarchar(30) = (
+						select 
+							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))
+					   )
+
+	declare @SymbolicUserName nvarchar(30) = (
+										select
+											Group_Symbol + @Subbed_User
+										from
+											Tbl_Cu_Base_GroupType_Symbol
+										where
+											GroupTypeID = @UserTypeID
+									 )
+
+	if not exists(select 1 from users.TblUsers where UserName like @SymbolicUserName)
+		SELECT cast(0 as bit) AS Res
+	ELSE
+		SELECT cast(1 as bit) AS Res
+END
+
+
+go
+
+create PROC [dbo].[SP_CU_CheckIfFullNameEmpty_Frm41611]
+@txtFullName NVARCHAR(50)
+AS
+BEGIN
+	IF @txtFullName = ''
+		SELECT cast(1 as bit) AS Res
+	ELSE
+		SELECT cast(0 as bit) AS Res
+END
 
 --create proc sp_cu_Tbl_Cu_UniversityUsersManagement_UpdateUser_Log 
 --@primary_UserID int,
