@@ -72,13 +72,10 @@ from Tbl_Cu_ServingTableSecondPhase_Log
 where cmbSubGroup = 1
 
 --لطفا به تفکیک نام کاربری افراد درون گروه بیمه ای ارسال شود.
-select
-	distinct p.FullName  
-from
-	Tbl_Cu_ServingTableSecondPhase_Log s
-	join users.TblProfiles p on p.UserId = s.EghdamUserId
-where
-	cmbSubGroup = 1
+select distinct p.FullName
+from Tbl_Cu_ServingTableSecondPhase_Log s
+join users.TblProfiles p on p.UserId = s.EghdamUserId
+where cmbSubGroup = 1
 
 
 select top 1000 *
@@ -93,7 +90,83 @@ order by WorkflowInstanceID desc
 
 
 
+select top 1000
+	WFID,RegDate, RegTime, FullName, OrganizationUnit, OrganizationPost, DateActing, TimeActing
+	, EghdamRegDate, EghdamRegTime
+from
+	Tbl_Cu_ServingTableSecondPhase_Log
+where
+	StatusActing = 2
+	--and cmbSubGroup = 1
 
+
+select distinct p.FullName
+from Tbl_Cu_ServingTableSecondPhase_Log s
+join users.TblProfiles p on p.UserId = s.EghdamUserId
+where cmbSubGroup = 1
+
+
+
+select 
+	p.FullName, count(WFID) wfid_count
+from
+	Tbl_Cu_ServingTableSecondPhase_Log s
+	join users.TblProfiles p on p.UserId = s.EghdamUserId
+where
+	StatusActing = 2 --در انتظار پیمانکار
+	and cmbSubGroup = 1   --در گروه بیمه ای
+group by rollup(p.FullName)
+
+
+with cte as(
+	select 
+		p.FullName as EghdamUser,
+		count(WFID) over(partition by p.FullName ) wfid_count
+		,s.FullName as RegUser, WFID,RegDate, RegTime,
+		OrganizationUnit, OrganizationPost, DateActing, TimeActing
+		, EghdamRegDate, EghdamRegTime		
+		--,ROW_NUMBER() over(partition by p.FullName order by wfid) rownumber
+	from
+		Tbl_Cu_ServingTableSecondPhase_Log s
+		join users.TblProfiles p on p.UserId = s.EghdamUserId
+	where
+		StatusActing = 2 --در انتظار پیمانکار
+		and cmbSubGroup = 1   --در گروه بیمه ای
+		)
+	select * from cte
+	--where rownumber = 1
+
+/*
+گزارشی از درخواست های بیمه ای  که وضعیت آن در انتظار پیمانکار هستند را اعلام نمائید.
+لطفا به تفکیک نام کاربری افراد درون گروه بیمه ای ارسال شود.
+*/
+select 
+		p.FullName as EghdamUser,
+		count(WFID) over(partition by p.FullName ) wfid_count
+		,s.FullName as RegUser, WFID,RegDate, RegTime,
+		OrganizationUnit, OrganizationPost, DateActing, TimeActing
+		, EghdamRegDate, EghdamRegTime		
+		--,ROW_NUMBER() over(partition by p.FullName order by wfid) rownumber
+	from
+		Tbl_Cu_ServingTableSecondPhase_Log s
+		join users.TblProfiles p on p.UserId = s.EghdamUserId
+	where
+		StatusActing = 2 --در انتظار پیمانکار
+		and cmbSubGroup = 1   --در گروه بیمه ای
+--union all
+--	select top 1
+--		p.FullName as EghdamUser,
+--		count(WFID) over() wfid_count
+--		,s.FullName as RegUser, WFID,RegDate, RegTime,
+--		OrganizationUnit, OrganizationPost, DateActing, TimeActing
+--		, EghdamRegDate, EghdamRegTime				
+--	from
+--		Tbl_Cu_ServingTableSecondPhase_Log s
+--		join users.TblProfiles p on p.UserId = s.EghdamUserId
+--	where
+--		StatusActing = 2 --در انتظار پیمانکار
+--		and cmbSubGroup = 1   --در گروه بیمه ای
+		
 
 
 

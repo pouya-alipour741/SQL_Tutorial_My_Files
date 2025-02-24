@@ -125,13 +125,6 @@ begin
 						select  
 							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))							
 										)
-							--case
-							--	when charindex('_', @UserName) > 0 then
-							--		substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
-							--	else
-							--		@UserID 
-							--end
-					  -- )
 	
 	if @GroupTypeID not in (-1, '')
 		begin
@@ -193,12 +186,6 @@ begin
 	declare @Subbed_User nvarchar(30) = (
 						select 
 							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))
-							--case
-							--	when charindex('_', @UserName) > 0 then
-							--		substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
-							--	else
-							--		@UserID 
-							--end
 					   )
 
 
@@ -238,12 +225,13 @@ begin
 					 islockedout,
 					 failedpasswordattemptcount,
 					 failedpasswordanswerattemptcount,
-					 SessionCount
+					 SessionCount,
+					 IsSHA
 					 )
 			values  (@identity,
 					@MobileNo,
 					@Comment,
-					--'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==',  
+					--'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==',   --password: 123
 					'MVSo5JS1ZlkmOHwCisl6x2Vd+lT7h0fpTVrYwWhoX23xUnZzfbT+eu9eWhYJuskHIZ2WBBkINcd8BVX/aydn4g==',  --password: 12345
 					0,
 					'',
@@ -257,7 +245,8 @@ begin
 					0,
 					0,
 					0,
-					100
+					100,
+					1
 					)
 
 			INSERT  INTO [Users].[TblApplicationModuleTrustee]
@@ -300,12 +289,6 @@ begin
 
 end
 
-
---12345
---MVSo5JS1ZlkmOHwCisl6x2Vd+lT7h0fpTVrYwWhoX23xUnZzfbT+eu9eWhYJuskHIZ2WBBkINcd8BVX/aydn4g==
-
---123
---mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA==
 
 
 
@@ -355,14 +338,8 @@ create proc sp_cu_ChangePassTo_123_frm41611_And_Log
 @User int,
 @RegUser int,
 @UserTypeID int
---@NationalCode int,
---@FullName nvarchar(50),
---@MobileNo nvarchar(11),
---@Comment nvarchar(50), --شماره تلفن ثابت اداری
---@UnitName nvarchar(100) --پست سازمانی
 as
 begin
-	--declare @old_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
 
 	update users.TblMemebrShips
 	set Password = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='  --password: 123
@@ -400,8 +377,6 @@ begin
 		@OldComment,
 		@OldUnitName	
 
-	--declare @new_password nvarchar(100) = (select password from users.TblMemebrShips where UserId = @User)
-	--select @old_password as old_password, @new_password as new_password
 end
 
 go
@@ -454,11 +429,6 @@ create proc sp_cu_DisableUser_frm41611_And_Log
 @user int,
 @UserId int,
 @UserTypeID int
---@NationalCode nvarchar(10),
---@FullName nvarchar(50),
---@MobileNo nvarchar(11),
---@Comment nvarchar(50), --شماره تلفن ثابت اداری
---@UnitName nvarchar(100) --پست سازمانی
 as
 begin
 	update users.TblProfiles
@@ -470,7 +440,6 @@ begin
 	set IsLockedOut = 1
 	where UserId = @User
 
-	--declare @OldUserName nvarchar(30)  = (select UserName from users.TblUsers where UserId = @User)
 	declare @oldFullName nvarchar(50) = (select FullName from users.TblProfiles where UserId = @User)
 	declare @OldUnitName nvarchar(100) = (select UnitName from users.TblProfiles where UserId = @User)
 	declare @OldNationalCode nvarchar(10) = (select NationalCode from users.TblProfiles where UserId = @User)
@@ -518,39 +487,6 @@ create proc sp_cu_UpdateUser_frm41611
 @UnitName nvarchar(100) --پست سازمانی
 as
 begin
-	--declare @UserName nvarchar(30) = (
-	--									select
-	--										Group_Symbol + cast(@UserId as nvarchar(30))
-	--									from
-	--										Tbl_Cu_Base_GroupType_Symbol
-	--									where
-	--										GroupTypeID = @UserTypeID
-	--								 )
-
-	declare @UserName nvarchar(30) = (select UserName from users.TblUsers where UserId = @UserID)
-
-
-	declare @Subbed_User nvarchar(30) = (
-						select 
-							substring(@UserName , charindex('_', @UserName) + 1, len(@UserName))
-							--case
-							--	when charindex('_', @UserName) > 0 then
-							--		substring(@UserName , charindex('_', @UserName) + 1, len(@UserName)) 
-							--	else
-							--		@UserID 
-							--end
-					   )
-
-
-	declare @SymbolicUserName nvarchar(30) = (
-										select
-											Group_Symbol + @Subbed_User 
-										from
-											Tbl_Cu_Base_GroupType_Symbol
-										where
-											GroupTypeID = @UserTypeID
-									 )
-
 	declare @OldUserName nvarchar(30)  = (select UserName from users.TblUsers where UserId = @User)
 	declare @oldFullName nvarchar(50) = (select FullName from users.TblProfiles where UserId = @User)
 	declare @OldUnitName nvarchar(100) = (select UnitName from users.TblProfiles where UserId = @User)
@@ -558,52 +494,79 @@ begin
 	declare @OldCellPhone nvarchar(11) = (select CellPhone from users.tblmemebrships where UserId = @User)
 	declare @OldComment nvarchar(50) = (select Comment from users.tblmemebrships where UserId = @User)
 
-	--update users.TblUsers
-	--set 
-	--	UserName = @SymbolicUserName
+	if @NationalCode != ''
+		update users.TblProfiles
+		set
+			NationalCode = @NationalCode
+		where
+			UserId = @User
+	if @FullName != ''
+		update users.TblProfiles
+		set
+			FullName = @NationalCode
+		where
+			UserId = @User
+	if @MobileNo != ''
+		update users.tblmemebrships
+		set
+			CellPhone = @MobileNo
+		where
+			UserId = @User
+	if @Comment != ''
+		update users.tblmemebrships
+		set
+			Comment = (select  'شماره تلفن ثابت اداری:' + char(13) + @Comment )
+		where
+			UserId = @User
+	if @UnitName != ''
+		update users.TblProfiles
+		set
+			UnitName = @UnitName
+		where
+			UserId = @User
+	
+	--update users.TblProfiles
+	--set
+	--	FullName = @FullName,
+	--	UnitName = @UnitName,
+	--	NationalCode = @NationalCode
 	--where
 	--	UserId = @User
 
-	update users.TblProfiles
-	set
-		FullName = @FullName,
-		UnitName = @UnitName,
-		NationalCode = @NationalCode
-	where
-		UserId = @User
-
-	update users.tblmemebrships
-	set
-        CellPhone = @MobileNo,
-        Comment = @Comment
-	where
-		UserId = @User
-
-	insert into Tbl_Cu_UniversityUsersManagement_log
-	(	UserID,
-		RegDate,
-		RegTime,
-		RegUser,
-		UserTypeID,
-		ActionType,  
-		NationalCode,
-		FullName,
-		MobileNo,
-		Comment,
-		UnitName
-	)
-	select 
-		@User,
-		(dbo.miladitoshamsi(getdate())),
-		cast(convert(time,getdate())as nvarchar(5)),
-		@UserId,
-		@UserTypeID,
-		2, --ویرایش
-		@OldNationalCode,
-		@OldFullName,
-		@OldCellPhone,
-		@OldComment,
-		@OldUnitName	
+	--update users.tblmemebrships
+	--set
+ --       CellPhone = @MobileNo,
+ --       Comment = @Comment
+	--where
+	--	UserId = @User
+	if (@NationalCode != '' or @FullName != '' or @MobileNo != '' or @Comment != '' or @UnitName != '')
+		begin
+			insert into Tbl_Cu_UniversityUsersManagement_log
+			(	UserID,
+				RegDate,
+				RegTime,
+				RegUser,
+				UserTypeID,
+				ActionType,  
+				NationalCode,
+				FullName,
+				MobileNo,
+				Comment,
+				UnitName
+			)
+			select 
+				@User,
+				(dbo.miladitoshamsi(getdate())),
+				cast(convert(time,getdate())as nvarchar(5)),
+				@UserId,
+				@UserTypeID,
+				2, --ویرایش
+				@OldNationalCode,
+				@OldFullName,
+				@OldCellPhone,
+				@OldComment,
+				@OldUnitName	
+		end
  end 
  
 go
@@ -638,32 +601,34 @@ begin
 										);
 
 		with cte as(
-			select top 1000			
-				(select UserName from users.TblUsers where UserId = u.UserID) UserName,
-				RegDate,
-				RegTime,
-				(select FullName from users.TblProfiles where UserId = RegUser) RegUser,
-				case 
-					when ActionType = 1 then 'کاربر جدید'
-					when ActionType = 2 then 'ویرایش'
-					when ActionType = 3 then 'غیر فعال سازی'
-					when ActionType = 4 then 'تغییر رمز به 123'
-				end ActionType,
-				NationalCode,
-				FullName,
-				MobileNo,
-				Comment,
-				UnitName
-			from 
-				Tbl_Cu_UniversityUsersManagement_log u
-			where
-				(@ActionType in (-1, '') or ActionType = @ActionType)
-				)
+					select top 1000			
+						(select UserName from users.TblUsers where UserId = u.UserID) UserName,
+						RegDate,
+						RegTime,
+						(select FullName from users.TblProfiles where UserId = RegUser) RegUser,
+						case 
+							when ActionType = 1 then 'کاربر جدید'
+							when ActionType = 2 then 'ویرایش'
+							when ActionType = 3 then 'غیر فعال سازی'
+							when ActionType = 4 then 'تغییر رمز به 123'
+						end ActionType,
+						NationalCode,
+						FullName,
+						MobileNo,
+						Comment,
+						UnitName
+					from 
+						Tbl_Cu_UniversityUsersManagement_log u
+					where
+						(@ActionType in (-1, '') or ActionType = @ActionType)
+				   )
 			select
 				row_number() over(order by RegDate desc, RegTime desc) rownumber,
 				*
-			from cte
-			where UserName like '%' + @Subbed_User + '%'
+			from
+				cte
+			where
+				UserName like '%' + @Subbed_User + '%'
 end
 
 go
@@ -690,19 +655,6 @@ BEGIN
 		SELECT 0 AS Res
 END
 
-
-go
-
-
-create PROC [dbo].[SP_CU_CheckValidNationalCode_Frm41611]
-@NationalCode NVARCHAR(10)
-AS
-BEGIN
-	IF ((select [dbo].[Is_A_Valid_National_ID] (@NationalCode)) = 0)
-		SELECT 1 AS Res
-	ELSE
-		SELECT 0 AS Res
-END
 
 go
 
@@ -759,6 +711,35 @@ BEGIN
 	ELSE
 		SELECT cast(0 as bit) AS Res
 END
+
+go
+
+create proc sp_cu_checkAlreadyDisabled_frm41611
+@User int
+as
+begin
+	if (select Enabled from users.TblProfiles where UserId = @User) = 0
+		and (select IsLockedOut from users.TblMemebrShips where UserId = @User) = 1
+		begin
+			select cast(1 as bit) res
+		end
+	else
+		select cast(0 as bit) res
+end
+
+go
+
+create proc sp_cu_checkAlreadyPass123_frm41611  
+@User int
+as
+begin
+	if (select Password from users.TblMemebrShips where UserId = @User) = 'mUZn0ldiJ3RTqovDmAzBGEL++ZndLPeYPMS+dpDdI+0F87vigzTECPE56skc01Pv1/QA0l45boXCqRjHj0/WCA=='
+		begin
+			select 1 as res
+		end
+	else
+		select 0 as res
+end
 
 --create proc sp_cu_Tbl_Cu_UniversityUsersManagement_UpdateUser_Log 
 --@primary_UserID int,
