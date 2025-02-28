@@ -143,12 +143,13 @@ begin
 	if exists(
 		select 1
 			from [Tbl_CU_QuestionAnswer] q		
-			join task.TblWorkflowInstance i on i.WorkflowInstanceID = q.WFID
+			--join task.TblWorkflowInstance i on i.WorkflowInstanceID = q.WFID
 		where 
 			MainSubjectID = @mainSubject
 			and ISNULL(FinalDesc , '') = ''
 			and PortalUserID = @userID
-			and WorkflowInstanceStatusID = 1
+			--and WorkflowInstanceStatusID = 1 
+			and statusID not in(1021, 1920) --غیر از ابطالی ها
 			)
 		begin
 			select cast(1 as bit) res
