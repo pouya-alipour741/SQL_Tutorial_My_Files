@@ -42,13 +42,18 @@ begin
 				@ToDate = ''
 				OR RegDate <= @ToDate
 			)
-	)
-	select top 1
-		--count(*) over() tickets_count,
-		((sum(Actor_hours) over() / count(*) over()) / (1.0 * 60)) TicketsInActorCartable_AverageTime
-		--,*
-	from
-		cte
+	),
+	cte2 as(
+		select top 1
+			((sum(Actor_hours) over() / count(*) over()) / (1.0 * 60)) TicketsInActorCartable_AverageTime
+		from
+			cte
+		)
+		select
+			(SELECT RIGHT('00' + CONVERT(nvarchar(2), FLOOR(TicketsInActorCartable_AverageTime)), 2) + ' ساعت'
+			+ RIGHT('00' + CONVERT(nvarchar(2), (SELECT (TicketsInActorCartable_AverageTime - FLOOR(TicketsInActorCartable_AverageTime)) * 60)), 2) + ' دقیقه') TicketsInActorCartable_AverageTime_WorkingDays
+		from
+			cte2
 end
 	
 

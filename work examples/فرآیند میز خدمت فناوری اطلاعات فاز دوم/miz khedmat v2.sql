@@ -109,3 +109,12 @@ SELECT RIGHT('00' + CONVERT(varchar(2), @hour), 2) + ' ساعت'
 
 exec Sp_Cu_Tbl_Cu_ServingTableSecondPhase_Log_Frm31264 @FromDate=N'1403/12/12',@ToDate=N'1403/12/12',@SubGroupID=N'-1',@RequestKindID=N'-1',@RequestSubjectID=N'-1',@WFID=N'0',@RegUserID=N'-1',@ActionUserID=N'-1',@Status=N'-1',@EndWFIDFrom=N'',@EndWFIDTo=N'',@Desc=N''
 
+
+DECLARE @input float = 12.933333;
+
+DECLARE @hour int = FLOOR(AvgTimeTicketsDonePerUser);
+DECLARE @minutes int = (SELECT (AvgTimeTicketsDonePerUser - FLOOR(AvgTimeTicketsDonePerUser)) * 60);
+
+
+SELECT RIGHT('00' + CONVERT(nvarchar(2), FLOOR(AvgTimeTicketsDonePerUser)), 2) + ' ساعت'
++ RIGHT('00' + CONVERT(nvarchar(2), (SELECT (AvgTimeTicketsDonePerUser - FLOOR(AvgTimeTicketsDonePerUser)) * 60)), 2) + ' دقیقه'
