@@ -69,9 +69,8 @@ BEGIN
 							task.TblWorkflowInstance i
 							join task.TblWorkflowActivityInstance ai on ai.WokflowInstanceID = i.WorkflowInstanceID
 							join task.TblTask t on t.WorkflowActivityInstaceID = ai.WorkflowActivityInstanceID
-							--join users.TblProfiles p on p.UserId = t.UserId	
 						where
-							 i.WorkflowInstanceID =  B.WFID
+							 i.WorkflowInstanceID =  AQ.WFID
 							 and t.UserID in
 										(select
 											RegUserID
@@ -80,7 +79,7 @@ BEGIN
 										where
 											RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
 											and StatusActing != 2
-											--and s.WFID= x.WFID
+											and s.WFID= AQ.WFID
 											)
 							) Actor_hours
 				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHistory_Log X
