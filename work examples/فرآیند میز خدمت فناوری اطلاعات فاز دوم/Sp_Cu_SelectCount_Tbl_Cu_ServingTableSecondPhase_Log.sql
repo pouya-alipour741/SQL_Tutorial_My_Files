@@ -1,24 +1,28 @@
-﻿--exec Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log_test @FromDate=N'1403/12/10',@ToDate=N'1403/12/11'
+﻿--exec Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log @FromDate=N'',@ToDate=N'1403/12/11'
 
 
-create PROCEDURE [dbo].[Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log]
+alter PROCEDURE [dbo].[Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log]
     @FromDate AS NVARCHAR(10),
     @ToDate AS NVARCHAR(10)
 AS
 BEGIN
 	select 
 		*,
-		cast(
-				floor(AvgTimeTicketsDonePerUser / 8) as nvarchar(50)
-				) + ' روز کاری'
-			+ cast(
-				ceiling(AvgTimeTicketsDonePerUser % 8) as nvarchar(10)
-				)
-			+ ' ساعت'
+		ceiling(AvgTimeTicketsDonePerUser) AvgTimeTicketsDonePerUser_WorkDays
+		--cast(
+		--		floor(AvgTimeTicketsDonePerUser / 8) as nvarchar(50)
+		--		) + ' روز کاری'
+		--	+ cast(
+		--		ceiling(AvgTimeTicketsDonePerUser % 8) as nvarchar(10)
+		--		)
+		--	+ ' ساعت' as AvgTimeTicketsDonePerUser_WorkDays
 	from(
 		select
 			*,
-			(Actor_hours_sum / SumAll) AvgTimeTicketsDonePerUser
+			case
+				when SumAll != 0 then (Actor_hours_sum / SumAll)
+				else 0
+			end AvgTimeTicketsDonePerUser
 		from(
 			SELECT
 				(
@@ -70,7 +74,8 @@ BEGIN
 							join task.TblWorkflowActivityInstance ai on ai.WokflowInstanceID = i.WorkflowInstanceID
 							join task.TblTask t on t.WorkflowActivityInstaceID = ai.WorkflowActivityInstanceID
 						where
-							 i.WorkflowInstanceID =  AQ.WFID
+							 i.WorkflowInstanceID =  B.WFID
+							 and ActivityID != 4867931382758811148 --در صورتی که کاربر ثبت کننده با اقدام کننده یکی باشد محاسبات بدون این شرط(تسک ثبت فرآیند) خراب می شود.
 							 and t.UserID in
 										(select
 											RegUserID
@@ -79,7 +84,7 @@ BEGIN
 										where
 											RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
 											and StatusActing != 2
-											and s.WFID= AQ.WFID
+											and s.WFID= B.WFID
 											)
 							) Actor_hours
 				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHistory_Log X

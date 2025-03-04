@@ -1,8 +1,6 @@
-﻿--exec Sp_Cu_Tbl_Cu_ServingTableSecondPhase_Log_Frm31264 @FromDate=N'',@ToDate=N'1403/12/11',@SubGroupID=N'-1',@RequestKindID=N'-1',@RequestSubjectID=N'-1',@WFID=N'0',@RegUserID=N'-1',@ActionUserID=N'-1',@Status=N'-1',@EndWFIDFrom=N'',@EndWFIDTo=N'',@Desc=N''
+﻿--exec sp_cu_ServingTableSecondPhase_Frm31264_GetTicketsDoneAverageHours @FromDate=N'',@ToDate=N'1403/12/12'
 
---exec sp_cu_ServingTableSecondPhase_Frm31264_GetTicketsDoneAverageHours @FromDate=N'1403/12/11',@ToDate=N'1403/12/12'
-
-create proc sp_cu_ServingTableSecondPhase_Frm31264_GetTicketsDoneAverageHours
+alter proc sp_cu_ServingTableSecondPhase_Frm31264_GetTicketsDoneAverageHours
 @FromDate nvarchar(10), 
 @ToDate nvarchar(10)
 as
@@ -13,17 +11,16 @@ begin
 					sum(case
 						when isnull(t.EndDate, '') != '' then datediff(minute,t.CreateDate , t.EndDate) 
 						else datediff(minute,t.CreateDate , getdate()) 
-					end) --over() 
+					end)  
 				from
 					task.TblWorkflowInstance i
 					join task.TblWorkflowActivityInstance ai on ai.WokflowInstanceID = i.WorkflowInstanceID
-					join task.TblTask t on t.WorkflowActivityInstaceID = ai.WorkflowActivityInstanceID
-					--join users.TblProfiles p on p.UserId = t.UserId	
+					join task.TblTask t on t.WorkflowActivityInstaceID = ai.WorkflowActivityInstanceID	
 				where
 						i.WorkflowInstanceID =  A.WFID  
+						and ActivityID != 4867931382758811148 --در صورتی که کاربر ثبت کننده با اقدام کننده یکی باشد محاسبات بدون این شرط(تسک ثبت فرآیند) خراب می شود.
 						and t.UserID in
 									(select
-										--(select UserID from users.TblUsers u where u.UserId = s.RegUserID)
 										RegUserID
 									from 
 										Tbl_Cu_ServingTableSecondPhaseHistory_Log s
@@ -51,13 +48,14 @@ begin
 			cte
 		)
 		select
-			cast(
-				cast((TicketsInActorCartable_AverageTime / 8) as int) as nvarchar(50)
-				) + ' روز کاری'
-			+ cast(
-				cast((TicketsInActorCartable_AverageTime % 8) as int) as nvarchar(10)
-				)
-			+ ' ساعت'
+			ceiling(TicketsInActorCartable_AverageTime)  as TicketsInActorCartable_AverageTime_WorkHours
+			--cast(
+			--	floor(TicketsInActorCartable_AverageTime / 8) as nvarchar(50)
+			--	) + 'روز کاری و '
+			--+ cast(
+			--	ceiling(TicketsInActorCartable_AverageTime % 8) as nvarchar(10)
+			--	)
+			--+ ' ساعت' as TicketsInActorCartable_AverageTime_WorkHours
 		from   
 			cte2
 end
