@@ -1,13 +1,11 @@
-﻿--exec Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log_HumanResource @FromDate=N'',@ToDate=N'1403/12/11'
+﻿exec Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log @FromDate=N'',@ToDate=N'1403/12/11'
 
-alter PROCEDURE [dbo].[Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log_HumanResource]
+
+alter PROCEDURE [dbo].[Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log]
     @FromDate AS NVARCHAR(10),
     @ToDate AS NVARCHAR(10)
 AS
 BEGIN
-	declare @CurrentDate nvarchar(10) = (select dbo.MiladiToShamsi(GETDATE()))
-	declare @CurrentTime nvarchar(5) = (select convert(nvarchar(5),cast(getdate() as time)));
-
 	select 
 		*,
 		ceiling(AvgTimeTicketsDonePerUser) AvgTimeTicketsDonePerUser_WorkDays
@@ -38,7 +36,7 @@ BEGIN
 				SUM(AQ.Tekrari) AS Tekrari,
 				SUM(AQ.Peymankar) AS Peymankar,
 				(SUM(AQ.HalShode) + SUM(AQ.RadShode) + SUM(AQ.Tekrari) + SUM(AQ.Peymankar)) AS SumAll
-				,sum(Actor_minutes) / 60.0 Actor_hours_sum
+				,sum(Actor_hours) / 60.0 Actor_hours_sum
 			FROM
 			(
 				SELECT X.RegUserID,
@@ -66,34 +64,35 @@ BEGIN
 						   ELSE
 							   0
 					   END AS Peymankar,
-						   (select
-				sum(
-					isnull(case
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, RegDate, EghdamStartDate)  +  DATEDIFF(minute, RegTime , EghdamStartTime) 
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''
-						then datediff(MINUTE, @CurrentDate, EghdamStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamStartTime)					
-					end, 0)
-					+
-					isnull(case
-						when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, RegDate, EghdamGroupStartDate)  +  DATEDIFF(minute, RegTime , EghdamGroupStartTime) 
-						when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') = ''
-						then datediff(MINUTE, @CurrentDate, EghdamGroupStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamGroupStartTime)					
-					end, 0)
-					) 
-				from
-					Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log s	
-			where
-					s.WFID =  B.WFID 
-					and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-					and StatusActing != 2			
-				) Actor_minutes
-				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log X
+					   (select
+							sum(case
+								when isnull(t.EndDate, '') != '' then datediff(minute,t.CreateDate , t.EndDate) 
+								else datediff(minute,t.CreateDate , getdate()) 
+							end)
+						from
+							task.TblWorkflowInstance i
+							join task.TblWorkflowActivityInstance ai on ai.WokflowInstanceID = i.WorkflowInstanceID
+							join task.TblTask t on t.WorkflowActivityInstaceID = ai.WorkflowActivityInstanceID
+						where
+							 i.WorkflowInstanceID =  B.WFID
+							 --and TaskName like N'%اقدام%'
+							 and ActivityID in(4782972985427111846, 5443268012818330002)  --فقط اقدام 
+							 and t.UserID in
+										(select
+											RegUserID
+										from 
+											Tbl_Cu_ServingTableSecondPhaseHistory_Log s
+										where
+											RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+											and StatusActing != 2
+											and s.WFID= B.WFID
+											)
+							) Actor_hours
+				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHistory_Log X
 					INNER JOIN
 					(
 						SELECT *
-						FROM dbo.Tbl_Cu_ServingTableSecondPhaseHumanResource_Log S
+						FROM dbo.Tbl_Cu_ServingTableSecondPhase_Log S
 						WHERE S.StatusID IN ( 203, 207, 208, 200 )
 							  AND
 							  (
@@ -109,7 +108,7 @@ BEGIN
 						ON X.WFID = B.WFID
 				WHERE X.ServingTableSecondPhaseHistoryID IN (
 																SELECT MAX(S.ServingTableSecondPhaseHistoryID)
-																FROM Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log S
+																FROM Tbl_Cu_ServingTableSecondPhaseHistory_Log S
 																WHERE S.RoleID = 4
 																GROUP BY S.WFID
 															)

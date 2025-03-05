@@ -6,6 +6,9 @@ alter PROCEDURE [dbo].[Sp_Cu_SelectCount_Tbl_Cu_ServingTableSecondPhase_Log]
     @ToDate AS NVARCHAR(10)
 AS
 BEGIN
+	declare @CurrentDate nvarchar(10) = (select dbo.MiladiToShamsi(GETDATE()))
+	declare @CurrentTime nvarchar(5) = (select convert(nvarchar(5),cast(getdate() as time)));
+
 	select 
 		*,
 		ceiling(AvgTimeTicketsDonePerUser) AvgTimeTicketsDonePerUser_WorkDays
@@ -36,7 +39,7 @@ BEGIN
 				SUM(AQ.Tekrari) AS Tekrari,
 				SUM(AQ.Peymankar) AS Peymankar,
 				(SUM(AQ.HalShode) + SUM(AQ.RadShode) + SUM(AQ.Tekrari) + SUM(AQ.Peymankar)) AS SumAll
-				,sum(Actor_hours) / 60.0 Actor_hours_sum
+				,sum(Actor_minutes) / 60.0 Actor_hours_sum
 			FROM
 			(
 				SELECT X.RegUserID,
@@ -65,28 +68,29 @@ BEGIN
 							   0
 					   END AS Peymankar,
 					   (select
-							sum(case
-								when isnull(t.EndDate, '') != '' then datediff(minute,t.CreateDate , t.EndDate) 
-								else datediff(minute,t.CreateDate , getdate()) 
-							end)
+							sum(
+								isnull(case
+									when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
+									then datediff(MINUTE, RegDate, EghdamStartDate)  +  DATEDIFF(minute, RegTime , EghdamStartTime) 
+									when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''
+									then datediff(MINUTE, @CurrentDate, EghdamStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamStartTime)					
+								end, 0)
+								+
+								isnull(case
+									when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') != ''
+									then datediff(MINUTE, RegDate, EghdamGroupStartDate)  +  DATEDIFF(minute, RegTime , EghdamGroupStartTime) 
+									when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') = ''
+									then datediff(MINUTE, @CurrentDate, EghdamGroupStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamGroupStartTime)					
+								end, 0)
+								) 
 						from
-							task.TblWorkflowInstance i
-							join task.TblWorkflowActivityInstance ai on ai.WokflowInstanceID = i.WorkflowInstanceID
-							join task.TblTask t on t.WorkflowActivityInstaceID = ai.WorkflowActivityInstanceID
+							Tbl_Cu_ServingTableSecondPhaseHistory_Log s	
 						where
-							 i.WorkflowInstanceID =  B.WFID
-							 and ActivityID != 4867931382758811148 --در صورتی که کاربر ثبت کننده با اقدام کننده یکی باشد محاسبات بدون این شرط(تسک ثبت فرآیند) خراب می شود.
-							 and t.UserID in
-										(select
-											RegUserID
-										from 
-											Tbl_Cu_ServingTableSecondPhaseHistory_Log s
-										where
-											RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-											and StatusActing != 2
-											and s.WFID= B.WFID
-											)
-							) Actor_hours
+								s.WFID =  B.WFID 
+								and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+								and StatusActing != 2
+								--and ActivityID in(4782972985427111846, 5443268012818330002)
+							) Actor_minutes
 				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHistory_Log X
 					INNER JOIN
 					(
