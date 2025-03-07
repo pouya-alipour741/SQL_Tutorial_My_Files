@@ -14,24 +14,17 @@ from
 	join task.TblWorkflowActivityInstance ai on ai.WokflowInstanceID = i.WorkflowInstanceID
 	join task.TblTask t on t.WorkflowActivityInstaceID = ai.WorkflowActivityInstanceID	
 	join Tbl_Cu_ServingTableSecondPhase_Log s on s.wfid = i.WorkflowInstanceID
+	join Tbl_Cu_ServingTableSecondPhaseHistory_Log h on h.wfid = s.wfid
 where 
 	t.ActivityID in( 5443268012818330002, 4782972985427111846) 
-	and t.UserID in
-				(select
-					RegUserID
-				from 
-					Tbl_Cu_ServingTableSecondPhaseHistory_Log s
-				where
-					RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-					and StatusActing != 2
-						)
+	and t.ActivityID = h.ActivityID
+	and t.UserID = h.RegUserID
+	and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+	and StatusActing != 2
 )	
-	update	Tbl_Cu_ServingTableSecondPhaseHistory_Log
+	update	cte
 	set 
-		EghdamEndDate = cte.CreateDate,
-		EghdamEndTime = cte.CreateTime
-	where
-		cte.wfid = Tbl_Cu_ServingTableSecondPhaseHistory_Log.wfid
-		and cte.ActivityID = Tbl_Cu_ServingTableSecondPhaseHistory_Log.ActivityID
-		and cte.RegUserID = t.UserID
+		EghdamEndDate = CreateDate,
+		EghdamEndTime = CreateTime
+
 
