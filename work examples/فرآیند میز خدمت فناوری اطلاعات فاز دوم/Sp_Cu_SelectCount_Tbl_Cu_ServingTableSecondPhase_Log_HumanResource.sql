@@ -67,28 +67,21 @@ BEGIN
 							   0
 					   END AS Peymankar,
 						   (select
-				sum(
-					isnull(case
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, RegDate, EghdamStartDate)  +  DATEDIFF(minute, RegTime , EghdamStartTime) 
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''
-						then datediff(MINUTE, @CurrentDate, EghdamStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamStartTime)					
-					end, 0)
-					+
-					isnull(case
-						when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, RegDate, EghdamGroupStartDate)  +  DATEDIFF(minute, RegTime , EghdamGroupStartTime) 
-						when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') = ''
-						then datediff(MINUTE, @CurrentDate, EghdamGroupStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamGroupStartTime)					
-					end, 0)
-					) 
-				from
-					Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log s	
-			where
-					s.WFID =  B.WFID 
-					and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-					and StatusActing != 2			
-				) Actor_minutes
+								sum(
+									case
+										when isnull(EghdamEndDate, '') != '' and isnull(RegDate, '') != ''
+										then datediff(MINUTE, RegDate, EghdamEndDate)  +  DATEDIFF(minute, RegTime , EghdamEndTime) 
+										when isnull(RegDate, '') != '' and isnull(EghdamEndDate, '') = ''    --تیکت همچنان در کارتابل اقدام کننده هست
+										then datediff(MINUTE, RegDate, @CurrentDate)  +  DATEDIFF(minute, RegTime, @CurrentTime)					
+									end
+								) 
+								from
+									Tbl_Cu_ServingTableSecondPhaseHumanResource_Log s	
+								where
+									s.WFID =  B.WFID 
+									and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+									and StatusActing != 2			
+							) Actor_minutes
 				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log X
 					INNER JOIN
 					(

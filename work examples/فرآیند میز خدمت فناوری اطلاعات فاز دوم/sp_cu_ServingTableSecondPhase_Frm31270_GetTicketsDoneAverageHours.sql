@@ -13,41 +13,36 @@ begin
 		select
 			(select
 				sum(
-					isnull(case
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, RegDate, EghdamStartDate)  +  DATEDIFF(minute, RegTime , EghdamStartTime) 
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''
-						then datediff(MINUTE, @CurrentDate, EghdamStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamStartTime)					
-					end, 0)
-					+
-					isnull(case
-						when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, RegDate, EghdamGroupStartDate)  +  DATEDIFF(minute, RegTime , EghdamGroupStartTime) 
-						when isnull(EghdamGroupStartDate, '') != '' and isnull(RegDate, '') = ''
-						then datediff(MINUTE, @CurrentDate, EghdamGroupStartDate)  +  DATEDIFF(minute, @CurrentTime, EghdamGroupStartTime)					
-					end, 0)
-					) 
-				from
-					Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log s	
+				case
+					when isnull(EghdamEndDate, '') != '' and isnull(RegDate, '') != ''
+					then datediff(MINUTE, RegDate, EghdamEndDate)  +  DATEDIFF(minute, RegTime , EghdamEndTime) 
+					when isnull(RegDate, '') != '' and isnull(EghdamEndDate, '') = ''  --تیکت همچنان در کارتابل اقدام کننده هست
+					then datediff(MINUTE, RegDate, @CurrentDate)  +  DATEDIFF(minute, RegTime, @CurrentTime)					
+				end
+				)
+			from
+				Tbl_Cu_ServingTableSecondPhaseHumanResource_Log s	
 			where
-					s.WFID =  A.WFID 
-					and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-					and StatusActing != 2			
+				s.WFID =  A.WFID
+				and (
+						@FromDate = ''
+						OR RegDate >= @FromDate
+					)
+					AND
+					(
+						@ToDate = ''
+						OR RegDate <= @ToDate
+					)
 				) Actor_minutes
-		FROM dbo.Tbl_Cu_ServingTableSecondPhaseHumanResource_Log A
-		WHERE (
-				@FromDate = ''
-				OR RegDate >= @FromDate
-			)
-			AND
-			(
-				@ToDate = ''
-				OR RegDate <= @ToDate
-			)
+		FROM
+			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log A
+		WHERE
+			A.RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+			and A.StatusActing != 2	
 	),
 	cte2 as(
 		select top 1
-			((sum(Actor_minutes) over() / count(*) over()) / (1.0 * 60)) TicketsInActorCartable_AverageTime  --total hours
+			((sum(Actor_minutes) over() / count(*) over()) / 60.0) TicketsInActorCartable_AverageTime  --total hours
 		from
 			cte
 		)
