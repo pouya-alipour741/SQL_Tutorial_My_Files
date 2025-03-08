@@ -13,33 +13,32 @@ begin
 		select
 			(select
 				sum(
-					case
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, EghdamStartDate, RegDate)  +  DATEDIFF(minute , EghdamStartTime, RegTime) 
-						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''  --تیکت همچنان در کارتابل اقدام کننده هست
-						then datediff(MINUTE, EghdamStartDate, @CurrentDate)  +  DATEDIFF(minute, EghdamStartTime, @CurrentTime)					
-					end
-				) 
+				case
+					when isnull(EghdamEndDate, '') != '' and isnull(RegDate, '') != ''
+					then datediff(MINUTE, RegDate, EghdamEndDate)  +  DATEDIFF(minute, RegTime , EghdamEndTime) 
+					when isnull(RegDate, '') != '' and isnull(EghdamEndDate, '') = ''  --تیکت همچنان در کارتابل اقدام کننده هست
+					then datediff(MINUTE, RegDate, @CurrentDate)  +  DATEDIFF(minute, RegTime, @CurrentTime)					
+				end
+				)
 			from
-				Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log h	
+				Tbl_Cu_ServingTableSecondPhaseHumanResource_Log s	
 			where
-				h.WFID =  s.WFID
-				and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-				and StatusActing != 2
-				and ActivityID in(4782972985427111846, 5443268012818330002)
-			) Actor_minutes
+				s.WFID =  A.WFID
+				and (
+						@FromDate = ''
+						OR RegDate >= @FromDate
+					)
+					AND
+					(
+						@ToDate = ''
+						OR RegDate <= @ToDate
+					)
+				) Actor_minutes
 		FROM
-			Tbl_Cu_ServingTableSecondPhaseHumanResource_Log s
+			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log A
 		WHERE
-			(
-				@FromDate = ''
-				OR RegDate >= @FromDate
-			)
-			AND
-			(
-				@ToDate = ''
-				OR RegDate <= @ToDate
-			)
+			A.RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+			and A.StatusActing != 2	
 	),
 	cte2 as(
 		select top 1

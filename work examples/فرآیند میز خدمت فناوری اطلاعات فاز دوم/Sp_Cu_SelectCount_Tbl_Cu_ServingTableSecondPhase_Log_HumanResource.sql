@@ -69,18 +69,19 @@ BEGIN
 						   (select
 								sum(
 									case
-										when isnull(EghdamEndDate, '') != '' and isnull(RegDate, '') != ''
-										then datediff(MINUTE, RegDate, EghdamEndDate)  +  DATEDIFF(minute, RegTime , EghdamEndTime) 
-										when isnull(RegDate, '') != '' and isnull(EghdamEndDate, '') = ''    --تیکت همچنان در کارتابل اقدام کننده هست
-										then datediff(MINUTE, RegDate, @CurrentDate)  +  DATEDIFF(minute, RegTime, @CurrentTime)					
+										when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
+										then datediff(MINUTE, EghdamStartDate, RegDate)  +  DATEDIFF(minute , EghdamStartTime, RegTime) 
+										when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''  --تیکت همچنان در کارتابل اقدام کننده هست
+										then datediff(MINUTE, EghdamStartDate, @CurrentDate)  +  DATEDIFF(minute, EghdamStartTime, @CurrentTime)					
 									end
 								) 
 								from
-									Tbl_Cu_ServingTableSecondPhaseHumanResource_Log s	
+									Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log h	
 								where
-									s.WFID =  B.WFID 
+									h.WFID =  B.WFID 
 									and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-									and StatusActing != 2			
+									and StatusActing != 2	
+									and ActivityID in(4782972985427111846, 5443268012818330002)
 							) Actor_minutes
 				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log X
 					INNER JOIN
