@@ -1,200 +1,185 @@
-﻿alter table Tbl_Cu_ServingTableSecondPhase_Log
-add EghdamEndDate nvarchar(10)
-
-go
-
-alter table Tbl_Cu_ServingTableSecondPhase_Log
-add EghdamEndTime nvarchar(5)
-
-go
-
---alter table Tbl_Cu_ServingTableSecondPhase_Log
---add EghdamGroupEndDate nvarchar(10)
+﻿--alter table Tbl_Cu_ServingTableSecondPhase_Log
+--add EghdamStartDate nvarchar(10)
 
 --go
 
 --alter table Tbl_Cu_ServingTableSecondPhase_Log
---add EghdamGroupEndTime nvarchar(5)
+--add EghdamStartTime nvarchar(5)
 
 --go
 
-alter table Tbl_Cu_ServingTableSecondPhaseHumanResource_Log
-add EghdamEndDate nvarchar(10)
-
-go
-
-alter table Tbl_Cu_ServingTableSecondPhaseHumanResource_Log
-add EghdamEndTime nvarchar(5)
-
-go
 
 --alter table Tbl_Cu_ServingTableSecondPhaseHumanResource_Log
---add EghdamGroupEndDate nvarchar(10)
+--add EghdamStartDate nvarchar(10)
 
 --go
 
 --alter table Tbl_Cu_ServingTableSecondPhaseHumanResource_Log
---add EghdamGroupEndTime nvarchar(5)
+--add EghdamStartTime nvarchar(5)
 
 --go
 
-create PROCEDURE [dbo].[Sp_Cu_Update_EghdamEndDate_Tbl_Cu_ServingTableSecondPhase_Log]
+
+create PROCEDURE [dbo].[Sp_Cu_Update_EghdamStartDate_Tbl_Cu_ServingTableSecondPhaseHistory_Log]
     @WFID AS BIGINT
 AS
 BEGIN
-	declare @CurrentDate nvarchar(10) = (select dbo.MiladiToShamsi(GETDATE()))
-	declare @CurrentTime nvarchar(5) = (select convert(nvarchar(5),cast(getdate() as time)))
+	declare
+		@CreateDate nvarchar(10),
+		@CreateTime nvarchar(5)
+
+	select	top 1
+		@CreateDate = (select dbo.MiladiToShamsi(t.CreateDate)) ,
+		@CreateTime = (select convert(nvarchar(5),cast(t.CreateDate as time))) 
+	from
+		task.TblTask t
+		join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
+	where
+		a.ActivityType = 'TZHumanActivity'
+		and a.WokflowInstanceID = @WFID
+	order by
+		TaskID desc;
+
 
 	with cte as(
-		select top 1
-			*
-		from
-			Tbl_Cu_ServingTableSecondPhaseHistory_Log
+		select
+			h.EghdamStartDate, h.EghdamStartTime
+		from 
+			Tbl_Cu_ServingTableSecondPhaseHistory_Log h 
 		where
-			WFID = @WFID
+			h.WFID = @WFID
 			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and StatusActing != 2
+			and h.StatusActing != 2
 			and activityID = 5443268012818330002
-		order by
-			 --primary key desc
-		),
-		cte2 as(
-			select top 1
-				*
-			from
-				Tbl_Cu_ServingTableSecondPhase_Log
-			where
-				cte.wfid = Tbl_Cu_ServingTableSecondPhase_Log.wfid
-			order by
-				--primary key desc
 		)
-		update cte2
+		update cte
 		set
-			EghdamEndDate = @CurrentDate,
-			EghdamEndTime = @CurrentTime
+			EghdamStartDate = @CreateDate,
+			EghdamStartTime = @CreateTime
 end
 
 go
 
-create PROCEDURE [dbo].[Sp_Cu_Update_EghdamGroupEndDate_Tbl_Cu_ServingTableSecondPhase_Log]
+create PROCEDURE [dbo].[Sp_Cu_Update_EghdamGroupStartDate_Tbl_Cu_ServingTableSecondPhaseHistory_Log]
     @WFID AS BIGINT
 AS
 BEGIN
-	declare @CurrentDate nvarchar(10) = (select dbo.MiladiToShamsi(GETDATE()))
-	declare @CurrentTime nvarchar(5) = (select convert(nvarchar(5),cast(getdate() as time)))
+	declare
+		@CreateDate nvarchar(10),
+		@CreateTime nvarchar(5)
+
+	select	top 1
+		@CreateDate = (select dbo.MiladiToShamsi(t.CreateDate)) ,
+		@CreateTime = (select convert(nvarchar(5),cast(t.CreateDate as time))) 
+	from
+		task.TblTask t
+		join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
+	where
+		a.ActivityType = 'TZHumanActivity'
+		and a.WokflowInstanceID = @WFID
+	order by
+		TaskID desc;
+
 
 	with cte as(
-		select top 1
-			*
-		from
-			Tbl_Cu_ServingTableSecondPhaseHistory_Log
+		select
+			h.EghdamStartDate, h.EghdamStartTime
+		from 
+			Tbl_Cu_ServingTableSecondPhaseHistory_Log h 
 		where
-			WFID = @WFID
+			h.WFID = @WFID
 			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and StatusActing != 2
+			and h.StatusActing != 2
 			and activityID = 4782972985427111846
-		order by
-			 --primary key desc
-		),
-		cte2 as(
-			select top 1
-				*
-			from
-				Tbl_Cu_ServingTableSecondPhase_Log
-			where
-				cte.wfid = Tbl_Cu_ServingTableSecondPhase_Log.wfid
-			order by
-				--primary key desc
 		)
-		update cte2
+		update cte
 		set
-			EghdamEndDate = @CurrentDate,
-			EghdamEndTime = @CurrentTime
+			EghdamStartDate = @CreateDate,
+			EghdamStartTime = @CreateTime
 end
 
 go
 
 
-create PROCEDURE [dbo].[Sp_Cu_Update_EghdamEndDate_Tbl_Cu_ServingTableSecondPhaseHumanResource_Log]
+create PROCEDURE [dbo].[Sp_Cu_Update_EghdamStartDate_Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log]
     @WFID AS BIGINT
 AS
 BEGIN
-	declare @CurrentDate nvarchar(10) = (select dbo.MiladiToShamsi(GETDATE()))
-	declare @CurrentTime nvarchar(5) = (select convert(nvarchar(5),cast(getdate() as time)))
+	declare
+		@CreateDate nvarchar(10),
+		@CreateTime nvarchar(5)
+
+	select	top 1
+		@CreateDate = (select dbo.MiladiToShamsi(t.CreateDate)) ,
+		@CreateTime = (select convert(nvarchar(5),cast(t.CreateDate as time))) 
+	from
+		task.TblTask t
+		join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
+	where
+		a.ActivityType = 'TZHumanActivity'
+		and a.WokflowInstanceID = @WFID
+	order by
+		TaskID desc;
+
 
 	with cte as(
-		select top 1
-			*
-		from
-			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log
+		select
+			h.EghdamStartDate, h.EghdamStartTime
+		from 
+			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log h 
 		where
-			WFID = @WFID
+			h.WFID = @WFID
 			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and StatusActing != 2
+			and h.StatusActing != 2
 			and activityID = 5443268012818330002
-		order by
-			 --primary key desc
-		),
-		cte2 as(
-			select top 1
-				*
-			from
-				Tbl_Cu_ServingTableSecondPhaseHumanResource_Log
-			where
-				cte.wfid = Tbl_Cu_ServingTableSecondPhaseHumanResource_Log.wfid
-			order by
-				--primary key desc
 		)
-		update cte2
+		update cte
 		set
-			EghdamEndDate = @CurrentDate,
-			EghdamEndTime = @CurrentTime
+			EghdamStartDate = @CreateDate,
+			EghdamStartTime = @CreateTime
 end
 
 go
 
-create PROCEDURE [dbo].[Sp_Cu_Update_EghdamGroupEndDate_Tbl_Cu_ServingTableSecondPhaseHumanResource_Log]
+create PROCEDURE [dbo].[Sp_Cu_Update_EghdamGroupStartDate_Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log]
     @WFID AS BIGINT
 AS
 BEGIN
-	declare @CurrentDate nvarchar(10) = (select dbo.MiladiToShamsi(GETDATE()))
-	declare @CurrentTime nvarchar(5) = (select convert(nvarchar(5),cast(getdate() as time)))
+	declare
+		@CreateDate nvarchar(10),
+		@CreateTime nvarchar(5)
+
+	select	top 1
+		@CreateDate = (select dbo.MiladiToShamsi(t.CreateDate)) ,
+		@CreateTime = (select convert(nvarchar(5),cast(t.CreateDate as time))) 
+	from
+		task.TblTask t
+		join task.TblWorkflowActivityInstance a on a.WorkflowActivityInstanceID = t.WorkflowActivityInstaceID
+	where
+		a.ActivityType = 'TZHumanActivity'
+		and a.WokflowInstanceID = @WFID
+	order by
+		TaskID desc;
+
 
 	with cte as(
-		select top 1
-			*
-		from
-			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log
+		select
+			h.EghdamStartDate, h.EghdamStartTime
+		from 
+			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log h 
 		where
-			WFID = @WFID
+			h.WFID = @WFID
 			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and StatusActing != 2
+			and h.StatusActing != 2
 			and activityID = 4782972985427111846
-		order by
-			 --primary key desc
-		),
-		cte2 as(
-			select top 1
-				*
-			from
-				Tbl_Cu_ServingTableSecondPhaseHumanResource_Log
-			where
-				cte.wfid = Tbl_Cu_ServingTableSecondPhaseHumanResource_Log.wfid
-			order by
-				--primary key desc
 		)
-		update cte2
+		update cte
 		set
-			EghdamEndDate = @CurrentDate,
-			EghdamEndTime = @CurrentTime
+			EghdamStartDate = @CreateDate,
+			EghdamStartTime = @CreateTime
 end
 
 
 
 
-
---select * from Tbl_Cu_ServingTableSecondPhaseHistory_Log
-
-
---select * from Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log
 

@@ -503,7 +503,7 @@ begin
 	if @FullName != ''
 		update users.TblProfiles
 		set
-			FullName = @NationalCode
+			FullName = @FullName
 		where
 			UserId = @User
 	if @MobileNo != ''
