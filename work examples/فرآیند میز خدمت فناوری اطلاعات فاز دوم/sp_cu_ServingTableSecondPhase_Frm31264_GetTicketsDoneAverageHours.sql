@@ -15,17 +15,23 @@ begin
 				sum(
 					case
 						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
-						then datediff(MINUTE, EghdamStartDate, RegDate)  +  DATEDIFF(minute , EghdamStartTime, RegTime) 
+						then dbo.FN_CU_CalculateWorkingHours(EghdamStartDate, EghdamStartTime, RegDate, RegTime)
 						when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''  --تیکت همچنان در کارتابل اقدام کننده هست
-						then datediff(MINUTE, EghdamStartDate, @CurrentDate)  +  DATEDIFF(minute, EghdamStartTime, @CurrentTime)					
+						then dbo.FN_CU_CalculateWorkingHours(EghdamStartDate, EghdamStartTime, @CurrentDate, @CurrentTime)
 					end
-				) 
+					)
+				--sum(
+				--	case
+				--		when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
+				--		then datediff(MINUTE, EghdamStartDate, RegDate)  +  DATEDIFF(minute , EghdamStartTime, RegTime) 
+				--		when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''  --تیکت همچنان در کارتابل اقدام کننده هست
+				--		then datediff(MINUTE, EghdamStartDate, @CurrentDate)  +  DATEDIFF(minute, EghdamStartTime, @CurrentTime)					
+				--	end)
 			from
 				Tbl_Cu_ServingTableSecondPhaseHistory_Log h
 			where
 				h.WFID =  s.WFID
-				and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-				and StatusActing != 2
+				and (h.RoleID = 6 and h.StatusActing != 2 or h.RoleID = 4)  --شرط های کاربر اقدام کننده بودن	
 				and ActivityID in(4782972985427111846, 5443268012818330002)
 			) Actor_minutes
 		FROM 
@@ -50,13 +56,6 @@ begin
 		)
 		select
 			ceiling(TicketsInActorCartable_AverageTime)  as TicketsInActorCartable_AverageTime_WorkHours
-			--cast(
-			--	floor(TicketsInActorCartable_AverageTime / 8) as nvarchar(50)
-			--	) + 'روز کاری و '
-			--+ cast(
-			--	ceiling(TicketsInActorCartable_AverageTime % 8) as nvarchar(10)
-			--	)
-			--+ ' ساعت' as TicketsInActorCartable_AverageTime_WorkHours
 		from   
 			cte2
 end

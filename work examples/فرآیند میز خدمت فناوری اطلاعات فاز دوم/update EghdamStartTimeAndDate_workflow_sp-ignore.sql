@@ -48,8 +48,10 @@ BEGIN
 			Tbl_Cu_ServingTableSecondPhaseHistory_Log h 
 		where
 			h.WFID = @WFID
-			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and h.StatusActing != 2
+			--and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+			--and h.StatusActing != 2
+			and (RoleID = 6 and h.StatusActing != 2)
+			or RoleID = 4
 			and activityID = 5443268012818330002
 		)
 		update cte
@@ -88,8 +90,10 @@ BEGIN
 			Tbl_Cu_ServingTableSecondPhaseHistory_Log h 
 		where
 			h.WFID = @WFID
-			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and h.StatusActing != 2
+			--and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+			--and h.StatusActing != 2
+			and (RoleID = 6 and h.StatusActing != 2)
+			or RoleID = 4
 			and activityID = 4782972985427111846
 		)
 		update cte
@@ -129,8 +133,10 @@ BEGIN
 			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log h 
 		where
 			h.WFID = @WFID
-			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and h.StatusActing != 2
+			--and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+			--and h.StatusActing != 2
+			and (RoleID = 6 and h.StatusActing != 2)
+			or RoleID = 4
 			and activityID = 5443268012818330002
 		)
 		update cte
@@ -169,8 +175,10 @@ BEGIN
 			Tbl_Cu_ServingTableSecondPhaseHumanResourceHistory_Log h 
 		where
 			h.WFID = @WFID
-			and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-			and h.StatusActing != 2
+			--and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
+			--and h.StatusActing != 2
+			and (RoleID = 6 and h.StatusActing != 2)
+			or RoleID = 4
 			and activityID = 4782972985427111846
 		)
 		update cte

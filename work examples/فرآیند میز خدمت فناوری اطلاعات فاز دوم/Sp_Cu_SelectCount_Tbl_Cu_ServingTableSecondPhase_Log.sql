@@ -12,13 +12,6 @@ BEGIN
 	select 
 		*,
 		ceiling(AvgTimeTicketsDonePerUser) AvgTimeTicketsDonePerUser_WorkDays
-		--cast(
-		--		floor(AvgTimeTicketsDonePerUser / 8) as nvarchar(50)
-		--		) + ' روز کاری'
-		--	+ cast(
-		--		ceiling(AvgTimeTicketsDonePerUser % 8) as nvarchar(10)
-		--		)
-		--	+ ' ساعت' as AvgTimeTicketsDonePerUser_WorkDays
 	from(
 		select
 			*,
@@ -56,7 +49,7 @@ BEGIN
 							   0
 					   END AS RadShode,
 					   CASE
-						   WHEN X.StatusActing = 4 THEN
+						   WHEN X.StatusActing = 6 THEN
 							   1
 						   ELSE
 							   0
@@ -71,17 +64,16 @@ BEGIN
 							sum(
 								case
 									when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') != ''
-									then datediff(MINUTE, EghdamStartDate, RegDate)  +  DATEDIFF(minute , EghdamStartTime, RegTime) 
+									then dbo.FN_CU_CalculateWorkingHours(EghdamStartDate, EghdamStartTime, RegDate, RegTime)
 									when isnull(EghdamStartDate, '') != '' and isnull(RegDate, '') = ''  --تیکت همچنان در کارتابل اقدام کننده هست
-									then datediff(MINUTE, EghdamStartDate, @CurrentDate)  +  DATEDIFF(minute, EghdamStartTime, @CurrentTime)					
+									then dbo.FN_CU_CalculateWorkingHours(EghdamStartDate, EghdamStartTime, @CurrentDate, @CurrentTime)
 								end
 								) 
 							from
 								Tbl_Cu_ServingTableSecondPhaseHistory_Log h
 							where
 									h.WFID =  B.WFID 
-									and RoleID in(4,6)  --شرط های کاربر اقدام کننده بودن
-									and StatusActing != 2
+									and (h.RoleID = 6 and h.StatusActing != 2 or h.RoleID = 4)  --شرط های کاربر اقدام کننده بودن									
 									and ActivityID in(4782972985427111846, 5443268012818330002)
 							) Actor_minutes
 				FROM dbo.Tbl_Cu_ServingTableSecondPhaseHistory_Log X
