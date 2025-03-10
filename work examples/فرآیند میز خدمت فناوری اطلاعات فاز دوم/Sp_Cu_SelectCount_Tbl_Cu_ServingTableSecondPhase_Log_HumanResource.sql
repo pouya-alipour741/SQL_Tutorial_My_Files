@@ -80,8 +80,8 @@ BEGIN
 					(
 						SELECT *
 						FROM dbo.Tbl_Cu_ServingTableSecondPhaseHumanResource_Log S
-						WHERE S.StatusID IN ( 203, 207, 208, 200 )
-							  AND
+						WHERE --S.StatusID IN ( 203, 207, 208, 200 )
+							  --AND
 							  (
 								  @FromDate = ''
 								  OR RegDate >= @FromDate
