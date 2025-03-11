@@ -1,4 +1,4 @@
-﻿--exec sp_cu_ServingTableSecondPhase_Frm31264_GetTicketsDoneAverageHours @FromDate=N'',@ToDate=N'1403/12/12'
+﻿--exec sp_cu_ServingTableSecondPhase_Frm31264_GetTicketsDoneAverageHours @FromDate=N'1403/11/14',@ToDate=N'1403/11/17'
 
 
 alter proc sp_cu_ServingTableSecondPhase_Frm31264_GetTicketsDoneAverageHours
@@ -29,10 +29,15 @@ begin
 				--	end)
 			from
 				Tbl_Cu_ServingTableSecondPhaseHistory_Log h
+				join task.TblWorkflowActivityInstance a on a.WokflowInstanceID = h.WFID
+				join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
 			where
 				h.WFID =  s.WFID
 				and (h.RoleID = 6 and h.StatusActing != 2 or h.RoleID = 4)  --شرط های کاربر اقدام کننده بودن	
-				and ActivityID in(4782972985427111846, 5443268012818330002)
+				and h.ActivityID in(4782972985427111846, 5443268012818330002)
+				and TaskName like N'%اقدام%'  -- بدلیل وجود تسک های نامرتبط برای همان اکتیویتی در یک فرآیند محاسبات بدون این فیلتر برای دیتاهای قدیمی خراب می شد
+				and a.ActivityID = h.ActivityID
+				and t.UserID = h.RegUserID
 			) Actor_minutes
 		FROM 
 			Tbl_Cu_ServingTableSecondPhase_Log s
