@@ -100,10 +100,20 @@ go
 create proc Sp_Cu_WFIDStatus_Frm41612
 as
 begin
+	--select
+	--	LogStatusID, LogStatusTitle
+	--from
+	--	Tbl_CU_LogStatus s
+	--where
+	--	LogStatusID in(select StatusID from Tbl_Cu_EncyclopediaEdit_Log)
+
+
 	select
 		LogStatusID, LogStatusTitle
 	from
 		Tbl_CU_LogStatus s
 	where
-		LogStatusID in(select StatusID from Tbl_Cu_EncyclopediaEdit_Log)
+		WID = 2000554
 end
+
+
