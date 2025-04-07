@@ -1,0 +1,11 @@
+172
+user tazarvuser
+pass T@z@rvU$er
+
+176 sa
+T@zarv76
+
+ftp
+https://ftp.samaninsurance.ir/Web%20Client/ListDir.htm
+user Tazarv
+pass wKKbVc6Z
