@@ -137,8 +137,8 @@ EXEC sp_executesql
 
 
 alter proc sp_dynamic_user_task
-@fromdate varchar(10)=null,
-@todate varchar(10)=null,
+@fromdate date=null,
+@todate date=null,
 @taskname nvarchar(50)=null,
 @viewdiff int=null
 as
@@ -149,23 +149,56 @@ begin
 	from task.TblTask t join task.TblTaskStatus s on t.TaskStatusID=s.TaskStatusID
 	join users.TblProfiles p on p.UserId=t.UserID where 1=1'
 	if (@taskname is not null)
-		set @sql+='
-		 and s.TaskStatusName =@tn'
-	if (@fromdate is not null)
+		set @sql+=N' and s.TaskStatusName =@tn'
+		 
+	if (@fromdate is not null and @todate is not null)
 		set @sql+=
-		' and CreateDate between @fd and @td'
+		N' and t.CreateDate between @fd and @td'
 	if (@viewdiff is not null)
-		begin
 		set @sql+=
-		' and datediff(day,CreateDate,ViewDate)<= cast(@vd as nvarchar(50))'
-		end
+		N' and datediff(day,t.CreateDate,t.ViewDate)<= @vd'
 	set @sql+=
 	'group by p.UserId,FullName'
 
 	exec sp_executesql @sql,
-		N'@tn nvarchar(50), @fd date,@td date, @vd int',
+		N'@tn nvarchar(50),@td date, @fd date, @vd int',
 		@tn=@taskname,@td=@todate,@fd=@fromdate,@vd=@viewdiff
 end
 
 
-exec sp_dynamic_user_task @fromdate='2018',@todate='2024',@taskname='در حال انجام' ,@viewdiff =5
+exec sp_dynamic_user_task @fromdate='2018',@todate='2024',@taskname=null ,@viewdiff =null
+
+
+
+ALTER PROC sp_dynamic_user_task
+    @fromdate DATE = NULL,
+    @todate DATE = NULL,
+    @taskname NVARCHAR(50) = NULL,
+    @viewdiff INT = NULL
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX) = N'
+    SELECT p.UserId, FullName, COUNT(t.TaskID) AS user_count
+    FROM task.TblTask t
+    JOIN task.TblTaskStatus s ON t.TaskStatusID = s.TaskStatusID
+    JOIN users.TblProfiles p ON p.UserId = t.UserID
+    WHERE 1 = 1'
+
+    IF (@taskname IS NOT NULL)
+        SET @sql += N' AND s.TaskStatusName = @tn'
+
+    IF (@fromdate IS NOT NULL AND @todate IS NOT NULL)
+        SET @sql += N' AND t.CreateDate BETWEEN @fd AND @td'
+
+    IF (@viewdiff IS NOT NULL)
+        SET @sql += N' AND DATEDIFF(DAY, t.CreateDate, t.ViewDate) <= @vd'
+
+    SET @sql += N' GROUP BY p.UserId, FullName'
+
+    EXEC sp_executesql 
+        @sql,
+        N'@tn NVARCHAR(50), @fd DATE, @td DATE, @vd INT',
+        @tn = @taskname, @fd = @fromdate, @td = @todate, @vd = @viewdiff
+END
+
+

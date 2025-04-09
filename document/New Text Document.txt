@@ -9,3 +9,6 @@ ftp
 https://ftp.samaninsurance.ir/Web%20Client/ListDir.htm
 user Tazarv
 pass wKKbVc6Z
+
+
+10.10.15.145\sql2017 
