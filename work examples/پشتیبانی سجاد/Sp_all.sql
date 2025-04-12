@@ -1,12 +1,22 @@
 ﻿alter table  Tbl_CU_QuestionAnswer
 add UserChosenFollowupCode nvarchar(10)
 
+go
+
 alter table Tbl_CU_QuestionRefer
 add InstituteID int, UniversityID int, SendToTazarv bit , UniversityUserID int
+
+go
 
 alter table Tbl_Cu_Base_ExpertWF_SaoSupport
 add ITExpertID bigint  
 
+go
+
+alter table Tbl_CU_QuestionAnswer 
+add ObservorID int
+
+go
 
 create PROCEDURE [dbo].[Sp_Cu_chkProblemTypeID_frm21041]
 @ProblemType int
@@ -251,8 +261,8 @@ as
 begin
 	declare @temp table  (
 	GUIDID nvarchar(50),	CountriesScholarshipID bigint,	WorkFlowName nvarchar(50),	WFID bigint,
-	FollowCode nvarchar(50),	WFStatus nvarchar(50),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
-	PageID int,	EntryID nvarchar(50),	ShowFRM nvarchar(10),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
+	FollowCode nvarchar(max),	WFStatus nvarchar(100),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
+	PageID int,	EntryID bigint,	ShowFRM nvarchar(1400),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
 	)
 	insert into @temp
 	exec [Sp_CU_GetDashboard] @PortalUserID
@@ -1047,3 +1057,36 @@ AS
 
 
     END
+
+
+go
+
+create proc [dbo].[sp_cu_UpdateObservorUser_Support]
+@wfid int
+as
+begin
+	declare @observorID int = (
+								select top 1 t.userid
+								from
+									task.TblTask t
+									join task.TblWorkflowActivityInstance a on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+								where
+									a.WokflowInstanceID = @wfid
+									and ActivityID in(5012698392437218490, 5669317155888546760)
+									and t.UserID is not null
+								)
+	if not exists(select 1 from Tbl_CU_QuestionAnswer where WFID = @wfid)
+		begin
+			print 'insert'
+			insert into Tbl_CU_QuestionAnswer(ObservorID)
+			values(@ObservorID)
+		end
+	else
+		begin
+			print 'update'
+			update Tbl_CU_QuestionAnswer
+			set ObservorID = @ObservorID
+			where WFID = @wfid
+
+		end
+end

@@ -1,20 +1,25 @@
 https://172.50.0.93/user-tasks/  portal simulation
-https://172.50.0.94/HTMLTBS/Account/Login?ReturnUrl=%2fHTMLTBS%2ffa tbs  simulation
+https://172.16.17.113/HTMLTBS/Account/Login?ReturnUrl=%2fHTMLTBS%2ffa tbs  simulation
 
 https://10.10.15.119/HTMLSAO/ tbs local
 
 
+172.50.0.112
+administrator
+Qazxsw@#$%^&*
+
+----obsolete 
 172.50.0.106
 Administrator    
 Qazxsw@#$%^&*
 
-172.50.0.94
+172.16.17.113
 Administrator
 Ghey#Thue^
-
+-----
 
 https://172.50.0.93/wp-login.php
 0077874145         
 12345
 
-https://10.10.15.119/HTMLSAO/ local tbs
+
