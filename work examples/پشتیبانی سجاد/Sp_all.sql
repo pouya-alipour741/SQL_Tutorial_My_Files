@@ -99,6 +99,7 @@ BEGIN
 
 	declare @IsAutomat bit = (select IsAutomat from Tbl_CU_QuestionAnswer where WFID = @WFID)
 	declare @PortalUserID bigint = (select PortalUserID from Tbl_CU_QuestionAnswer where WFID = @WFID)
+	declare @RegisteredUserId bigint = (select RegisteredUserId from Tbl_CU_QuestionAnswer where WFID = @WFID)
 	declare @regUsername nvarchar(50) = (   
 											case 
 												when 
@@ -120,14 +121,21 @@ BEGIN
 														UserID = @PortalUserID
 													)
 																										
+												--else
+												--	(select
+												--		top 1 FullName 											
+												--	from
+												--		Tbl_CU_QuestionAnswer l
+												--		join users.TblProfiles p on l.RegisteredUserId = p.UserId
+												--	where
+												--		WFID = @WFID)
 												else
 													(select
 														top 1 FullName 											
 													from
-														Tbl_CU_QuestionAnswer l
-														join users.TblProfiles p on l.RegisteredUserId = p.UserId
+														users.TblProfiles
 													where
-														WFID = @WFID)
+														UserId = @RegisteredUserId)
 											end
 										)
 
@@ -666,15 +674,15 @@ BEGIN
 						declare @temp2 table(GroupID int, MentalHealthGroup5 int, MentalHealthGroup6 int)
 						insert into @temp2
 						exec Sp_Cu_Select_Group_ForMentalHealth @cmbUniversity
-						set @GROUPID = (select GroupID from @temp2)
+						set @GROUPID = (select top 1 GroupID from @temp2)
 					end
 				else if @cmbMainSubject = 2000578 --فرآیند دانشجویان سرآمد
 					begin
-						set @USERID = (select UserId from  users.TblUsers
+						set @USERID = (select top 1 UserId from  users.TblUsers
 						where UserName like '%' + 'saramad_' + cast((select UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
 					end
 				else if @cmbMainSubject = 2000573  --فرآیند همیار دانشجو
-					set @USERID = (select UserId from  users.TblUsers
+					set @USERID = (select top 1 UserId from  users.TblUsers
 					where UserName like '%' + 'hamyar_' + cast((select UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
 			end
 
