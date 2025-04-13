@@ -1,20 +1,15 @@
 ﻿alter table  Tbl_CU_QuestionAnswer
-add UserChosenFollowupCode nvarchar(10)
+add UserChosenFollowupCode nvarchar(10), ObservorID int
 
 go
 
 alter table Tbl_CU_QuestionRefer
-add InstituteID int, UniversityID int, SendToTazarv bit , UniversityUserID int
+add InstituteID int, UniversityID int, SendToTazarv bit , UniversityUserID int, IsUniRefUser bit
 
 go
 
 alter table Tbl_Cu_Base_ExpertWF_SaoSupport
 add ITExpertID bigint  
-
-go
-
-alter table Tbl_CU_QuestionAnswer 
-add ObservorID int
 
 go
 
@@ -556,7 +551,9 @@ ALTER PROCEDURE [dbo].[Sp_Cu_GetGroupID_frm20295]
 	@cmbMainSubject int
 AS
 BEGIN
-    DECLARE @GROUPID AS BIGINT, @USERID bigint
+    DECLARE @GROUPID AS BIGINT,
+			@USERID bigint,
+			@IsUser bit = 0
 
     IF (@rbnDesiredOffice = 1)
     BEGIN
@@ -678,16 +675,21 @@ BEGIN
 					end
 				else if @cmbMainSubject = 2000578 --فرآیند دانشجویان سرآمد
 					begin
+						set @IsUser = 1
 						set @USERID = (select top 1 UserId from  users.TblUsers
-						where UserName like '%' + 'saramad_' + cast((select UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
+						where UserName like '%' + 'saramad_' + cast((select top 1 UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
 					end
 				else if @cmbMainSubject = 2000573  --فرآیند همیار دانشجو
-					set @USERID = (select top 1 UserId from  users.TblUsers
-					where UserName like '%' + 'hamyar_' + cast((select UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
+					begin
+						set @IsUser = 1
+						set @USERID = (select top 1 UserId from  users.TblUsers
+						where UserName like '%' + 'hamyar_' + cast((select top 1 UniversityCode from Tbl_CU_University where UniversityID = @cmbUniversity) as nvarchar(50)) + '%')
+					end
 			end
 
     END
-	SELECT @GROUPID AS GROUPID, @USERID as USERID
+	SELECT isnull(@GROUPID, 923) AS GROUPID, isnull(@USERID, 51) as USERID, @IsUser as IsUniRefUser
+		
 
 END;
 

@@ -633,7 +633,8 @@ ALTER PROCEDURE [dbo].[Sp_Cu_Insert_tbl_cu_QuestionRefer]
 	@cmbInstitute int,   --update
 	@cmbUniversity int,  
     @SendToTazarv bit, 
-	@UniversityUserID int, --end
+	@UniversityUserID int,
+	@IsUniRefUser bit,--end
 	@Des AS NVARCHAR(1000),
     @Attachment AS NVARCHAR(1000),
     @GroupID AS BIGINT,
@@ -666,7 +667,8 @@ BEGIN
 		InstituteID,  --update
 		UniversityID,  
 		SendToTazarv,
-		UniversityUserID --end
+		UniversityUserID, 
+		IsUniRefUser--end
 	)
     SELECT @ReferId,
            @cmbDesiredUnit,
@@ -688,9 +690,11 @@ BEGIN
 		   @cmbInstitute,  --update
 		   @cmbUniversity,  
 		   @SendToTazarv,
-		   @UniversityUserID --end
+		   @UniversityUserID,
+		   @IsUniRefUser--end
     SELECT GETDATE() AS Res;
 END;
+
 
 go
 
@@ -714,7 +718,8 @@ ALTER PROCEDURE [dbo].[Sp_Cu_Update_tbl_cu_QuestionRefer]
 	@UniversityID int,  --update
 	@InstituteID int,  
 	@SendToTazarv bit,
-	@UniversityUserId int -- end
+	@UniversityUserId int,
+	@IsUniRefUser bit-- end
 AS
 BEGIN
     UPDATE Tbl_CU_QuestionRefer
@@ -737,7 +742,8 @@ BEGIN
 		UniversityID = @UniversityID,  --update
 		InstituteID = @InstituteID,
 		SendToTazarv = @SendToTazarv,
-		UniversityUserId = @UniversityUserId --end
+		UniversityUserId = @UniversityUserId,
+		IsUniRefUser = @IsUniRefUser --end
     WHERE Id = @Id;
 
     SELECT GETDATE() AS Res;
@@ -846,6 +852,21 @@ AS
 			order by id desc
     END
 
+go
 
+ALTER PROCEDURE [dbo].[SP_CU_GetGroupOrUserName_QuestionRefer]
+@WFID AS BIGINT
+AS
+    BEGIN
+
+        SELECT TOP 1
+                GroupID, UniversityUserID
+				,IsUniRefUser  --update
+        FROM    dbo.Tbl_CU_QuestionRefer
+        WHERE   WFID = @WFID
+        ORDER BY Id DESC
+
+
+    END
 
 
