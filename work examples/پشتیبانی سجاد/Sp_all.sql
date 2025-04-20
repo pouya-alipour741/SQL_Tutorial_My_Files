@@ -222,6 +222,36 @@ end
 
 go
 
+--create PROCEDURE [dbo].[Sp_cu_SelectObservors_SaoSupport]
+--@WFID AS BIGINT
+--AS
+--BEGIN
+
+--		declare @ObservorUserID as bigint,
+--				@ObservorGroupID bigint
+
+
+
+--		declare @FollowUpCode nvarchar(100) = (select top 1 UserChosenFollowUpCode from Tbl_CU_QuestionAnswer where WFID = @WFID) 
+
+
+--		select top 1
+--			@ObservorUserID=isnull(t.UserID,0), 
+--			@ObservorGroupID=isnull(t.GroupID,0) 
+--		from
+--			task.TblWorkflowActivityInstance a
+--			join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+--		where
+--			a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
+--			--and a.ActivityType = 'TZHumanActivity'
+--			and isnull(userid,0)<>2
+--		order by
+--			t.TaskID desc
+		
+--		select @ObservorUserID as ObservorID, @ObservorGroupID as ObservorGroupID
+
+--END;
+
 create PROCEDURE [dbo].[Sp_cu_SelectObservors_SaoSupport]
 @WFID AS BIGINT
 AS
@@ -233,25 +263,31 @@ BEGIN
 
 
 		declare @FollowUpCode nvarchar(100) = (select top 1 UserChosenFollowUpCode from Tbl_CU_QuestionAnswer where WFID = @WFID) 
+		declare @MainSubjectID int = (select top 1 MainSubjectID from Tbl_CU_QuestionAnswer where WFID = @WFID) 
 
-
-		select top 1
-			@ObservorUserID=isnull(t.UserID,0), 
-			@ObservorGroupID=isnull(t.GroupID,0) 
-		from
-			task.TblWorkflowActivityInstance a
-			join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
-		where
-			a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
-			--and a.ActivityType = 'TZHumanActivity'
-			and isnull(userid,0)<>2
-		order by
-			t.TaskID desc
-		
+		if @MainSubjectID = 46 --مدیریت پروفایل متقاضی
+			begin
+				set @ObservorUserID = 51
+				set @ObservorGroupID = 0
+			end
+		else
+			begin
+				select top 1
+					@ObservorUserID=isnull(t.UserID,0), 
+					@ObservorGroupID=isnull(t.GroupID,0) 
+				from
+					task.TblWorkflowActivityInstance a
+					join task.TblTask t on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+				where
+					a.WokflowInstanceID = (select WFID from Tbl_CU_FollowUpCode where FollowUpCode= @FollowUpCode)
+					--and a.ActivityType = 'TZHumanActivity'
+					and isnull(userid,0)<>2
+				order by
+					t.TaskID desc
+			end
 		select @ObservorUserID as ObservorID, @ObservorGroupID as ObservorGroupID
 
 END;
-
 
 go
 
