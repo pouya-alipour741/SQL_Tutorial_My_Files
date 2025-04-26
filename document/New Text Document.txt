@@ -1,3 +1,6 @@
+10.10.10.157\sql2017 
+
+
 172
 user tazarvuser
 pass T@z@rvU$er
@@ -10,7 +13,4 @@ https://ftp.samaninsurance.ir/Web%20Client/ListDir.htm
 user Tazarv
 pass wKKbVc6Z
 
-
-10.10.10.157\sql2017 
-
-web saman main: crm@123
+web saman and tbs main: crm@123
