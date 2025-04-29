@@ -1,7 +1,6 @@
 https://172.50.0.93/user-tasks/  portal simulation
 https://172.16.17.113/HTMLTBS/Account/Login?ReturnUrl=%2fHTMLTBS%2ffa tbs  simulation
 
-https://10.10.15.119/HTMLSAO/ tbs local
 
 
 172.50.0.112

@@ -267,7 +267,7 @@ BEGIN
 
 		if @MainSubjectID = 46 --مدیریت پروفایل متقاضی
 			begin
-				set @ObservorUserID = 51
+				set @ObservorUserID = 31 --رسول توکلی
 				set @ObservorGroupID = 0
 			end
 		else
