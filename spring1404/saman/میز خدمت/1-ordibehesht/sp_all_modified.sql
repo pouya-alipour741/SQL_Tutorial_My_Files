@@ -313,7 +313,7 @@ AS
 BEGIN
 	
 	declare @GUID nvarchar(50) = (select GUIDD from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
-	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID order by ServingTableFieldID desc)
+	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
 
     SELECT 'بررسی جهت تایید' + '-' + ISNULL(
                                      (
@@ -811,7 +811,7 @@ BEGIN
 			isnull((select top 1 SubGroupTitle from Tbl_CU_Base_SubGroups_FRM151 where SubGroupID = a.cmbSubGroup), '') + '-' +
 			isnull((select top 1 RequestKindTitle from Tbl_CU_Base_RequestKind_FRM153 where RequestKindID = a.cmbRequestKind), '') + '-' +
 			isnull((select top 1 RequestSubjectName from Tbl_CU_Base_RequestSubject_FRM155 where RequestSubjectID = a.cmbRequestSubject),'') + '-' +
-			isnull((select top 1 FieldSubjectTitle from Tbl_CU_Base_FieldSubject_FRM157 where FieldSubjectID = @cmbFieldValueID), '') + '-' +
+			isnull((select top 1 FieldValueTitle from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID), '') + '-' +
 			'ثبت شده توسط:' +
 			isnull((select top 1 FullName from users.TblProfiles where UserId = a.RegUserID), '') 
 			--+ '-به کد پیگیری ' + isnull(cast(@wfid as nvarchar(50)),'') 
@@ -824,110 +824,110 @@ END;
 go
 
 ------------
-ALTER PROCEDURE [dbo].[Sp_Cu_Update_Tbl_Cu_ServingTableField_Log]
-    @ItemID AS BIGINT,
-    @FileUploadCertificate AS NVARCHAR(2000),
-    @FieldValueTitle AS NVARCHAR(1000),
-    @FieldValueID AS INT,
-    @FieldValueDate AS NVARCHAR(10),
-	@txtMultipleValues AS NVARCHAR(100)
-AS
-BEGIN
-    DECLARE @FieldID AS INT = (
-                                  SELECT TOP 1
-                                      X.FieldID
-                                  FROM Tbl_Cu_ServingTableField_Log X
-                                  WHERE X.ServingTableFieldID = @ItemID
-                              );
+--ALTER PROCEDURE [dbo].[Sp_Cu_Update_Tbl_Cu_ServingTableField_Log]
+--    @ItemID AS BIGINT,
+--    @FileUploadCertificate AS NVARCHAR(2000),
+--    @FieldValueTitle AS NVARCHAR(1000),
+--    @FieldValueID AS INT,
+--    @FieldValueDate AS NVARCHAR(10),
+--	@txtMultipleValues AS NVARCHAR(100)
+--AS
+--BEGIN
+--    DECLARE @FieldID AS INT = (
+--                                  SELECT TOP 1
+--                                      X.FieldID
+--                                  FROM Tbl_Cu_ServingTableField_Log X
+--                                  WHERE X.ServingTableFieldID = @ItemID
+--                              );
 
 
-    DECLARE @SelectInfo AS BIT,
-            @IsNeedCertificate AS BIT,
-			@rbnMultipleValues AS BIT
-    SELECT @SelectInfo = SelectInfo,
-           @IsNeedCertificate = IsNeedCertificate,
-		   @rbnMultipleValues = rbnMultipleValues
-    FROM [dbo].[Tbl_CU_Base_FieldSubject_FRM157]
-    WHERE FieldSubjectID = @FieldID;
+--    DECLARE @SelectInfo AS BIT,
+--            @IsNeedCertificate AS BIT,
+--			@rbnMultipleValues AS BIT
+--    SELECT @SelectInfo = SelectInfo,
+--           @IsNeedCertificate = IsNeedCertificate,
+--		   @rbnMultipleValues = rbnMultipleValues
+--    FROM [dbo].[Tbl_CU_Base_FieldSubject_FRM157]
+--    WHERE FieldSubjectID = @FieldID;
 
-    IF (@SelectInfo = 1)
-    BEGIN
-        UPDATE dbo.Tbl_Cu_ServingTableField_Log
-        SET FieldValueID = @FieldValueID,
-            FileUploadCertificate = @FileUploadCertificate
-        --CASE
-        --              WHEN @IsNeedCertificate = 1 THEN
-        --                  @FileUploadCertificate
-        --              ELSE
-        --                  ''
-        --          END
-        WHERE ServingTableFieldID = @ItemID;
+--    IF (@SelectInfo = 1)
+--    BEGIN
+--        UPDATE dbo.Tbl_Cu_ServingTableField_Log
+--        SET FieldValueID = @FieldValueID,
+--            FileUploadCertificate = @FileUploadCertificate
+--        --CASE
+--        --              WHEN @IsNeedCertificate = 1 THEN
+--        --                  @FileUploadCertificate
+--        --              ELSE
+--        --                  ''
+--        --          END
+--        WHERE ServingTableFieldID = @ItemID;
 
-		select convert(nvarchar,GETDATE(),21) Res --update
-        --SELECT GETDATE() AS Res;
+--		select convert(nvarchar,GETDATE(),21) Res --update
+--        --SELECT GETDATE() AS Res;
 
-    END;
-    ELSE IF (@rbnMultipleValues = 1)
-    BEGIN
-        UPDATE dbo.Tbl_Cu_ServingTableField_Log
-        SET MultyData = @txtMultipleValues,
-            FileUploadCertificate = @FileUploadCertificate
-        WHERE ServingTableFieldID = @ItemID;
-        SELECT GETDATE() AS Res;
-    END;
-    ELSE
-    BEGIN
-
-
-        DECLARE @ItemType INT = (
-                                    SELECT TOP 1
-                                        ItemType
-                                    FROM [dbo].[Tbl_CU_Base_FieldSubject_FRM157]
-                                    WHERE FieldSubjectID = @FieldID
-                                );
-
-        IF (@ItemType = 3)
-        BEGIN
-
-            UPDATE dbo.Tbl_Cu_ServingTableField_Log
-            SET FieldValueTitle = @FieldValueDate,
-                FileUploadCertificate = @FileUploadCertificate
-            WHERE ServingTableFieldID = @ItemID;
-
-        END;
+--    END;
+--    ELSE IF (@rbnMultipleValues = 1)
+--    BEGIN
+--        UPDATE dbo.Tbl_Cu_ServingTableField_Log
+--        SET MultyData = @txtMultipleValues,
+--            FileUploadCertificate = @FileUploadCertificate
+--        WHERE ServingTableFieldID = @ItemID;
+--        SELECT GETDATE() AS Res;
+--    END;
+--    ELSE
+--    BEGIN
 
 
+--        DECLARE @ItemType INT = (
+--                                    SELECT TOP 1
+--                                        ItemType
+--                                    FROM [dbo].[Tbl_CU_Base_FieldSubject_FRM157]
+--                                    WHERE FieldSubjectID = @FieldID
+--                                );
 
-        ELSE IF (@ItemType = 8)
-        BEGIN
+--        IF (@ItemType = 3)
+--        BEGIN
+
+--            UPDATE dbo.Tbl_Cu_ServingTableField_Log
+--            SET FieldValueTitle = @FieldValueDate,
+--                FileUploadCertificate = @FileUploadCertificate
+--            WHERE ServingTableFieldID = @ItemID;
+
+--        END;
 
 
-            IF (ISNUMERIC(@FieldValueTitle) = 1)
-                SET @FieldValueTitle = dbo.InsertComma(@FieldValueTitle);
 
-            UPDATE dbo.Tbl_Cu_ServingTableField_Log
-            SET FieldValueTitle = @FieldValueTitle,
-                FileUploadCertificate = @FileUploadCertificate
-            WHERE ServingTableFieldID = @ItemID;
+--        ELSE IF (@ItemType = 8)
+--        BEGIN
 
-        END;
 
-        ELSE
-        BEGIN
-            UPDATE dbo.Tbl_Cu_ServingTableField_Log
-            SET FieldValueTitle = @FieldValueTitle,
-                FileUploadCertificate = @FileUploadCertificate
-            WHERE ServingTableFieldID = @ItemID;
-        END;
+--            IF (ISNUMERIC(@FieldValueTitle) = 1)
+--                SET @FieldValueTitle = dbo.InsertComma(@FieldValueTitle);
 
-        SELECT 
-			convert(nvarchar,GETDATE(),21) Res,  --update
-			--GETDATE() AS Res,
-               1 AS clear;
+--            UPDATE dbo.Tbl_Cu_ServingTableField_Log
+--            SET FieldValueTitle = @FieldValueTitle,
+--                FileUploadCertificate = @FileUploadCertificate
+--            WHERE ServingTableFieldID = @ItemID;
 
-    END;
+--        END;
 
-END;
+--        ELSE
+--        BEGIN
+--            UPDATE dbo.Tbl_Cu_ServingTableField_Log
+--            SET FieldValueTitle = @FieldValueTitle,
+--                FileUploadCertificate = @FileUploadCertificate
+--            WHERE ServingTableFieldID = @ItemID;
+--        END;
+
+--        SELECT 
+--			convert(nvarchar,GETDATE(),21) Res,  --update
+--			--GETDATE() AS Res,
+--               1 AS clear;
+
+--    END;
+
+--END;
 
 
 

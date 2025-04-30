@@ -108,9 +108,9 @@ create proc sp_cu_check_IsFieldManagerAvailable
 @guidd nvarchar(50)
 as
 begin
-	declare @cmbFieldValueID int = (select top 1000 FieldValueID from Tbl_Cu_ServingTableField_Log
+	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log
 					WHERE  GUIDD = @guidd
-					and FieldValueID != -1)
+					and FieldID in(15,505))
 	if exists(
 		select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
 		where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and chkManagerConfirmation = 1	

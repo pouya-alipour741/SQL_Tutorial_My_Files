@@ -14,3 +14,5 @@ user Tazarv
 pass wKKbVc6Z
 
 web saman and tbs main: crm@123
+
+simulation : tazarv, tazrv2  password: 123456789 
