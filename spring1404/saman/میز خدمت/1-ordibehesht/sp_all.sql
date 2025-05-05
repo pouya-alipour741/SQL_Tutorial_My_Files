@@ -8,6 +8,16 @@
 
 --go
 
+--alter table Tbl_Cu_ServingTableSecondPhase_Log
+--add ManagerGroupID int
+
+--go
+
+----insert into Tbl_Cu_Base_LogStatus(LogStatusTitle, wid, Descriptions)
+----values('تایید مدیر',38,'')
+
+----go
+
 --alter proc sp_cu_check_FieldSubjectID_frm167
 --@txtFieldSubjectID int
 --as
@@ -72,59 +82,122 @@
 
 --go
 
-create Proc SP_CU_NeedManagerConfirmation_wf38
-@wfid int
-AS
-	begin	
+--alter Proc SP_CU_NeedManagerConfirmation_wf38
+--@wfid int
+--AS
+--	begin	
 		
-	declare @GUID nvarchar(50) = (select GUIDD from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
+--	declare @GUID nvarchar(50) = (select GUIDD from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
 
-	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID order by ServingTableFieldID desc)
+--	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
 
-	declare @RequestKindID int = (select cmbRequestKind from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
+--	declare @RequestKindID int = (select cmbRequestKind from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
 
-	declare @RequestSubjectID int = (select cmbRequestSubject from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
+--	declare @RequestSubjectID int = (select cmbRequestSubject from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
 
-	declare @GroupID int = (select FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID )
+--	declare @GroupID int = (select top 1 FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID )
 
-	if exists(
-		select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
-		where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and chkManagerConfirmation = 1	
-	)
-	select
-		 @GroupID as ManagerGroupID,
-		 1 as ManagerConfirmation
-	else
-		select
-			 0 as ManagerGroupID,
-			 0 as ManagerConfirmation  
-end
+--	if exists(
+--		select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
+--		where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and chkManagerConfirmation = 1	
+--	)
+--	select
+--		 @GroupID as ManagerGroupID,
+--		 cast(1 as bit) as ManagerConfirmation
+--	else
+--		select
+--			 0 as ManagerGroupID,
+--			 cast(0 as bit) as ManagerConfirmation  
+--end
 
-go
+--go
 
-create proc sp_cu_check_IsFieldManagerAvailable
-@RequestKindID int,
-@RequestSubjectID int,
-@guidd nvarchar(50)
-as
-begin
-	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log
-					WHERE  GUIDD = @guidd
-					and FieldID in(15,505))
-	if exists(
-		select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
-		where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and chkManagerConfirmation = 1	
-	)
-	and
-	exists(
-		select 1 from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID and isnull(FieldManager, '') = ''	
-		)
-		select cast(1 as bit) as FieldManagerNotAvailable
-	else
-		select cast(0 as bit) as FieldManagerNotAvailable
-end
+--create proc sp_cu_check_IsFieldManagerAvailable
+--@RequestKindID int,
+--@RequestSubjectID int,
+--@guidd nvarchar(50)
+--as
+--begin
+--	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log
+--					WHERE  GUIDD = @guidd
+--					and FieldID in(15,505))
+--	if exists(
+--		select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
+--		where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and chkManagerConfirmation = 1	
+--	)
+--	and
+--	exists(
+--		select 1 from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID and isnull(FieldManager, '') = ''	
+--		)
+--		select cast(1 as bit) as FieldManagerNotAvailable
+--	else
+--		select cast(0 as bit) as FieldManagerNotAvailable
+--end
 
-go
+--go
+
+--create PROCEDURE [dbo].[Sp_Cu_Insert_Tbl_Cu_ServingTableSecondPhaseHistory_Log_Second_Manager] @WFID AS BIGINT
+--AS
+--BEGIN
+--    DECLARE @RegDate AS NVARCHAR(10),
+--            @RegTime AS NVARCHAR(5),
+--            @RegUserID AS BIGINT,
+--            @rbnAccSeconder AS BIT,
+--            @rbnNotAccSeconder AS BIT,
+--            @rbnReferencerbnAccSeconder AS BIT,
+--            @ReferenceUserSeconder AS BIGINT,
+--            @DescSeconder AS NVARCHAR(2000),
+--            @GUIDD AS NVARCHAR(100),
+--            @ActivityID AS BIGINT;
+
+--    SELECT @RegDate = Col_4866237595884546157,
+--           @RegTime = Col_4839123484665695911,
+--           @RegUserID = Col_4882272451934286700,
+--           @rbnAccSeconder = Col_5433095950633073955,
+--           @rbnNotAccSeconder = Col_5558469775321616550,
+--           @rbnReferencerbnAccSeconder = Col_4684667365755274354,
+--           @ReferenceUserSeconder = Col_5265233019818142125,
+--           @DescSeconder = Col_5181720467505861532,
+--           @GUIDD = Col_4995533338641167379,
+--           @ActivityID = Col_5626482120269590337
+--    FROM dbo.Tbl_frm243
+--    WHERE frm243Id IN (
+--                          SELECT MAX(PKFormID)
+--                          FROM Task.TblFormInstance
+--                          WHERE WorkflowInstanceId = @WFID
+--                                AND FormID = 243
+--                      );
+--    INSERT INTO dbo.Tbl_Cu_ServingTableSecondPhaseHistory_Log
+--    (
+--        WFID,
+--        GUIDD,
+--        RegUserID,
+--        RegDate,
+--        RegTime,
+--        RoleID,
+--        RbnAcc,
+--        RbnNotAcc,
+--        RbnReference,
+--        RbnReferenceUserID,
+--        UserDesc,
+--        ActivityID
+--    )
+--    VALUES
+--    (   @WFID,                       -- WFID - bigint
+--        @GUIDD,                      -- GUID - nvarchar(100)
+--        @RegUserID,                  -- RegUserID - bigint
+--        @RegDate,                    -- RegDate - nvarchar(10)
+--        @RegTime,                    -- RegTime - nvarchar(5)
+--        7,                           -- RoleID - int
+--        @rbnAccSeconder,             -- RbnAcc - bit
+--        @rbnNotAccSeconder,          -- RbnNotAcc - bit
+--        @rbnReferencerbnAccSeconder, -- RbnReference - bit
+--        @ReferenceUserSeconder,      -- RbnReferenceUserID - bigint
+--        @DescSeconder,               -- UserDesc - nvarchar(2000)
+--        @ActivityID);
+
+
+--END;
 
 
 
