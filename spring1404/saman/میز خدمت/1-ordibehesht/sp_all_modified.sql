@@ -32,7 +32,7 @@
 --end
 
 --go
------------------------------------
+
 --ALTER PROCEDURE [dbo].[Sp_CU_InsertInto_Tbl_CU_Base_DetermineRequestAcc_FRM141]
 --    @SubGroupID AS INT,
 --    @RequestKindID AS INT,
@@ -40,14 +40,15 @@
 --    @UserID AS BIGINT,
 --    @rbnHierarchy AS BIT,
 --    @rbnPersonAcc AS BIT,
+--    @rbnManagerConfirmation bit,
 --    @chkActive3 AS BIT,
 --    @HierarchyLevel AS INT,
 --    @rbnNotAcc AS BIT,
 --    @rbnToLevel AS BIT,
 --    @rbnOnlyLevel AS BIT,
 --    @txtHierarchyOnlyLevel AS INT,
---    @cmbLocation AS INT,
---	@chkManagerConfirmation bit --
+--    @cmbLocation AS INT
+	  
 --AS
 --BEGIN
 
@@ -58,6 +59,7 @@
 --        [RequestSubjectID],
 --        [rbnHierarchy],
 --        [rbnPersonAcc],
+--		  rbnManagerConfirmation, --
 --        [chkActive3],
 --        [txtUserID3],
 --        HierarchyLevel,
@@ -66,14 +68,14 @@
 --        rbnOnlyLevel,
 --        HierarchyOnlyLevel,
 --        cmbLocation,
---        IsSecondPhase,
---		chkManagerConfirmation --
+--        IsSecondPhase
 --    )
 --    SELECT @SubGroupID,
 --           @RequestKindID,
 --           @RequestSubjectID,
 --           @rbnHierarchy,
 --           @rbnPersonAcc,
+--		     @rbnManagerConfirmation, --
 --           @chkActive3,
 --           @UserID,
 --           @HierarchyLevel,
@@ -82,132 +84,10 @@
 --           @rbnOnlyLevel,
 --           @txtHierarchyOnlyLevel,
 --           @cmbLocation,
---           1,
---		   @chkManagerConfirmation; --
+--           1
 --    SELECT GETDATE() AS Res;
 
 --END;
-
---go
-
-----------------------------
-ALTER PROCEDURE [dbo].[Sp_Cu_Select_DetermineRequestAccID] @WFID AS BIGINT
-AS
-BEGIN
-    DECLARE @UserIsBranch AS BIT = (
-                                       SELECT TOP 1
-                                           UserIsBranch
-                                       FROM Tbl_Cu_ServingTableSecondPhase_Log
-                                       WHERE WFID = @WFID
-                                   );
-    DECLARE @cmbRequestSubject AS INT = (
-                                            SELECT TOP 1
-                                                cmbRequestSubject
-                                            FROM Tbl_Cu_ServingTableSecondPhase_Log
-                                            WHERE WFID = @WFID
-                                        );
-    PRINT @cmbRequestSubject;
-    DECLARE @DetermineRequestAccID AS BIGINT;
-    IF EXISTS
-    (
-        SELECT *
-        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-        WHERE RequestSubjectID = @cmbRequestSubject
-              AND chkActive3 = 1
-              AND IsSecondPhase = 1
-              AND ISNULL(cmbLocation, -1) = -1
-    )
-    BEGIN
-        SET @DetermineRequestAccID =
-        (
-            SELECT TOP 1 DetermineRequestAccID
-            FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-            WHERE RequestSubjectID = @cmbRequestSubject
-                  AND ISNULL(cmbLocation, -1) = -1
-                  AND chkActive3 = 1
-                  AND IsSecondPhase = 1
-        );
-        SELECT DetermineRequestAccID,
-               rbnNotAcc,
-               rbnPersonAcc,
-               rbnHierarchy,
-               txtUserID3,
-               rbnToLevel,
-               HierarchyLevel,
-               HierarchyOnlyLevel,
-			   chkManagerConfirmation
-        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-        WHERE DetermineRequestAccID = @DetermineRequestAccID
-              AND chkActive3 = 1;
-    END;
-    ELSE IF EXISTS
-    (
-        SELECT *
-        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-        WHERE RequestSubjectID = @cmbRequestSubject
-              AND chkActive3 = 1
-              AND IsSecondPhase = 1
-              AND ISNULL(cmbLocation, -1) <> -1
-    )
-    BEGIN
-
-        IF (@UserIsBranch = 1)
-        BEGIN
-            SET @DetermineRequestAccID =
-            (
-                SELECT TOP 1 DetermineRequestAccID
-                FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-                WHERE RequestSubjectID = @cmbRequestSubject
-                      AND cmbLocation = 2
-                      AND chkActive3 = 1
-                      AND IsSecondPhase = 1
-            );
-        END;
-        ELSE
-        BEGIN
-            BEGIN
-                SET @DetermineRequestAccID =
-                (
-                    SELECT Top 1  DetermineRequestAccID
-                    FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-                    WHERE RequestSubjectID = @cmbRequestSubject
-                          AND cmbLocation = 1
-                          AND chkActive3 = 1
-                          AND IsSecondPhase = 1
-                );
-            END;
-        END;
-        UPDATE Tbl_Cu_ServingTableSecondPhase_Log
-        SET DetermineRequestAccID = @DetermineRequestAccID
-        WHERE WFID = @WFID;
-        SELECT DetermineRequestAccID,
-               rbnNotAcc,
-               rbnPersonAcc,
-               rbnHierarchy,
-               txtUserID3,
-               rbnToLevel,
-               HierarchyLevel,
-               HierarchyOnlyLevel,
-			   chkManagerConfirmation
-        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-        WHERE DetermineRequestAccID = @DetermineRequestAccID
-              AND chkActive3 = 1;
-
-    END;
-    ELSE
-    BEGIN
-        SELECT 0 AS DetermineRequestAccID,
-               CAST(1 AS BIT) AS rbnNotAcc,
-               CAST(0 AS BIT) AS rbnPersonAcc,
-               CAST(0 AS BIT) AS rbnHierarchy,
-               0 txtUserID3,
-               CAST(0 AS BIT) rbnToLevel,
-               0 HierarchyLevel,
-               0 HierarchyOnlyLevel,
-			   0 chkManagerConfirmation;
-    END;
-
-END;
 
 --go
 
@@ -253,6 +133,8 @@ END;
 --                   'اشخاص تایید کننده درخواست'
 --               WHEN DE.rbnNotAcc = 1 THEN
 --                   'بدون تایید'
+--				when rbnManagerConfirmation = 1 then
+--					'تایید مدیر'
 --           END AS HalatEntekhab,
 --           CASE
 --               WHEN chkActive3 = 1 THEN
@@ -267,12 +149,8 @@ END;
 --               FROM dbo.Tbl_Cu_Base_Location X
 --               WHERE X.LocationID = DE.cmbLocation
 --           ) AS LocationTitle,
---           CAST(HierarchyOnlyLevel AS nvarchar(10)),
---		   case
---				when chkManagerConfirmation = 1 then 'دارد'
---				else 'ندارد'
---			end chkManagerConfirmation
---		   --
+--           CAST(HierarchyOnlyLevel AS nvarchar(10))
+
 --    FROM [dbo].[Tbl_CU_Base_DetermineRequestAcc_FRM141] DE
 --    WHERE (
 --              @SubGroupID = -1
@@ -1456,6 +1334,293 @@ END;
 --    ORDER BY X.ServingTableSecondPhaseHistoryID;
 --END;
 
+--go
+
+--ALTER PROCEDURE [dbo].[Sp_Cu_While_Users_ServiceTable]
+--    @WFID AS BIGINT,
+--    @UniqID AS INT
+--AS
+--BEGIN
+--    DECLARE @UserIsBranch AS BIT 
+--	DECLARE @cmbRequestSubject AS INT
+--                                       SELECT TOP 1
+--                                          @UserIsBranch= UserIsBranch,
+--										  @cmbRequestSubject=cmbRequestSubject
+--                                       FROM Tbl_Cu_ServingTableSecondPhase_Log
+--									   Where WFID =@WFID
+	
+--    DECLARE @Tbl AS TABLE
+--    (
+--        ID BIGINT,
+--        UserID BIGINT
+--    );
+--    DECLARE @CountAll AS INT;
+--    IF (@UserIsBranch = 1)
+--    BEGIN
+--        SET @CountAll =
+--        (
+--            SELECT COUNT(*)
+--            FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--            WHERE RequestSubjectID = @cmbRequestSubject
+--                  --AND cmbLocation = 2
+--                  AND chkActive3 = 1
+--                  AND IsSecondPhase = 1
+--                  AND (rbnPersonAcc = 1 or rbnManagerConfirmation = 1)
+--        );
+
+--        INSERT INTO @Tbl
+--        (
+--            ID,
+--            UserID
+--        )
+--        SELECT ROW_NUMBER() OVER (ORDER BY DetermineRequestAccID ASC),
+--               txtUserID3
+--        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--        WHERE RequestSubjectID = @cmbRequestSubject
+--              --AND cmbLocation = 2
+--              AND chkActive3 = 1
+--              AND IsSecondPhase = 1
+--              AND (rbnPersonAcc = 1 or rbnManagerConfirmation = 1);
+--    END;
+--    ELSE
+--    BEGIN
+--        BEGIN
+--            SET @CountAll =
+--            (
+--                SELECT COUNT(*)
+--                FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--                WHERE RequestSubjectID = @cmbRequestSubject
+--                      --AND cmbLocation = 1
+--                      AND chkActive3 = 1
+--                      AND IsSecondPhase = 1
+--                      AND (rbnPersonAcc = 1 or rbnManagerConfirmation = 1)
+--            );
+--            INSERT INTO @Tbl
+--            (
+--                ID,
+--                UserID
+--            )
+--            SELECT ROW_NUMBER() OVER (ORDER BY DetermineRequestAccID ASC),
+--                   txtUserID3
+--            FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--            WHERE RequestSubjectID = @cmbRequestSubject
+--                  --AND cmbLocation = 1
+--                  AND chkActive3 = 1
+--                  AND IsSecondPhase = 1
+--                  AND (rbnPersonAcc = 1 or rbnManagerConfirmation = 1);
+--        END;
+--    END;
+--    IF (@CountAll = 1)
+--    BEGIN
+--        SELECT UserID,
+--               CAST(0 AS BIT) AS Res,
+--               @UniqID + 1 AS UniqID
+--        FROM @Tbl
+--        WHERE ID = @UniqID;
+--    END;
+--    ELSE
+--    BEGIN
+--        IF (@CountAll >= @UniqID)
+--        BEGIN
+--            SELECT UserID,
+--                   CAST(1 AS BIT) AS Res,
+--                   @UniqID + 1 AS UniqID
+--            FROM @Tbl
+--            WHERE ID = @UniqID;
+--        END;
+
+--        ELSE
+--        BEGIN
+--            SELECT 0 AS UserID,
+--                   CAST(0 AS BIT) AS Res,
+--                   @UniqID + 1 AS UniqID;
+--        END;
+--    END;
+
+--END;
+
+--go
+
+--ALTER PROCEDURE [dbo].[Sp_Cu_CheckExists_DetermineRequestAcc_New]
+--    @cmbRequestSubject3 AS INT,
+--    @cmbLocation AS INT,
+--    @rbnPersonAccMain AS BIT,
+--    @rbnHierarchyMain AS BIT,
+--	@rbnManagerConfirmationMain bit
+--AS
+--BEGIN
+--    DECLARE @rbnHierarchy AS BIT = (
+--                                       SELECT TOP 1
+--                                           rbnHierarchy
+--                                       FROM Tbl_CU_Base_DetermineRequestAcc_FRM141
+--                                       WHERE RequestSubjectID = @cmbRequestSubject3
+--                                             AND cmbLocation = @cmbLocation
+--                                             AND chkActive3 = 1
+--                                             AND IsSecondPhase = 1
+--                                   );
+--    DECLARE @rbnPersonAcc AS BIT = (
+--                                       SELECT TOP 1
+--                                           rbnPersonAcc
+--                                       FROM Tbl_CU_Base_DetermineRequestAcc_FRM141
+--                                       WHERE RequestSubjectID = @cmbRequestSubject3
+--                                             AND cmbLocation = @cmbLocation
+--                                             AND chkActive3 = 1
+--                                             AND IsSecondPhase = 1
+--                                   );
+--	DECLARE @rbnManagerConfirmation AS BIT = (
+--                                       SELECT TOP 1
+--                                           rbnManagerConfirmation
+--                                       FROM Tbl_CU_Base_DetermineRequestAcc_FRM141
+--                                       WHERE RequestSubjectID = @cmbRequestSubject3
+--                                             AND cmbLocation = @cmbLocation
+--                                             AND chkActive3 = 1
+--                                             AND IsSecondPhase = 1
+--                                   );
+--    IF NOT EXISTS
+--    (
+--        SELECT TOP 1
+--            rbnHierarchy
+--        FROM Tbl_CU_Base_DetermineRequestAcc_FRM141
+--        WHERE RequestSubjectID = @cmbRequestSubject3
+--              AND cmbLocation = @cmbLocation
+--              AND chkActive3 = 1
+--              AND IsSecondPhase = 1
+--    )
+--    BEGIN
+--        SELECT CAST(0 AS BIT) AS Res;
+--    END;
+--    ELSE IF (@rbnHierarchy = 1 AND @rbnPersonAccMain = 1)
+--    BEGIN
+--        SELECT CAST(0 AS BIT) AS Res;
+--    END;
+--    ELSE IF (@rbnPersonAccMain = 1 AND @rbnPersonAcc = 1)
+--    BEGIN
+--        SELECT CAST(0 AS BIT) AS Res;
+--    END;
+--    ELSE
+--    BEGIN
+--        SELECT CAST(0 AS BIT) AS Res;
+--    END;
+
+--END;
+
+--go
+
+--ALTER PROCEDURE [dbo].[Sp_Cu_Select_DetermineRequestAccID] @WFID AS BIGINT
+--AS
+--BEGIN
+--    DECLARE @UserIsBranch AS BIT = (
+--                                       SELECT TOP 1
+--                                           UserIsBranch
+--                                       FROM Tbl_Cu_ServingTableSecondPhase_Log
+--                                       WHERE WFID = @WFID
+--                                   );
+--    DECLARE @cmbRequestSubject AS INT = (
+--                                            SELECT TOP 1
+--                                                cmbRequestSubject
+--                                            FROM Tbl_Cu_ServingTableSecondPhase_Log
+--                                            WHERE WFID = @WFID
+--                                        );
+--    PRINT @cmbRequestSubject;
+--    DECLARE @DetermineRequestAccID AS BIGINT;
+--    IF EXISTS
+--    (
+--        SELECT *
+--        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--        WHERE RequestSubjectID = @cmbRequestSubject
+--              AND chkActive3 = 1
+--              AND IsSecondPhase = 1
+--              AND ISNULL(cmbLocation, -1) = -1
+--    )
+--    BEGIN
+--        SET @DetermineRequestAccID = 
+--        (
+--            SELECT TOP 1 DetermineRequestAccID
+--            FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--            WHERE RequestSubjectID = @cmbRequestSubject
+--                  AND ISNULL(cmbLocation, -1) = -1
+--                  AND chkActive3 = 1
+--                  AND IsSecondPhase = 1
+--				  and rbnManagerConfirmation != 1 --
+--        );
+--        SELECT DetermineRequestAccID,
+--               rbnNotAcc,
+--               rbnPersonAcc,
+--               rbnHierarchy,
+--			   rbnManagerConfirmation,
+--               txtUserID3,
+--               rbnToLevel,
+--               HierarchyLevel,
+--               HierarchyOnlyLevel
+--        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--        WHERE DetermineRequestAccID = @DetermineRequestAccID
+--              AND chkActive3 = 1;
+--    END;
+--    ELSE IF EXISTS
+--    (
+--        SELECT *
+--        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--        WHERE RequestSubjectID = @cmbRequestSubject
+--              AND chkActive3 = 1
+--              AND IsSecondPhase = 1
+--              AND ISNULL(cmbLocation, -1) <> -1
+--    )
+--    BEGIN
+
+--        IF (@UserIsBranch = 1)
+--        BEGIN
+--            SET @DetermineRequestAccID =
+--            (
+--                SELECT TOP 1 DetermineRequestAccID
+--                FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--                WHERE RequestSubjectID = @cmbRequestSubject
+--                      AND cmbLocation = 2
+--                      AND chkActive3 = 1
+--                      AND IsSecondPhase = 1
+--            );
+--        END;
+--        ELSE
+--        BEGIN
+--            BEGIN
+--                SET @DetermineRequestAccID =
+--                (
+--                    SELECT Top 1  DetermineRequestAccID
+--                    FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--                    WHERE RequestSubjectID = @cmbRequestSubject
+--                          AND cmbLocation = 1
+--                          AND chkActive3 = 1
+--                          AND IsSecondPhase = 1
+--                );
+--            END;
+--        END;
+--        UPDATE Tbl_Cu_ServingTableSecondPhase_Log
+--        SET DetermineRequestAccID = @DetermineRequestAccID
+--        WHERE WFID = @WFID;
+--        SELECT DetermineRequestAccID,
+--               rbnNotAcc,
+--               rbnPersonAcc,
+--               rbnHierarchy,
+--               txtUserID3,
+--               rbnToLevel,
+--               HierarchyLevel,
+--               HierarchyOnlyLevel
+--        FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--        WHERE DetermineRequestAccID = @DetermineRequestAccID
+--              AND chkActive3 = 1;
+
+--    END;
+--    ELSE
+--    BEGIN
+--        SELECT 0 AS DetermineRequestAccID,
+--               CAST(1 AS BIT) AS rbnNotAcc,
+--               CAST(0 AS BIT) AS rbnPersonAcc,
+--               CAST(0 AS BIT) AS rbnHierarchy,
+--               0 txtUserID3,
+--               CAST(0 AS BIT) rbnToLevel,
+--               0 HierarchyLevel,
+--               0 HierarchyOnlyLevel;
+--    END;
+--END;
 
 
 
