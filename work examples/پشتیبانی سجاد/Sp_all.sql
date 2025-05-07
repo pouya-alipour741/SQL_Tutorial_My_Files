@@ -143,9 +143,7 @@ BEGIN
 END;
 
 
-
 go
-
 
 
 create proc sp_cu_chk_NoRepeatedReqestPerUser_frm21041  
@@ -808,7 +806,6 @@ END;
 
 go
 
-
 ---- add IT expert
 create PROCEDURE [dbo].[Sp_cu_Select_ITExpert_SaoSupport]
 @WFID AS BIGINT
@@ -832,10 +829,8 @@ BEGIN
 								order by expertWfID desc
 								)
 
-		select @ITExpertUserID as ITExpertID
-
+		select isnull(@ITExpertUserID, 26) as ITExpertID
 END;
-
 go 
 
 --چکباکس "ارسال به تذرو" ، فقط برای پشتیبان های سامانه قابل مشاهده و انتخاب است
@@ -1024,33 +1019,30 @@ END
 
 go
 
---alter proc sp_cu_NoUniForCertainMainSubjects_frm21041
+create proc [dbo].[sp_cu_NoUniForCertainMainSubjects_frm21041]
+@MainSubject int
+as
+begin
+	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
+		select cast(1 as bit) res
+	else
+		select cast(0 as bit) res
+end
+
+
+--create proc sp_cu_NoUniForCertainMainSubjects_frm21041
 --@WFID int,
 --@MainSubject int,
 --@User int
 --as
 --begin
 --	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
---		and @WFID != -1
+--		and (select top 1 ActivityID  from task.TblWorkflowActivityInstance a
+--		where a.wokflowinstanceID = @WFID and a.ActivityType = 'TZHumanActivity' order by ActivityID) != 5753723988987375715  --فرم درخواست پشتیبانی سامانه سجاد
 --		select cast(1 as bit) res
 --	else
 --		select cast(0 as bit) res
 --end
-
-
-create proc sp_cu_NoUniForCertainMainSubjects_frm21041
-@WFID int,
-@MainSubject int,
-@User int
-as
-begin
-	if @MainSubject not in(159,46,57,59,60,61,62,80,10150,85,94,109,2000040,2000044,2000047,2000567)
-		and (select top 1 ActivityID  from task.TblWorkflowActivityInstance a
-		where a.wokflowinstanceID = @WFID and a.ActivityType = 'TZHumanActivity' order by ActivityID) != 5753723988987375715  --فرم درخواست پشتیبانی سامانه سجاد
-		select cast(1 as bit) res
-	else
-		select cast(0 as bit) res
-end
 
 --go 
 

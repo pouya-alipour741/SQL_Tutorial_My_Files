@@ -82,7 +82,7 @@
 
 --go
 
---create proc sp_cu_check_IsFieldManagerAvailable
+--create proc [dbo].[sp_cu_check_IsFieldManagerAvailable]
 --@RequestKindID int,
 --@RequestSubjectID int,
 --@guidd nvarchar(50)
@@ -91,18 +91,32 @@
 --	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log
 --					WHERE  GUIDD = @guidd
 --					and FieldID in(15,505))
+--	print(@cmbFieldValueID)
+
+--	declare @txtMultipleValues nvarchar(100) = (select top 1 MultyData from Tbl_Cu_ServingTableField_Log
+--	where GUIDD=@guidd and FieldID in(15,505))
+--	print(@txtMultipleValues)
+
+--	--declare @tbl as table(val nvarchar(50))
+
+--	--insert into @tbl(val)
+--	--select value from string_split(@txtMultipleValues, ',');
+
 --	if exists(
 --		select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
 --		where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and rbnManagerConfirmation = 1	
 --	)
 --	and
---	exists(
---		select 1 from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID and isnull(FieldManager, '') = ''	
---		)
+--	(
+--		exists(select 1 from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID and isnull(FieldManager, '') = '')				
+--		or exists (select 1 from Tbl_CU_Base_FieldValue_FRM167
+--		where FieldValueID in (select value from string_split(@txtMultipleValues, ',')) and isnull(FieldManager, '') = '')
+--	)
 --		select cast(1 as bit) as FieldManagerNotAvailable
 --	else
 --		select cast(0 as bit) as FieldManagerNotAvailable
 --end
+
 
 --go
 
@@ -170,105 +184,171 @@
 
 --go
 
-ALTER Proc [dbo].[SP_CU_NeedManagerConfirmation_wf38]
-@wfid int,
-@index int
-AS
-begin	
+--ALTER Proc [dbo].[SP_CU_NeedManagerConfirmation_wf38]
+--@wfid int,
+--@index int
+--AS
+--begin	
 			
-	declare @GUID nvarchar(50) = (select GUIDD from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
+--	declare @GUID nvarchar(50) = (select GUIDD from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
 	
-	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
+--	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
 
-	declare @txtMultipleValues nvarchar(100) = (select top 1 MultyData from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
+--	declare @txtMultipleValues nvarchar(100) = (select top 1 MultyData from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
 
-	--set @txtMultipleValues = (select ROW_NUMBER() over(order by [value]) rn,value from string_split(@txtMultipleValues, ','))
+--	--set @txtMultipleValues = (select ROW_NUMBER() over(order by [value]) rn,value from string_split(@txtMultipleValues, ','))
 
-	declare @RequestKindID int = (select cmbRequestKind from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
+--	declare @RequestKindID int = (select cmbRequestKind from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
 
-	declare @RequestSubjectID int = (select cmbRequestSubject from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
+--	declare @RequestSubjectID int = (select cmbRequestSubject from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
 
-	DECLARE @SelectInfo AS BIT,
-            @IsNeedCertificate AS BIT,
-			@rbnMultipleValues AS BIT
-    SELECT @SelectInfo = SelectInfo,
-           @IsNeedCertificate = IsNeedCertificate,
-		   @rbnMultipleValues = rbnMultipleValues
-    FROM [dbo].[Tbl_CU_Base_FieldSubject_FRM157]
-    WHERE FieldSubjectID in(15,505) and RequestSubjectID = @RequestSubjectID;
+--	DECLARE @SelectInfo AS BIT,
+--            @IsNeedCertificate AS BIT,
+--			@rbnMultipleValues AS BIT
+--    SELECT @SelectInfo = SelectInfo,
+--           @IsNeedCertificate = IsNeedCertificate,
+--		   @rbnMultipleValues = rbnMultipleValues
+--    FROM [dbo].[Tbl_CU_Base_FieldSubject_FRM157]
+--    WHERE FieldSubjectID in(15,505) and RequestSubjectID = @RequestSubjectID;
 
-	declare @GroupID int
-	if exists(
-			select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
-			where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and rbnManagerConfirmation = 1	
-		)
-		begin
-			if @SelectInfo = 1
-				begin		
-						set @GroupID  = (select top 1 FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID )
-						select @GroupID as Managergroupid,
-						cast(1 as bit) as ManagerConfirmation,
-						cast(0 as bit) ManagerRemained,
-						@index as idx						
-				end
-			else if @rbnMultipleValues = 1
-			begin	
-				declare @tbl as table(idx int, val nvarchar(50))
+--	declare @GroupID int
+--	if exists(
+--			select 1 from Tbl_CU_Base_DetermineRequestAcc_FRM141
+--			where RequestKindID = @RequestKindID and RequestSubjectID = @RequestSubjectID and rbnManagerConfirmation = 1	
+--		)
+--		begin
+--			if @SelectInfo = 1
+--				begin		
+--						set @GroupID  = (select top 1 FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID )
+--						select @GroupID as Managergroupid,
+--						cast(1 as bit) as ManagerConfirmation,
+--						cast(0 as bit) ManagerRemained,
+--						@index as idx						
+--				end
+--			else if @rbnMultipleValues = 1
+--			begin	
+--				declare @tbl as table(idx int, val nvarchar(50))
 
-				insert into @tbl(idx, val)
-				select ROW_NUMBER() over(order by [value]), value
-				from string_split(@txtMultipleValues, ',');
+--				insert into @tbl(idx, val)
+--				select ROW_NUMBER() over(order by [value]), value
+--				from string_split(@txtMultipleValues, ',');
 
-				declare @CountAll int = (select count(1) from @tbl)
+--				declare @CountAll int = (select count(1) from @tbl)
 
-				if @CountAll = 1
-					begin
-						select
-							(select top 1 FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = val) Managergroupid,
-							cast(1 as bit) as ManagerConfirmation,
-							cast(0 as bit) ManagerRemained,
-							@index + 1 as idx
-						from @tbl
-						where idx = @index
-					end
-				else 
-					begin
-						if @CountAll >= @index
-						begin
-							select
-								(select top 1 FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = val) Managergroupid,
-								cast(1 as bit) as ManagerConfirmation,
-								cast(1 as bit) ManagerRemained,
-								@index + 1 as idx
-							from @tbl
-							where idx = @index
-						end			
-						else
-							begin
-								select
-									0 as Managergroupid,
-									cast(1 as bit) as ManagerConfirmation,
-									cast(0 as bit) ManagerRemained,
-									@index + 1 as idx
-							end
-					end
-			end
-		end
-	else
-		begin
-			select
-					0 as Managergroupid,
-					cast(0 as bit) as ManagerConfirmation,
-					cast(0 as bit) ManagerRemained,
-					@index as idx
-		end
+--				if @CountAll = 1
+--					begin
+--						select
+--							(select top 1 FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = val) Managergroupid,
+--							cast(1 as bit) as ManagerConfirmation,
+--							cast(0 as bit) ManagerRemained,
+--							@index + 1 as idx
+--						from @tbl
+--						where idx = @index
+--					end
+--				else 
+--					begin
+--						if @CountAll >= @index
+--						begin
+--							select
+--								(select top 1 FieldManager from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = val) Managergroupid,
+--								cast(1 as bit) as ManagerConfirmation,
+--								isnull((select cast(1 as bit) from @tbl where idx = @index + 1), 0) ManagerRemained,
+--								@index + 1 as idx
+--							from @tbl
+--							where idx = @index
+--						end			
+--						else
+--							begin
+--								select
+--									0 as Managergroupid,
+--									cast(1 as bit) as ManagerConfirmation,
+--									cast(0 as bit) ManagerRemained,
+--									@index + 1 as idx
+--							end
+--					end
+--			end
+--		end
+--	else
+--		begin
+--			select
+--					0 as Managergroupid,
+--					cast(0 as bit) as ManagerConfirmation,
+--					cast(0 as bit) ManagerRemained,
+--					@index as idx
+--		end
 			
 
+--end
+
+--go
+
+--create proc sp_cu_IsConfirmedByAtLeastOneManager
+--@wfid bigint
+--as
+--begin
+--	if exists(
+--	select 1 from Tbl_Cu_ServingTableSecondPhaseHistory_Log
+--	where RoleID = 7 and WFID = @wfid and RbnAcc = 1)
+--		select cast(1 as bit) as IsConfirmedByAtLeastOneManager
+--	else
+--		select cast(0 as bit) as IsConfirmedByAtLeastOneManager
+--end
+
+go
+
+create proc  sp_cu_get_wf_route_wf38
+@wfid bigint, @rownumber int
+as
+begin
+	DECLARE @cmbRequestSubject AS INT = (
+												SELECT TOP 1
+													cmbRequestSubject
+												FROM Tbl_Cu_ServingTableSecondPhase_Log
+												WHERE WFID = @wfid
+											);
+	declare @total_count int = (select count(1) from [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+								WHERE RequestSubjectID = @cmbRequestSubject
+									  AND ISNULL(cmbLocation, -1) = -1
+									  AND chkActive3 = 1
+									  AND IsSecondPhase = 1)
+	print(@total_count)
+
+	if @total_count >= @rownumber and @total_count > 1
+	begin
+		with cte as(
+		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
+					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+					WHERE RequestSubjectID = @cmbRequestSubject
+						  AND ISNULL(cmbLocation, -1) = -1
+						  AND chkActive3 = 1
+						  AND IsSecondPhase = 1
+						  )
+		select
+			rbnManagerConfirmation as rbnManagerConfirmationChosen,
+			rbnPersonAcc as rbnPersonAccChosen,
+			rbnHierarchy as rbnHierarchyChosen,
+			isnull((select cast(1 as bit) from cte where rownumber = @rownumber + 1), 0) as IsRecordsRemained,
+			rownumber + 1 as rownumber
+		from cte
+		where rownumber = @rownumber
+	end
+	else
+	begin
+		with cte as(
+		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
+					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+					WHERE RequestSubjectID = @cmbRequestSubject
+						  AND ISNULL(cmbLocation, -1) = -1
+						  AND chkActive3 = 1
+						  AND IsSecondPhase = 1
+						  )
+		select
+			rbnManagerConfirmation as rbnManagerConfirmationChosen,
+			rbnPersonAcc as rbnPersonAccChosen,
+			rbnHierarchy as rbnHierarchyChosen,
+			cast(0 as bit) as IsRecordsRemained,
+			rownumber + 1 as rownumber
+		from cte		
+	end
 end
-
-
-
-
-
-
 
