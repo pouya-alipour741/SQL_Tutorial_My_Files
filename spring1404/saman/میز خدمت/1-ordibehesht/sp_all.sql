@@ -308,7 +308,7 @@ begin
 											);
 	declare @total_count int = (select count(1) from [Tbl_CU_Base_DetermineRequestAcc_FRM141]
 								WHERE RequestSubjectID = @cmbRequestSubject
-									  AND ISNULL(cmbLocation, -1) = -1
+									  --AND ISNULL(cmbLocation, -1) = -1
 									  AND chkActive3 = 1
 									  AND IsSecondPhase = 1)
 	print(@total_count)
@@ -319,7 +319,7 @@ begin
 		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
 					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
 					WHERE RequestSubjectID = @cmbRequestSubject
-						  AND ISNULL(cmbLocation, -1) = -1
+						  --AND ISNULL(cmbLocation, -1) = -1
 						  AND chkActive3 = 1
 						  AND IsSecondPhase = 1
 						  )
@@ -338,7 +338,7 @@ begin
 		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
 					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
 					WHERE RequestSubjectID = @cmbRequestSubject
-						  AND ISNULL(cmbLocation, -1) = -1
+						  --AND ISNULL(cmbLocation, -1) = -1
 						  AND chkActive3 = 1
 						  AND IsSecondPhase = 1
 						  )
