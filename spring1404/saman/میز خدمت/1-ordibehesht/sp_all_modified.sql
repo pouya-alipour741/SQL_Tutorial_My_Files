@@ -192,6 +192,17 @@
 	
 --	declare @GUID nvarchar(50) = (select GUIDD from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
 --	declare @cmbFieldValueID int = (select top 1 FieldValueID from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
+--	declare @txtMultyData nvarchar(50) = (select top 1 MultyData from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
+--	declare @RequestSubjectID int = (select cmbRequestSubject from Tbl_Cu_ServingTableSecondPhase_Log where WFID = @wfid)
+
+--	DECLARE @SelectInfo AS BIT,
+--            @IsNeedCertificate AS BIT,
+--			@rbnMultipleValues AS BIT
+--    SELECT @SelectInfo = SelectInfo,
+--           @IsNeedCertificate = IsNeedCertificate,
+--		   @rbnMultipleValues = rbnMultipleValues
+--    FROM [dbo].[Tbl_CU_Base_FieldSubject_FRM157]
+--    WHERE FieldSubjectID in(15,505) and RequestSubjectID = @RequestSubjectID;
 
 --    SELECT 'بررسی جهت تایید' + '-' + ISNULL(
 --                                     (
@@ -685,10 +696,13 @@
 --             ''
 --                   ) AS TaskName13,
 --			------------------------------------------------------------
---			'بررسی جهت تایید:' +
+---			'بررسی جهت تایید:' +
 --			isnull((select top 1 SubGroupTitle from Tbl_CU_Base_SubGroups_FRM151 where SubGroupID = a.cmbSubGroup), '') + '-' +
 --			isnull((select top 1 RequestKindTitle from Tbl_CU_Base_RequestKind_FRM153 where RequestKindID = a.cmbRequestKind), '') + '-' +
---			isnull((select top 1 RequestSubjectName from Tbl_CU_Base_RequestSubject_FRM155 where RequestSubjectID = a.cmbRequestSubject),'') + '-' +
+--			case
+--				when @SelectInfo = 1 then (select top 1 RequestSubjectName from Tbl_CU_Base_RequestSubject_FRM155 where RequestSubjectID = a.cmbRequestSubject)
+--				when @rbnMultipleValues = 1 then (select top 1 dbo.[Fn_CU_Tbl_CU_Base_FieldValue_FRM167_Title](MultyData) from Tbl_Cu_ServingTableField_Log where GUIDD=@GUID and FieldID in(15,505))
+--			end + '-' +		
 --			isnull((select top 1 FieldValueTitle from Tbl_CU_Base_FieldValue_FRM167 where FieldValueID = @cmbFieldValueID), '') + '-' +
 --			'ثبت شده توسط:' +
 --			isnull((select top 1 FullName from users.TblProfiles where UserId = a.RegUserID), '') 
@@ -1130,7 +1144,7 @@
 --               WHEN X.RoleID = 2 THEN
 --                   'تایید کننده'
 --				when RoleID = 7 THEN
---					'مدیر تایید کننده'
+--					'مدیر رشته'
 --               WHEN X.RoleID = 3 THEN
 --                   'ارجاع گیرنده'
         
@@ -1256,6 +1270,10 @@
 --                    AND X.RbnAcc = 1 THEN
 --                   'تایید درخواست'			
 --               ----------------------------
+--			   WHEN X.RoleID in (2,7)
+--                    AND X.RbnNotAcc = 1 THEN
+--                   'عدم تایید درخواست'	  --update
+--			   ----------------------------
 --               WHEN X.ActivityID IN ( 5624706779067406565, 4633504046651884851, 5404828863396726991 ) THEN
 --                   'ثبت نظر'
 --               ----------------------------
@@ -1333,6 +1351,7 @@
 --    WHERE WFID = @WFID
 --    ORDER BY X.ServingTableSecondPhaseHistoryID;
 --END;
+
 
 --go
 

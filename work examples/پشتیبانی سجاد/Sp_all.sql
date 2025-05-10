@@ -295,18 +295,19 @@ create proc [dbo].[sp_cu_getStatusFromDashboard_frm31548]  --exec [sp_cu_getStat
 @PortalUserID bigint,
 @FollowUpCode nvarchar(10)
 as
-begin
+begin  --ExchangeStudentID, CountriesScholarshipID
 	declare @temp table  (
-	GUIDID nvarchar(50),	CountriesScholarshipID bigint,	WorkFlowName nvarchar(50),	WFID bigint,
-	FollowCode nvarchar(max),	WFStatus nvarchar(100),	Desciption nvarchar(max),WFMode nvarchar(10),	PortalFormID int,
-	PageID int,	EntryID bigint,	ShowFRM nvarchar(1400),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
+	rno int,
+	GUIDID nvarchar(max),	CommitmentCancellationID bigint,	WorkFlowName nvarchar(max),	WFID bigint,
+	FollowCode bigint,	WFStatus nvarchar(max),	Desciption nvarchar(max),WFMode nvarchar(max),	PortalFormID int,
+	PageID int,	EntryID nvarchar(max),	ShowFRM nvarchar(max),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
 	)
 	insert into @temp
 	exec [Sp_CU_GetDashboard] @PortalUserID
 
 		begin
 			select 
-				'وضعیت درخواست شما به شرح زیر میباشد : ' + '<br>' +  Desciption  as Desciption 
+				'وضعیت درخواست شما به شرح زیر میباشد : ' + '<br>' +  Desciption  as Desciption
 				,case 
 					 when WFMode = 'Editable' then cast(1 as bit) else cast(0 as bit)    --در صورتی که درخواست در کارتابل متقاضی (دانشجو) باشد ، امکان ثبت درخواست وجود نداشته 
 				end as res
@@ -316,6 +317,7 @@ begin
 				FollowCode = @FollowUpCode
 		end
 end
+
 
 go
 

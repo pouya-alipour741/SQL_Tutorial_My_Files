@@ -294,61 +294,61 @@
 --		select cast(0 as bit) as IsConfirmedByAtLeastOneManager
 --end
 
-go
+--go
 
-create proc  sp_cu_get_wf_route_wf38
-@wfid bigint, @rownumber int
-as
-begin
-	DECLARE @cmbRequestSubject AS INT = (
-												SELECT TOP 1
-													cmbRequestSubject
-												FROM Tbl_Cu_ServingTableSecondPhase_Log
-												WHERE WFID = @wfid
-											);
-	declare @total_count int = (select count(1) from [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-								WHERE RequestSubjectID = @cmbRequestSubject
-									  --AND ISNULL(cmbLocation, -1) = -1
-									  AND chkActive3 = 1
-									  AND IsSecondPhase = 1)
-	print(@total_count)
+--create proc  sp_cu_get_wf_route_wf38
+--@wfid bigint, @rownumber int
+--as
+--begin
+--	DECLARE @cmbRequestSubject AS INT = (
+--												SELECT TOP 1
+--													cmbRequestSubject
+--												FROM Tbl_Cu_ServingTableSecondPhase_Log
+--												WHERE WFID = @wfid
+--											);
+--	declare @total_count int = (select count(1) from [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--								WHERE RequestSubjectID = @cmbRequestSubject
+--									  --AND ISNULL(cmbLocation, -1) = -1
+--									  AND chkActive3 = 1
+--									  AND IsSecondPhase = 1)
+--	print(@total_count)
 
-	if @total_count >= @rownumber and @total_count > 1
-	begin
-		with cte as(
-		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
-					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-					WHERE RequestSubjectID = @cmbRequestSubject
-						  --AND ISNULL(cmbLocation, -1) = -1
-						  AND chkActive3 = 1
-						  AND IsSecondPhase = 1
-						  )
-		select
-			rbnManagerConfirmation as rbnManagerConfirmationChosen,
-			rbnPersonAcc as rbnPersonAccChosen,
-			rbnHierarchy as rbnHierarchyChosen,
-			isnull((select cast(1 as bit) from cte where rownumber = @rownumber + 1), 0) as IsRecordsRemained,
-			rownumber + 1 as rownumber
-		from cte
-		where rownumber = @rownumber
-	end
-	else
-	begin
-		with cte as(
-		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
-					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
-					WHERE RequestSubjectID = @cmbRequestSubject
-						  --AND ISNULL(cmbLocation, -1) = -1
-						  AND chkActive3 = 1
-						  AND IsSecondPhase = 1
-						  )
-		select
-			rbnManagerConfirmation as rbnManagerConfirmationChosen,
-			rbnPersonAcc as rbnPersonAccChosen,
-			rbnHierarchy as rbnHierarchyChosen,
-			cast(0 as bit) as IsRecordsRemained,
-			rownumber + 1 as rownumber
-		from cte		
-	end
-end
+--	if @total_count >= @rownumber and @total_count > 1
+--	begin
+--		with cte as(
+--		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
+--					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--					WHERE RequestSubjectID = @cmbRequestSubject
+--						  --AND ISNULL(cmbLocation, -1) = -1
+--						  AND chkActive3 = 1
+--						  AND IsSecondPhase = 1
+--						  )
+--		select
+--			rbnManagerConfirmation as rbnManagerConfirmationChosen,
+--			rbnPersonAcc as rbnPersonAccChosen,
+--			rbnHierarchy as rbnHierarchyChosen,
+--			isnull((select cast(1 as bit) from cte where rownumber = @rownumber + 1), 0) as IsRecordsRemained,
+--			rownumber + 1 as rownumber
+--		from cte
+--		where rownumber = @rownumber
+--	end
+--	else
+--	begin
+--		with cte as(
+--		SELECT  ROW_NUMBER() over(order by DetermineRequestaccID) rownumber,*
+--					FROM [Tbl_CU_Base_DetermineRequestAcc_FRM141]
+--					WHERE RequestSubjectID = @cmbRequestSubject
+--						  --AND ISNULL(cmbLocation, -1) = -1
+--						  AND chkActive3 = 1
+--						  AND IsSecondPhase = 1
+--						  )
+--		select
+--			rbnManagerConfirmation as rbnManagerConfirmationChosen,
+--			rbnPersonAcc as rbnPersonAccChosen,
+--			rbnHierarchy as rbnHierarchyChosen,
+--			cast(0 as bit) as IsRecordsRemained,
+--			rownumber + 1 as rownumber
+--		from cte		
+--	end
+--end
 
