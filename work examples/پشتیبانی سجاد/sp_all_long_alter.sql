@@ -561,7 +561,6 @@ END;
 go
 
 ALTER PROCEDURE [dbo].[Sp_Cu_SearchRefer_frm21041] @WFID AS BIGINT
-,@rbnDesiredOfficeInfo bit, @rbnOtherOrgInfo bit --update
 AS
 BEGIN
 	
@@ -572,24 +571,14 @@ BEGIN
            ),
            a.RegisteredDate,
            a.RegisteredTime,
-           --(  --update
-           --    SELECT TOP 1
-           --        ChartNodeTitle
-           --    FROM dbo.Tbl_CU_Chart
-           --    WHERE GroupID = a.GroupID
-           --    ORDER BY ChartNodeID DESC
-           --) AS Chart,
-		   case  --update
-				when @rbnDesiredOfficeInfo = 1 then (SELECT top 1 ChartNodeTitle FROM dbo.Tbl_CU_Chart WHERE GroupID = a.GroupID ORDER BY ChartNodeID DESC)
-				when @rbnOtherOrgInfo = 1 then (select InstituteName from Tbl_Cu_Institute where InstituteID = a.InstituteID)
+		   case  
+				when DesiredOffice = 1 then (SELECT top 1 ChartNodeTitle FROM dbo.Tbl_CU_Chart WHERE GroupID = a.GroupID ORDER BY ChartNodeID DESC)
+				when OtherOrg = 1 then (select InstituteName from Tbl_Cu_Institute where InstituteID = a.InstituteID)
 			end as Chart,
-			case  --update
-				when @rbnDesiredOfficeInfo = 1 then (SELECT FullName FROM Users.TblProfiles WHERE UserId = a.ExpertID)
-				when @rbnOtherOrgInfo = 1 then (SELECT UniversityName FROM dbo.Tbl_CU_University where UniversityID = a.UniversityID)
+			case  
+				when DesiredOffice = 1 then (SELECT FullName FROM Users.TblProfiles WHERE UserId = a.ExpertID)
+				when OtherOrg = 1 then (SELECT UniversityName FROM dbo.Tbl_CU_University where UniversityID = a.UniversityID)
 			end as Expert,
-           --(   --update
-           --    SELECT FullName FROM Users.TblProfiles WHERE UserId = a.ExpertID
-           --) AS Expert,
            a.Des,
            CASE
                WHEN a.Attachment = '-1#' THEN
@@ -598,12 +587,10 @@ BEGIN
                    a.Attachment
            END AS Attachment,
            CASE
-              --WHEN ISNULL(SendResult, 0) = 1 THEN  --update
-				--'عدم ارجاع و اعلام نتیجه'
 			   WHEN ISNULL(SendResult, 0) = 1 and SendToTazarv != 1 THEN
 				   'اعلام نتیجه به متقاضی'
 				WHEN ISNULL(SendResult, 0) = 1 and SendToTazarv = 1 THEN
-				   'ارسال به تذرو'						--end
+				   'ارسال به تذرو'						
                WHEN ISNULL(DesiredOffice, 0) = 1 THEN
                    'ارجاع به ادارات سازمان امور دانشجویان '
                WHEN ISNULL(OtherOrg, 0) = 1 THEN
@@ -617,7 +604,7 @@ BEGIN
            ) AS Result
     FROM dbo.Tbl_CU_QuestionRefer a       
     WHERE a.WFID = @WFID
-	and WFID != -1;  --update
+	and WFID != -1;  
 END;
 
 go

@@ -1537,8 +1537,42 @@
 --END;
 
 
+--go
 
-
+--ALTER PROCEDURE [dbo].[Sp_Cu_GetLoadEghamUserData_Frm243_Third]
+--    @WFID AS BIGINT,
+--    @USerID AS BIGINT
+--AS
+--BEGIN
+--    DECLARE @ActivityID AS BIGINT = (
+--                                        SELECT TOP 1
+--                                            ActivityID
+--                                        FROM Task.TblTask A
+--                                            INNER JOIN Task.TblWorkflowActivityInstance B
+--                                                ON B.WorkflowActivityInstanceID = A.WorkflowActivityInstaceID
+--                                        WHERE B.WokflowInstanceID = @WFID
+--                                        ORDER BY WorkflowActivityInstanceID DESC
+--                                    );
+--    IF @ActivityID IN ( 4889258265612070744, 5624706779067406565, 5404828863396726991, 4633504046651884851,
+--                        5685073198307059256
+--						,4849433516226528353 -- manager referral
+--                      )
+--    BEGIN
+--        SELECT dbo.fn_CU_MiladiToShamsi(GETDATE()) AS RegDate,
+--               CAST(CONVERT(TIME, GETDATE()) AS NVARCHAR(5)) AS RegTime,
+--               @USerID AS UserID,
+--               @ActivityID AS ActivityID;
+--    END;
+--    ELSE
+--    BEGIN
+--        SELECT '' AS RegDate,
+--               '' AS RegTime,
+--               0 AS UserID,
+--               0 AS ActivityID
+--        FROM Tbl_Cu_ServingTableSecondPhase_Log
+--        WHERE WFID = @WFID;
+--    END;
+--END;
 
 
 

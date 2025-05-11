@@ -1130,3 +1130,104 @@ begin
 
 		end
 end
+
+go
+
+create PROCEDURE [dbo].[Sp_Cu_Insert_tbl_cu_QuestionRefer_wf2000045]
+@WFID AS BIGINT, @IsAutomat bit
+as	
+    declare
+		@SendResult AS BIT,
+		@DesiredOffice AS BIT,
+		@OtherOrg AS BIT,
+		@cmbResult AS INT,
+		@cmbDesiredUnit AS INT,
+		--@cmbDesiredOffice AS INT,  --update
+		@cmbExperUserID AS INT,
+		@cmbInstitute int,   --update
+		@cmbUniversity int,  
+		@SendToTazarv bit, 
+		@UniversityUserID int,
+		@IsUniRefUser bit,--end
+		@Des AS NVARCHAR(1000),
+		@Attachment AS NVARCHAR(1000),
+		@GroupID AS BIGINT,
+		@ReferId AS BIGINT,
+		@UserId AS BIGINT,
+		@GUID AS NVARCHAR(1000)
+
+BEGIN
+	select 
+		 @SendResult = Col_5581934880622446261,
+		 @DesiredOffice = col_5319920761961862933,
+		 @OtherOrg = col_5139528391810745165,
+		 @cmbResult = col_4948200665753577473,
+		 @cmbDesiredUnit = col_5195609748428162630,
+		 @cmbExperUserID = col_5649431032226153954,
+		 @cmbInstitute = col_5208403737968325202,
+		 @cmbUniversity = col_5610076180504582867,
+		 @SendToTazarv = col_4731394453799451628,
+		 @UniversityUserID = col_5608294427009945013,
+		 @IsUniRefUser = col_5325503521548115568,
+		 @Des = col_5409369756743812385,
+		 @Attachment = col_4761793774768584392,
+		 @GroupID = col_5214184851893828049,
+		 @ReferId = col_5491021531889411585,
+		 @UserId = col_4612732637702051994,
+		 @GUID = col_5190992840719060449
+
+	from tbl_frm21041
+	where frm21041Id in(select PKFormID from task.TblFormInstance where WorkflowInstanceId = @WFID)
+
+
+    INSERT INTO dbo.Tbl_CU_QuestionRefer   
+    (
+        ReferId,
+        OrganizationId,
+        --OfficeId,  --update
+        UserId,
+        RegisteredDate,
+        WFID,
+        RegisteredTime,
+        SendResult,
+        DesiredOffice,
+        OtherOrg,
+        Result,
+        [GUID],
+        [Des],
+        Attachment,
+        GroupID,
+        IsAutomat,
+        ExpertID,
+		InstituteID,  --update
+		UniversityID,  
+		SendToTazarv,
+		UniversityUserID, 
+		IsUniRefUser--end
+	)
+    SELECT @ReferId,
+           @cmbDesiredUnit,
+           --@cmbDesiredOffice,  --update
+           @UserId,
+           dbo.MiladiToShamsi(GETDATE()),
+           @WFID,
+           CAST(CONVERT(TIME, GETDATE()) AS NVARCHAR(5)),
+           @SendResult,
+           @DesiredOffice,
+           @OtherOrg,
+           @cmbResult,
+           @GUID,
+           @Des,
+           @Attachment,
+           @GroupID,
+           @IsAutomat,
+           @cmbExperUserID,
+		   @cmbInstitute,  --update
+		   @cmbUniversity,  
+		   @SendToTazarv,
+		   @UniversityUserID,
+		   @IsUniRefUser--end
+
+END;
+
+
