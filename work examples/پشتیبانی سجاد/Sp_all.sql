@@ -30,43 +30,41 @@ go
 -------------------
 create PROCEDURE [dbo].[Sp_Cu_chkFollowUpCodeIfInRelatedWFID_frm21041]
 @MainSubject int,
-@FollowUpCode nvarchar(50),
-@ProblemType int
+@FollowUpCode bigint,
+@ProblemType int,
+@PortalUserID int
 AS
 BEGIN 
-	declare @wfid int = (select top 1 wfid from Tbl_CU_FollowUpCode where FollowUpCode = @followupcode )
-
 	if @ProblemType = 6
 		begin			 
-			if (select top 1 WorkflowID from task.TblWorkflowInstance where WorkflowInstanceID = @wfid) = 2000045   --درخواست پشتیبانی
-				begin
-					if (
-						select MainSubjectID
-						from Tbl_CU_FollowUpCode f
-							join Tbl_CU_QuestionAnswer q on f.WFID = q.WFID
-						where f.FollowUpCode = @FollowUpCode) = @MainSubject
+			declare @temp table  (
+			--rno int,
+			GUIDID nvarchar(max),	CommitmentCancellationID bigint,	WorkFlowName nvarchar(max),	WFID bigint,
+			FollowCode bigint,	WFStatus nvarchar(max),	Desciption nvarchar(max),WFMode nvarchar(max),	PortalFormID int,
+			PageID int,	EntryID nvarchar(max),	ShowFRM nvarchar(max),	StatusID bigint,	IsNewPortal int,	ActivityId  bigint
+			)
+			insert into @temp
+			exec [Sp_CU_GetDashboard] @PortalUserID
 
-						select cast(1 as bit) res
-					else
-						select cast(0 as bit) res
-				end
-			else  --غیر از درخواست پشتیبانی
-				begin
-					if (
-						select WorkflowID
-						
-						from Tbl_CU_FollowUpCode f
-							join task.TblWorkflowInstance i on i.WorkflowInstanceID= f.WFID						
-						where f.FollowUpCode = @FollowUpCode) = @MainSubject
+			select WFID, FollowCode from @temp where FollowCode = @FollowUpCode
 
-						select cast(1 as bit) res
-					else
-						select cast(0 as bit) res
+		
+			declare @wfid bigint = (select wfid										
+									from @temp									
+									where FollowCode = @FollowUpCode									
+										)
+			if (select WorkflowId from task.TblWorkflowInstance where WorkflowInstanceID = @wfid) = @MainSubject
+				begin
+					select cast(1 as bit) as res
 				end
+			else
+				select cast(0 as bit) as res
+				
 		end
 	else
 		select cast(1 as bit) res
 END;
+
 
 
 
