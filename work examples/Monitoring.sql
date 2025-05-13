@@ -13,8 +13,7 @@ set @wfid = 	97586
 	 --SELECT * FROM Task.TblWorkflowInstance
 --SELECT * FROM Users.TblUsers WHERE username like'%gha%'
 --SELECT * FROM Users.TblUsers WHERE userid=10
---SELECT * FROM Users.TblUSersGroups where groupid=53
---update Task.TblTask set TaskStatusID=6 where TaskID=1513385
+--SELECT ug.*, u.UserName FROM Users.TblUSersGroups ug join users.TblUsers u on ug.UserId = u.UserId where groupid=53
 --SELECT * FROM USERS.TBLGROUPS WHERE GROUPID=152
 
 --show tasks of an workflow instance id

@@ -46,8 +46,6 @@ BEGIN
 			insert into @temp
 			exec [Sp_CU_GetDashboard] @PortalUserID
 
-			select WFID, FollowCode from @temp where FollowCode = @FollowUpCode
-
 		
 			declare @wfid bigint = (select wfid										
 									from @temp									
