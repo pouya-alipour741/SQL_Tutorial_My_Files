@@ -24,11 +24,11 @@
 
 go
 
-
-insert into Tbl_CU_LogStatus(LogStatusTitle, WID, ExactMessage, ExactMessageID)  --1934, 1935
+insert into Tbl_CU_LogStatus(LogStatusTitle, WID, ExactMessage, ExactMessageID)  --1934, 1935, 1936
 values
 	('بررسی درخواست ثبت تماس', 2000588, 'شروع فرآیند',1),
-	('پایان', 2000588, 'بدون نیاز به شروع زیرفرآیند درخواست پشتیبانی',3)
+	('پایان', 2000588, 'بدون نیاز به شروع زیرفرآیند درخواست پشتیبانی',3),
+	('بررسي درخواست پشتيباني سامانه سجاد از ثبت تماس', 2000045, 'در حال بررسي در سازمان امور دانشجويان',2) 
 
 go
 
@@ -242,160 +242,6 @@ end
 
 go
 
-create proc sp_cu_LoadInfo_frm41614
-	@NationalCode nvarchar(10)
-as
-begin
-	if exists(select 1 from tbl_cu_govinfo_log where right(('00' + nationalId), 10) = @NationalCode)
-	begin
-		select top 1 
-				firstName ,
-				LastName,
-				mobile,
-				UserID
-		from tbl_cu_govinfo_log		
-		where
-			right(('00' + nationalId), 10) = @NationalCode	
-	end
-	else if exists(select 1 from Tbl_Cu_ApplierProfile where NationalCode = @NationalCode)
-		begin
-			select top 1 
-				[Name] as firstName,
-				LastName,
-				MobileNO as mobile,
-				UserPortalID as UserID
-		from Tbl_Cu_ApplierProfile		
-		where
-			NationalCode = @NationalCode
-		end
-	else
-		select
-				'' as firstName,
-				'' as LastName,
-				'' as mobile,
-				0 as UserID
-end
-
-go
-
-create proc sp_cu_LoadInfoByFollowUpCode_frm41614
-	@wfid bigint
-as
-begin
-       declare @WorkflowID bigint
-       declare @StarterUserID bigint
-       select @WorkflowID=WorkflowID,@StarterUserID=StarterUserID from task.TblWorkflowInstance where WorkflowInstanceID=@WFID
-       print @WorkflowID
-       if @WorkflowID=40
-       begin
-       select [Name] as FirstName,
-              LName as LastName,
-              MobileNO as Mobile,
-			  UserID as PortalUserID
-       from Tbl_CU_SAOComplaintLog L
-       where WFID=@WFID
-       end
-       else if @WorkflowID in(2000579,2000045)
-       begin
-       select 
-                   CASE
-                           WHEN Q.IsAutomat = 1 THEN 
-                           (
-                               SELECT TOP 1
-                                      Name 
-                               FROM dbo.Tbl_Cu_ApplierProfile x
-                               WHERE x.UserPortalID = Q.PortalUserID
-                                     AND Q.PortalUserID != 0
-                           )
-                           ELSE
-                       (
-                           SELECT TOP 1
-                                  FirstName
-                           FROM Users.TblProfiles
-                           WHERE UserId = Q.RegisteredUserId
-                       )
-                    END as FirstName,
-					CASE
-                           WHEN Q.IsAutomat = 1 THEN 
-                           (
-                               SELECT TOP 1
-                                      LastName 
-                               FROM dbo.Tbl_Cu_ApplierProfile x
-                               WHERE x.UserPortalID = Q.PortalUserID
-                                     AND Q.PortalUserID != 0
-                           )
-                           ELSE
-                       (
-                           SELECT TOP 1
-                                  LastName
-                           FROM Users.TblProfiles
-                           WHERE UserId = Q.RegisteredUserId
-                       )
-                    END as LastName,
-						Mobile,
-					    PortalUserID
-					   
-       from Tbl_CU_QuestionAnswer Q
-       where WFID=@WFID
-       end
-       else if @WorkflowID =2000569 and @StarterUserID<>2
-       begin
-       select 
-			FirstName,
-			LastName,
-			(
-                SELECT TOP 1
-                        MobileNO 
-                FROM dbo.Tbl_Cu_ApplierProfile x
-                WHERE x.UserPortalID = PortalUserID                   
-            ) Mobile,
-			PortalUserID
-                  
-       from Tbl_Cu_StudentGetCertificateCode_LOG
-       where WFID=@WFID
-       end
-
-       else if @WorkflowID =2000560 
-       begin
-       select
-			CASE
-                    WHEN IsAuto = 1 THEN 
-                    (
-                        SELECT TOP 1
-                                Name 
-                        FROM dbo.Tbl_Cu_ApplierProfile x
-                        WHERE x.UserPortalID = 950682
-                                AND PortalUserID != 0
-                    )
-                    ELSE
-						txtEditFirstName
-            END as FirstName,
-			CASE
-                    WHEN IsAuto = 1 THEN 
-                    (
-                        SELECT TOP 1
-                                LastName 
-                        FROM dbo.Tbl_Cu_ApplierProfile x
-                        WHERE x.UserPortalID = PortalUserID
-                                AND PortalUserID != 0
-                    )
-                    ELSE
-						txtEditLastName
-            END as LastName,
-			(
-                SELECT TOP 1
-                        MobileNO 
-                FROM dbo.Tbl_Cu_ApplierProfile x
-                WHERE x.UserPortalID = PortalUserID                   
-            ) Mobile,
-			PortalUserID
-       from Tbl_Cu_MehrSystemEdit_Log
-       where WFID=@WFID
-       end
-end
-
-go
-
 create proc sp_cu_getWorkFlowListFrom_DashBoard_frm41614
 	@portalUserID int
 as
@@ -411,11 +257,11 @@ begin
 
 	select
 		WorkFlowName,
+		WFID as key_value,
 		WFID,
 		FollowCode,
-		REPLACE(REPLACE(WFStatus, '<p class="sclosed">', ''), '<p class="schecking">', '') WFStatus,  --REPLACE(REPLACE(WFStatus, '<p class="sclosed">', ''), '<p class="schecking">', '')
-		REPLACE(REPLACE(Desciption, '<p class="sclosed">', ''), '<p class="schecking">', '') Desciption
-		,(select LogStatusTitle from Tbl_CU_LogStatus where LogStatusID = StatusID) LogStatusTitle
+		REPLACE(REPLACE(REPLACE(WFStatus, '<p class="sclosed">', ''), '<p class="schecking">', ''), '</p>', '') WFStatus, 
+		Desciption
 	from @temp
 end
 
@@ -441,3 +287,256 @@ end
 
 go
 
+create proc sp_cu_chkIfUserChosen_frm41614
+	@txtGetPortalUserID nvarchar(20)
+as
+begin
+	if (@txtGetPortalUserID = '' or @txtGetPortalUserID = 0)
+		select 1 as res
+	else
+		select 0 as res
+end
+
+go
+
+create proc sp_cu_chkIfMainSubjectChosen_frm41614
+	@txtMainTopicResult nvarchar(20)
+as
+begin
+	if (@txtMainTopicResult = '' or @txtMainTopicResult = 0)
+		select 1 as res
+	else
+		select 0 as res
+end
+
+go
+
+create PROCEDURE sp_cu_LoadInfo_frm41614
+    @NationalCode NVARCHAR(10),
+    @WFID BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+ 
+    -- Step 1: Try to get user info from gov info log
+	if @NationalCode != ''
+		begin
+			IF EXISTS (SELECT 1 FROM tbl_cu_govinfo_log WHERE RIGHT('00' + nationalId, 10) = @NationalCode)
+				BEGIN
+					SELECT TOP 1 
+						firstName,
+						LastName,
+						mobile,
+						UserID
+					FROM tbl_cu_govinfo_log
+					WHERE RIGHT('00' + nationalId, 10) = @NationalCode
+					ORDER BY GovInfoLogId DESC;
+					RETURN;
+				END
+
+					-- Step 2: Try to get user info from applier profile
+			ELSE IF EXISTS (SELECT 1 FROM Tbl_Cu_ApplierProfile WHERE NationalCode = @NationalCode)
+				BEGIN
+					SELECT TOP 1
+						[Name] AS firstName,
+						LastName,
+						MobileNO AS mobile,
+						UserPortalID AS UserID
+					FROM Tbl_Cu_ApplierProfile
+					WHERE NationalCode = @NationalCode
+					ORDER BY ApplierProfileID DESC;
+					RETURN;
+				END
+		end
+	else IF @WFID != ''
+		begin
+			
+			DECLARE @WorkflowID BIGINT;
+			DECLARE @StarterUserID BIGINT;
+
+			-- Step 3: Get Workflow details
+			SELECT @WorkflowID = WorkflowID, @StarterUserID = StarterUserID
+			FROM task.TblWorkflowInstance
+			WHERE WorkflowInstanceID = @WFID;
+
+			-- Step 4: Handle based on WorkflowID
+			IF @WorkflowID = 40
+			BEGIN
+				SELECT top 1 [Name] AS FirstName,
+					   LName AS LastName,
+					   MobileNO AS Mobile,
+					   UserID 
+				FROM Tbl_CU_SAOComplaintLog
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			IF @WorkflowID IN (2000579, 2000045)
+			BEGIN
+				SELECT top 1
+					CASE WHEN Q.IsAutomat = 1 THEN 
+						(SELECT TOP 1 Name FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = Q.PortalUserID AND Q.PortalUserID != 0)
+					ELSE
+						(SELECT TOP 1 FirstName FROM Users.TblProfiles WHERE UserId = Q.RegisteredUserId)
+					END AS FirstName,
+					CASE WHEN Q.IsAutomat = 1 THEN 
+						(SELECT TOP 1 LastName FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = Q.PortalUserID AND Q.PortalUserID != 0)
+					ELSE
+						(SELECT TOP 1 LastName FROM Users.TblProfiles WHERE UserId = Q.RegisteredUserId)
+					END AS LastName,
+					Mobile,
+					PortalUserID as UserID
+				FROM Tbl_CU_QuestionAnswer Q
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			IF @WorkflowID = 2000569 AND @StarterUserID <> 2
+			BEGIN
+				SELECT top 1
+					FirstName,
+					LastName,
+					(SELECT TOP 1 MobileNO FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) AS Mobile,
+					PortalUserID as UserID
+				FROM Tbl_Cu_StudentGetCertificateCode_LOG
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			IF @WorkflowID = 2000560
+			BEGIN
+				SELECT top 1
+					CASE WHEN IsAuto = 1 THEN
+						(SELECT TOP 1 Name FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID AND PortalUserID != 0)
+					ELSE
+						txtEditFirstName
+					END AS FirstName,
+					CASE WHEN IsAuto = 1 THEN
+						(SELECT TOP 1 LastName FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID AND PortalUserID != 0)
+					ELSE
+						txtEditLastName
+					END AS LastName,
+					(SELECT TOP 1 MobileNO FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) AS Mobile,
+					PortalUserID as UserID
+				FROM Tbl_Cu_MehrSystemEdit_Log
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			-- Step 5: Default case
+			SELECT top 1
+				(SELECT TOP 1 [Name] FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) as FirstName,
+				(SELECT TOP 1 LastName FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) AS LastName,
+				(SELECT TOP 1 MobileNO FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) AS Mobile,
+				PortalUserID as UserID     
+			FROM Tbl_CU_FollowUpCode F
+			INNER JOIN Tbl_Cu_PortalReceiveLog P ON P.PortalLogID = F.PortalLogID
+			WHERE F.WFID = @WFID;
+		
+		end
+	else
+		select
+			'' as FirstName,
+			'' as LastName,
+			'' as Mobile,
+			0 as UserID
+
+END;
+
+go
+
+create PROCEDURE [dbo].[Sp_Insert_Tbl_CU_QuestionAnswer_From_CallCentre] 
+    @WFID AS BIGINT ,
+    @StatusID AS BIGINT 
+
+AS
+    BEGIN
+        SET NOCOUNT ON;
+        --DECLARE @FollowUpCode AS NVARCHAR(50)= ( SELECT TOP 1
+        --                                                FollowUpCode
+        --                                         FROM   dbo.Tbl_CU_FollowUpCode
+        --                                         WHERE  WFID = @WFID
+        --                                       ) 
+
+        DECLARE @Pkfrm41614Id bigint,
+		        @PortalUserID AS BIGINT ,
+				--@RegDate nvarchar(10),
+				--@RegTime nvarchar(10),
+				@MainSubjectID bigint,
+				@Mobile bigint,
+				--@Email nvarchar(100),
+				@ProblemType bigint,
+				@Descript nvarchar(2000),
+				@NationalCode nvarchar(10),
+				@ApplierUserID bigint
+        
+		  SELECT TOP 1
+                @Pkfrm41614Id = frm41614Id ,
+                @PortalUserID = Col_5157668540547016625 ,
+                --@RegDate = Col_5659690905747023735 ,
+                --@RegTime = Col_4622391479516633008 ,
+                @MainSubjectID = Col_5252272654235027560 ,
+                @Mobile = Col_5639456084995486972 ,
+                --@Email = Col_5072203725658548127 ,
+                --@ProblemType = Col_4685558585417077630 ,
+                @Descript = Col_5201950943389170313 ,
+                @NationalCode = col_5718928631750974967
+               
+        FROM    dbo.Tbl_frm41614
+        WHERE   frm41614Id IN ( SELECT top 1  PKFormID
+                                FROM    Task.TblFormInstance
+                                WHERE   WorkflowInstanceId = @WFID
+                                        AND FormID = 41614 )
+        
+		set @ApplierUserID=(select ExternalUserId from users.TblMemebrShips where UserId=@PortalUserID)
+
+        if not exists(select top 1 1 from Tbl_CU_QuestionAnswer where WFIDPortal = WFID)
+		begin
+        INSERT  INTO [dbo].[Tbl_CU_QuestionAnswer]
+                ( RegDate ,
+                  RegTime ,
+                  PortalUserID ,
+                  FollowUpCode ,
+                  WFIDPortal ,
+                  [MainSubjectID] ,
+                  [Mobile] ,
+                  --[Email] ,
+                  ProblemType ,
+                  [Descript] ,
+                  [StatusID] ,
+                  IsAutomat ,
+                  --RegisteredUserId ,
+                  NationalCode,
+				  PriorityID,
+				  PkFrm31548ID
+                  
+		        )
+                values (dbo.MiladiToShamsi(GETDATE()),
+                         dbo.OnlyTime(GETDATE()),
+                        @ApplierUserID ,
+                        @WFID ,
+                        @WFID ,
+                        @MainSubjectID ,
+                        @Mobile ,
+                        --@Email ,
+                        10 ,
+                        @Descript ,
+                        @StatusID ,
+                        6 ,                     
+                        --( SELECT TOP 1
+                        --            UserID
+                        --  FROM      Task.TblWorkflowActivityInstance
+                        --            INNER JOIN Task.TblTask ON TblTask.WorkflowActivityInstaceID = TblWorkflowActivityInstance.WorkflowActivityInstanceID
+                        --  WHERE     ActivityID = 5566011793824984477
+                        --            AND WokflowInstanceID = @WFID
+                        --  ORDER BY  TaskID DESC
+                        --) ,
+                        @NationalCode,
+						5,
+						@Pkfrm41614Id						
+						)  
+            end
+			select top 1 id from Tbl_CU_QuestionAnswer where WFIDPortal=@WFID
+			order by id desc
+    END

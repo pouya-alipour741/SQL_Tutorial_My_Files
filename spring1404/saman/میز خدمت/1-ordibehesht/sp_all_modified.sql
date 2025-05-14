@@ -134,7 +134,7 @@
 --               WHEN DE.rbnNotAcc = 1 THEN
 --                   'بدون تایید'
 --				when rbnManagerConfirmation = 1 then
---					'تایید مدیر'
+--					'تایید مدیر رشته'
 --           END AS HalatEntekhab,
 --           CASE
 --               WHEN chkActive3 = 1 THEN
