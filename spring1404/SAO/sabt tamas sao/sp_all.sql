@@ -1,10 +1,37 @@
-﻿create table Tbl_CU_CallCentre_log
+﻿CREATE FUNCTION dbo.RemoveHTMLTags (@Input NVARCHAR(MAX))
+RETURNS NVARCHAR(MAX)
+AS
+BEGIN
+    DECLARE @Output NVARCHAR(MAX)
+    DECLARE @Start INT
+    DECLARE @End INT
+    DECLARE @Length INT
+
+    SET @Output = @Input
+    SET @Start = CHARINDEX('<', @Output)
+    SET @End = CHARINDEX('>', @Output, @Start)
+
+    WHILE @Start > 0 AND @End > 0 AND @End > @Start
+    BEGIN
+        SET @Length = @End - @Start + 1
+        SET @Output = STUFF(@Output, @Start, @Length, '')
+        SET @Start = CHARINDEX('<', @Output)
+        SET @End = CHARINDEX('>', @Output, @Start)
+    END
+
+    RETURN LTRIM(RTRIM(@Output))
+END
+
+go
+
+create table Tbl_CU_CallCentre_log
 (
 	CallCentreID bigint primary key identity(1,1),
 	WFID bigint,
 	RegDate nvarchar(10),
 	RegTime nvarchar(5),
 	RegUser int,
+	PortalUserID int,
 	Nationalcode  nvarchar(10),
 	FollowUpCode nvarchar(100),
 	FirstName nvarchar(100),
@@ -24,11 +51,12 @@
 
 go
 
-insert into Tbl_CU_LogStatus(LogStatusTitle, WID, ExactMessage, ExactMessageID)  --1934, 1935, 1936
+insert into Tbl_CU_LogStatus(LogStatusTitle, WID, ExactMessage, ExactMessageID)  --1934, 1935, 1936, 1937
 values
 	('بررسی درخواست ثبت تماس', 2000588, 'شروع فرآیند',1),
-	('پایان', 2000588, 'بدون نیاز به شروع زیرفرآیند درخواست پشتیبانی',3),
-	('بررسي درخواست پشتيباني سامانه سجاد از ثبت تماس', 2000045, 'در حال بررسي در سازمان امور دانشجويان',2) 
+	('بدون نياز به شروع زيرفرآيند درخواست پشتيباني', 2000588, 'خاتمه فرآيند',3),
+	('بررسي درخواست پشتيباني سامانه سجاد از ثبت تماس', 2000045, 'در حال بررسي در سازمان امور دانشجويان',2),
+	('نياز به درخواست پشتيباني', 2000588, 'خاتمه فرآيند',3)
 
 go
 
@@ -41,6 +69,7 @@ begin
 		@txtRegUser int,
 		@txtNationalCode nvarchar(10),
 		@txtFollowUpCode nvarchar(100),
+		@txtPortalUserID int,
 		@txtName nvarchar(100),
 		@txtLastName nvarchar(100),
 		@txtContactNo nvarchar(100),
@@ -63,6 +92,7 @@ begin
 		@txtRegUser = col_4941204978461054497,
 		@txtNationalCode = col_5718928631750974967,
 		@txtFollowUpCode = col_4929762884074901527,
+		@txtPortalUserID = col_5157668540547016625,
 		@txtName = col_5015109671430041049,
 		@txtLastName = col_4878731099635972323,
 		@txtContactNo = col_5639456084995486972,
@@ -97,13 +127,14 @@ begin
 
 	if not exists(select 1 from Tbl_CU_CallCentre_log where WFID = @wfid)
 	begin
-		insert into Tbl_CU_CallCentre_log([WFID], [RegDate], [RegTime], [RegUser], [Nationalcode], [FollowUpCode], [FirstName],
+		insert into Tbl_CU_CallCentre_log([WFID], [RegDate], [RegTime], [RegUser],[PortalUserID], [Nationalcode], [FollowUpCode], [FirstName],
 									[LastName], [ContactNo], [Topics], [PremadeResponse], [SubjectDescription], [RelatedWFID],
 									[Guidance], [SystemError], [UserError], [RegisteredRequest], [ResultDescription],[StatusID])
 		values( @wfid,
 				dbo.MiladiToShamsi(getdate()),
 				dbo.OnlyTime(getdate()),   
 				@txtRegUser,
+				@txtPortalUserID,
 				@txtNationalCode,
 				@txtFollowUpCode,
 				@txtName,
@@ -141,8 +172,7 @@ begin
 			[RegisteredRequest] = @rbnRegisteredRequest,
 			[ResultDescription] = @txtResultDescription,
 			[StatusID] = @StatusID
-		where WFID = @wfid
-			
+		where WFID = @wfid			
 end
 
 go
@@ -231,7 +261,7 @@ begin
 	select
 		WFID,
 		(select [Name] from Workflow.TblWorkflow where WorkflowId = MainSubjectID) MainSubjectTitle,
-		Descript,
+		Descript
 		RegDate,
 		RegTime,
 		(select LogStatusTitle from Tbl_CU_LogStatus where LogStatusID = q.StatusID) LogStatusTitle,
@@ -261,14 +291,14 @@ begin
 		WFID,
 		FollowCode,
 		REPLACE(REPLACE(REPLACE(WFStatus, '<p class="sclosed">', ''), '<p class="schecking">', ''), '</p>', '') WFStatus, 
-		Desciption
+		dbo.RemoveHTMLTags(Desciption) Desciption
 	from @temp
 end
 
 go
 
 create proc sp_cu_getInfoFromCallCentre_frm41614
-	@userID int
+	@PortalUserID int
 as
 begin
 	select 
@@ -282,7 +312,7 @@ begin
 		(select top 1 LogStatusTitle from Tbl_CU_LogStatus where LogStatusID = StatusID) LogStatusTitle,
 		FollowUpCode
 	from Tbl_CU_CallCentre_log
-	where RegUser = @userID
+	where PortalUserID = @PortalUserID
 end
 
 go
@@ -325,9 +355,9 @@ BEGIN
 			IF EXISTS (SELECT 1 FROM tbl_cu_govinfo_log WHERE RIGHT('00' + nationalId, 10) = @NationalCode)
 				BEGIN
 					SELECT TOP 1 
-						firstName,
+						FirstName,
 						LastName,
-						mobile,
+						Mobile,
 						UserID
 					FROM tbl_cu_govinfo_log
 					WHERE RIGHT('00' + nationalId, 10) = @NationalCode
@@ -339,9 +369,9 @@ BEGIN
 			ELSE IF EXISTS (SELECT 1 FROM Tbl_Cu_ApplierProfile WHERE NationalCode = @NationalCode)
 				BEGIN
 					SELECT TOP 1
-						[Name] AS firstName,
+						[Name] AS FirstName,
 						LastName,
-						MobileNO AS mobile,
+						MobileNO AS Mobile,
 						UserPortalID AS UserID
 					FROM Tbl_Cu_ApplierProfile
 					WHERE NationalCode = @NationalCode
@@ -426,9 +456,9 @@ BEGIN
 
 			-- Step 5: Default case
 			SELECT top 1
-				(SELECT TOP 1 [Name] FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) as FirstName,
-				(SELECT TOP 1 LastName FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) AS LastName,
-				(SELECT TOP 1 MobileNO FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID) AS Mobile,
+				(SELECT TOP 1 [Name] FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID order by ApplierProfileID desc) as FirstName,
+				(SELECT TOP 1 LastName FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID order by ApplierProfileID desc) AS LastName,
+				(SELECT TOP 1 MobileNO FROM Tbl_Cu_ApplierProfile WHERE UserPortalID = PortalUserID order by ApplierProfileID desc) AS Mobile,
 				PortalUserID as UserID     
 			FROM Tbl_CU_FollowUpCode F
 			INNER JOIN Tbl_Cu_PortalReceiveLog P ON P.PortalLogID = F.PortalLogID
@@ -468,8 +498,7 @@ AS
 				--@Email nvarchar(100),
 				@ProblemType bigint,
 				@Descript nvarchar(2000),
-				@NationalCode nvarchar(10),
-				@ApplierUserID bigint
+				@NationalCode nvarchar(10)
         
 		  SELECT TOP 1
                 @Pkfrm41614Id = frm41614Id ,
@@ -489,7 +518,6 @@ AS
                                 WHERE   WorkflowInstanceId = @WFID
                                         AND FormID = 41614 )
         
-		set @ApplierUserID=(select ExternalUserId from users.TblMemebrShips where UserId=@PortalUserID)
 
         if not exists(select top 1 1 from Tbl_CU_QuestionAnswer where WFIDPortal = WFID)
 		begin
@@ -514,7 +542,7 @@ AS
 		        )
                 values (dbo.MiladiToShamsi(GETDATE()),
                          dbo.OnlyTime(GETDATE()),
-                        @ApplierUserID ,
+                        @PortalUserID ,
                         @WFID ,
                         @WFID ,
                         @MainSubjectID ,
@@ -540,3 +568,165 @@ AS
 			select top 1 id from Tbl_CU_QuestionAnswer where WFIDPortal=@WFID
 			order by id desc
     END
+
+go
+
+create proc sp_cu_chkMandatoryResult_frm41614
+	@rbnGuidance bit,
+	@rbnSystemError bit,
+	@rbnUserError bit,
+	@rbnRegisteredRequest bit
+as
+begin
+	if (@rbnGuidance = 0 and @rbnSystemError = 0 and @rbnUserError = 0 and @rbnRegisteredRequest = 0)
+		select 1 as res
+	else
+		select 0 as res	
+end
+
+go
+
+create proc sp_cu_chkIsNationalCodeNumeric_frm41614
+	@NationalCode nvarchar(50)
+as
+begin
+	if (isnumeric(@NationalCode) = 0 and @NationalCode != '')	
+		select 1 as res
+	else
+		select 0 as res
+end
+
+go
+
+create proc sp_cu_chkIsFollowUpCodeNumeric_frm41614
+	@FollowUpCode nvarchar(50)
+as
+begin
+	if (isnumeric(@FollowUpCode) = 0 and @FollowUpCode != '')
+		select 1 as res
+	else
+		select 0 as res
+end
+
+go
+
+create PROCEDURE [dbo].[SP_CU_Search_TBL_CU_CertificateCodeDatas_Log_CallCentre] @NationalCode NVARCHAR(10), @WFID bigint
+AS
+BEGIN
+	if @NationalCode != ''
+		begin
+			SELECT IdentityCode
+				,Average
+				,StudingModeTitle
+				,FieldCode
+				,EducationStatusCode
+				,EducationStatusTitle
+				,CodeSehat
+				,levelDegreetTitle
+				,UniversityCode
+				,UniversityTypeCode
+				,FieldTitle
+				,EduEndDate
+				,UniversityTypeTitle
+				,LeveldDegreeCode
+				,LevelCode
+				,InquirySourceCode
+				,InquirySourceTitle
+				,IdentityType
+				,StudingModeCode
+				,FirstName
+				,EduStartDate
+				,Last_Name
+				,UniversityTitle
+				,ExpireDate
+				,LevelTitle
+				,InquiryDate
+			FROM TBL_CU_CertificateCodeDatas_Log
+			WHERE IdentityCode = @NationalCode
+		end
+	else
+		begin						
+			DECLARE @WorkflowID BIGINT;
+			DECLARE @StarterUserID BIGINT;
+			-- Step 3: Get Workflow details
+			SELECT @WorkflowID = WorkflowID, @StarterUserID = StarterUserID
+			FROM task.TblWorkflowInstance
+			WHERE WorkflowInstanceID = @WFID;
+
+			-- Step 4: Handle based on WorkflowID
+			IF @WorkflowID = 40
+			BEGIN
+				SELECT top 1 
+						@NationalCode = NationalCode
+				FROM Tbl_CU_SAOComplaintLog
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			else IF @WorkflowID IN (2000579, 2000045)
+			BEGIN
+				SELECT top 1				
+					@NationalCode = NationalCode
+				FROM Tbl_CU_QuestionAnswer Q
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			else IF @WorkflowID = 2000569 AND @StarterUserID <> 2
+			BEGIN
+				SELECT top 1
+					@NationalCode = NationalCode
+				FROM Tbl_Cu_StudentGetCertificateCode_LOG
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			else IF @WorkflowID = 2000560
+			BEGIN
+				SELECT top 1
+					@NationalCode = NationalCode
+				FROM Tbl_Cu_MehrSystemEdit_Log
+				WHERE WFID = @WFID;
+				RETURN;
+			END
+
+			else
+			begin
+				-- Step 5: Default case
+				SELECT top 1
+					@NationalCode = NationalCode
+				FROM Tbl_CU_FollowUpCode F
+				INNER JOIN Tbl_Cu_PortalReceiveLog P ON P.PortalLogID = F.PortalLogID
+				WHERE F.WFID = @WFID
+			end
+
+			SELECT IdentityCode
+				,Average
+				,StudingModeTitle
+				,FieldCode
+				,EducationStatusCode
+				,EducationStatusTitle
+				,CodeSehat
+				,levelDegreetTitle
+				,UniversityCode
+				,UniversityTypeCode
+				,FieldTitle
+				,EduEndDate
+				,UniversityTypeTitle
+				,LeveldDegreeCode
+				,LevelCode
+				,InquirySourceCode
+				,InquirySourceTitle
+				,IdentityType
+				,StudingModeCode
+				,FirstName
+				,EduStartDate
+				,Last_Name
+				,UniversityTitle
+				,ExpireDate
+				,LevelTitle
+				,InquiryDate
+			FROM TBL_CU_CertificateCodeDatas_Log
+			WHERE IdentityCode = @NationalCode
+		end
+END;
