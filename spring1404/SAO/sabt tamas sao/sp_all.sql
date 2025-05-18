@@ -217,17 +217,30 @@ create proc sp_cu_CallCentreAdvancedSearch
 as
 begin	
 	select 
-		[WFID], [RegDate], [RegTime], [RegUser], [Nationalcode], [FollowUpCode],
-		[FirstName], [LastName], [ContactNo], [Topics], [PremadeResponse], [SubjectDescription], [RelatedWFID],
-		[Guidance], [SystemError], [UserError], [RegisteredRequest], [ResultDescription],
+		ROW_NUMBER() over(order by wfid desc) rownumber,
+		[WFID], [RegDate], [RegTime], 
+		(select FullName from users.TblProfiles where UserId = [RegUser]) [RegUser],
+		(select FullName from users.TblProfiles where UserId = [PortalUserID]) [PortalUserID],
+		[Nationalcode], [FollowUpCode],
+		[FirstName], [LastName], [ContactNo],
+		(select [Name] from Workflow.TblWorkflow where WorkflowId = Topics) [Topics],
+		(select RequestType from tbl_cu_base_PremadeResponses where PremadeResponses_ID = PremadeResponse) [PremadeResponse],
+		[SubjectDescription], [RelatedWFID],
+		case
+			when Guidance = 1 then 'راهنمایی'
+			when SystemError = 1 then 'خطای سامانه'
+			when UserError = 1 then 'خطای کاربر'
+			when RegisteredRequest = 1 then 'پیگیری روند درخواست ثبت شده' 
+		end VerificationResult
+		,[ResultDescription],
 		(select LogStatusTitle from Tbl_CU_LogStatus where LogStatusID =  [StatusID]) LogStatusTitle
 	from Tbl_CU_CallCentre_log
 	where
 		(RegDate >= @FromDate or @FromDate = '') and
 		(RegDate <= @ToDate or @ToDate = '') and
 		(Nationalcode = @NationalCode or @NationalCode = '') and
-		(RegUser = @Expert or @Expert = '') and
-		(Topics = @Topic or @Topic = '')
+		(RegUser = @Expert or @Expert = -1) and
+		(Topics = @Topic or @Topic = -1)
 end
 
 go
@@ -302,6 +315,7 @@ create proc sp_cu_getInfoFromCallCentre_frm41614
 as
 begin
 	select 
+		ROW_NUMBER() over(order by wfid desc) rownumber,
 		WFID,
 		RegDate,
 		RegTime,

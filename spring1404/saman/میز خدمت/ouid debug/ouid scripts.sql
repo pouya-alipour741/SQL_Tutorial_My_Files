@@ -18,9 +18,7 @@ order by WFID desc
 
 EXEC Sp_Cu_GetHierarchy_Users 1909582,1,0
 
---update task.TblTask
---set UserID = 77
---where taskid = 30904755
+
 
 select top 1000 * from Tbl_Cu_Base_HierarchicalPublicService
 where UnitID = 0
@@ -43,12 +41,7 @@ SELECT TOP 1
         WHERE [GUID] = 'a6041735-4536-4ccf-b224-54548ba8a594'
               AND [PropName] = 'adspath'
 
---begin tran
---update Tbl_Cu_ServingTableSecondPhase_Log
---set OUChart = 464
---where OrganizationUnit = '1371' and OUChart = 0 
 
---commit
 
 select * from Tbl_Cu_ServingTableSecondPhase_Log
 where OrganizationUnit = '1371' and OUChart = 0
@@ -60,10 +53,3 @@ where wfid = 1909582
 select * from task.TblWorkflowInstance
 where WorkflowInstanceID = 1909594
 
---update task.TblWorkflowInstance
---set WorkflowInstanceStatusID = 1
---where WorkflowInstanceID = 1909594
-
---update task.TblTask
---set TaskStatusID = 6
---where TaskID = 30904578
