@@ -53,7 +53,7 @@ go
 
 insert into Tbl_CU_LogStatus(LogStatusTitle, WID, ExactMessage, ExactMessageID)  --1934, 1935, 1936, 1937
 values
-	('بررسی درخواست ثبت تماس', 2000588, 'شروع فرآیند',1),
+	--('بررسی درخواست ثبت تماس', 2000588, 'شروع فرآیند',1),
 	('بدون نياز به شروع زيرفرآيند درخواست پشتيباني', 2000588, 'خاتمه فرآيند',3),
 	('بررسي درخواست پشتيباني سامانه سجاد از ثبت تماس', 2000045, 'در حال بررسي در سازمان امور دانشجويان',2),
 	('نياز به درخواست پشتيباني', 2000588, 'خاتمه فرآيند',3)
@@ -303,7 +303,7 @@ begin
 		WFID as key_value,
 		WFID,
 		FollowCode,
-		REPLACE(REPLACE(REPLACE(WFStatus, '<p class="sclosed">', ''), '<p class="schecking">', ''), '</p>', '') WFStatus, 
+		dbo.RemoveHTMLTags(WFStatus) WFStatus, 
 		dbo.RemoveHTMLTags(Desciption) Desciption
 	from @temp
 end
