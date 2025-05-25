@@ -59,7 +59,7 @@ BEGIN
         [RequestSubjectID],
         [rbnHierarchy],
         [rbnPersonAcc],
-		  rbnManagerConfirmation, --
+		rbnManagerConfirmation, 
         [chkActive3],
         [txtUserID3],
         HierarchyLevel,
@@ -75,7 +75,7 @@ BEGIN
            @RequestSubjectID,
            @rbnHierarchy,
            @rbnPersonAcc,
-		     @rbnManagerConfirmation, --
+		   @rbnManagerConfirmation, 
            @chkActive3,
            @UserID,
            @HierarchyLevel,
@@ -1456,7 +1456,7 @@ BEGIN
                   AND ISNULL(cmbLocation, -1) = -1
                   AND chkActive3 = 1
                   AND IsSecondPhase = 1
-				  and rbnManagerConfirmation != 1 --
+				  and rbnManagerConfirmation != 1 
         );
         SELECT DetermineRequestAccID,
                rbnNotAcc,
