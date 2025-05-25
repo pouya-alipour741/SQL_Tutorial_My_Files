@@ -23,14 +23,14 @@ begin
 	(
 		SELECT 
 			'شاخه اصلی' as MainSubjectTitle,		
-				1 as BranchLevel,
+				1 as MainBranch,
 				-1 as ParentID
 		)
 	union all
 	(
 		SELECT 
 			MainSubjectTitle,		
-				MainSubjectID + 1 as BranchLevel,
+				MainSubjectID + 1 as MainBranch,
 				1 as ParentID
 		FROM Tbl_CU_Base_MainSubject_HR
 		where MainSubjectStatus = 1
@@ -42,7 +42,7 @@ begin
 					r.RelationOfMainSubjectTitle as MainSubjectTitle ,
 				   --(select MainSubjectTitle 
 				   --from Tbl_CU_Base_MainSubject_HR where MainSubjectID = r.MainSubjectMapID) as MainSubjectTitle,
-				   RelationOfMainSubjectID + (select count(1) cnt from Tbl_CU_Base_MainSubject_HR) + 1 as BranchLevel,
+				   RelationOfMainSubjectID + (select count(1) cnt from Tbl_CU_Base_MainSubject_HR) + 1 as MainBranch,
 				   MainSubjectMapID + 1 as ParentID
 	
 		from Tbl_CU_Base_RelationOfMainSubject_HR   as  r 
