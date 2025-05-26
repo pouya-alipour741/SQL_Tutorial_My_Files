@@ -14,6 +14,36 @@ go
 alter table Tbl_CU_HR_RequestLog
 add RequestSource int
 
+go
+
+create table Tbl_CU_Base_3rdLevel_HR
+(
+	ThirdLevelID int primary key identity(1,1),
+	ThirdLevelTitle nvarchar(100),
+	MainSubjectID int,
+	SubSubjectID int,
+	SubSubjectMapID int,
+	ShowPortal bit,
+	SortOrder int,
+	IsActive bit
+
+)
+
+go
+
+create table Tbl_CU_Base_4thLevel_HR
+(
+	FourthLevelID int primary key identity(1,1),
+	FourthLevelTitle nvarchar(100),
+	MainSubjectID int,
+	SubSubjectID int,
+	ThirdLevelID int,
+	ThirdLevelMapID int,
+	ShowPortal bit,
+	SortOrder int,
+	IsActive bit
+)
+
 --------Created Sps----------
 go
 
@@ -56,6 +86,31 @@ create or alter proc sp_cu_select_IncomingSource_frm580
 as
 begin
 	select * from tbl_cu_base_IncomingSource
+end
+
+go
+
+create or alter proc sp_cu_ThirdLevelSearch_frm581
+	@MainSubjectID int, @SubSubjectID int
+as
+begin
+	select
+	ThirdLevelID,
+	ROW_NUMBER() over(order by ThirdLevelID) rownumber,
+	(select MainSubjectTitle from Tbl_CU_Base_MainSubject_HR where MainSubjectID = third.MainSubjectID) MainSubjectTitle,
+	(select RelationOfMainSubjectTitle from Tbl_CU_Base_RelationOfMainSubject_HR where RelationOfMainSubjectID=third.SubSubjectID) SubSubjectTitle,
+	ThirdLevelTitle
+	--,CASE 
+	--		WHEN IsActive = 0
+	--			THEN N'غیرفعال'
+	--		WHEN IsActive = 1
+	--			THEN N'فعال'
+	--		ELSE N'نامشخص'
+	--		END AS [Status]
+from Tbl_CU_Base_3rdLevel_HR third
+where 
+	(MainSubjectID = @MainSubjectID or @MainSubjectID in('',-1) )
+	and (SubSubjectID = @SubSubjectID or @SubSubjectID in('',-1) )
 end
 
 
@@ -454,4 +509,161 @@ BEGIN
 	END;
 END;
 
+go
 
+ALTER   PROCEDURE [dbo].[SP_CU_Complaint_GetTaskName_HR] @WFID BIGINT
+AS
+    BEGIN
+        DECLARE @TaskName1 NVARCHAR(300);
+        SET NOCOUNT ON;
+		Declare @CustomerName nvarchar(200)
+		
+        set @CustomerName = (select t.CustomerName from Tbl_CU_HR_RequestLog as t 
+		                     where t.WFID = @WFID)
+		declare @GUID nvarchar(50) = (select [GUID] from Tbl_CU_HR_RequestLog where WFID = @wfid)
+
+		declare @MainSubject nvarchar(200) 
+
+		declare @RelationToMainSubject nvarchar(200)
+
+		set @MainSubject = (	
+		select top 1
+			(select MainSubjectTitle from Tbl_CU_Base_MainSubject_HR where MainSubjectID = r.MainID) as  MainSubject			
+		from Tbl_CU_Complaint_RequestLog_HR  as r
+		where r.[GUID] = @Guid  and @Guid != ''
+							)
+
+		set @RelationToMainSubject = (	
+		select top 1
+			( select RelationOfMainSubjectTitle + ',' from Tbl_CU_Base_RelationOfMainSubject_HR
+		   where RelationOfMainSubjectID IN (SELECT  ID 
+                              FROM dbo.FN_CU_split(r.SubID,','))  
+                              FOR XML PATH('')     ) as RelationOfMainSubjectTitle 
+			
+		from Tbl_CU_Complaint_RequestLog_HR  as r
+		where r.[GUID] = @Guid  and @Guid != ''
+							)
+		
+        SET @TaskName1 =
+        (
+            SELECT
+            (
+                SELECT CustomerTypeTitle
+                FROM Tbl_CU_Base_CustomerType
+                WHERE Tbl_CU_Base_CustomerType.CustomerTypeID = Tbl_CU_HR_RequestLog.CustomerType
+            )
+
+			--+' - ' + CustomerName 
+
+            FROM Tbl_CU_HR_RequestLog
+            WHERE WFID = @WFID
+        );
+        SELECT
+			Concat(@CustomerName,'-',@TaskName1,'-',@WFID) AS 'TaskName1',
+			concat('بررسی درخواست', '-', @MainSubject, '-', @RelationToMainSubject) as 'TaskName2'
+         	
+	END;
+
+go
+
+ALTER PROCEDURE [dbo].[SP_CU_Complaint_GetReferGroupList_HR]
+@chbNeedAction bit 
+AS
+BEGIN
+	
+	if isnull(@chbNeedAction,0)=1
+	begin
+		select 
+		(select GroupName from users.TblGroups as Tblgroup 
+		 where Tblgroup.GroupId=TblReferGroup.GroupId) as ReferGroupName,
+		 TblReferGroup.GroupId as ReferGroupId
+		from [dbo].[Tbl_CU_Base_ReferGroup_HR] as TblReferGroup 
+		inner join users.TblGroups as g on g.GroupId = TblReferGroup.GroupId
+	
+		where TblReferGroup.status=1 and g.Enabled = 1  and g.GroupId != 57 and g.GroupId not in (48,49) 
+		union all
+		select 'میز خدمت' as ReferGroupName, 1 as ReferGroupId
+	
+	end
+	else
+	select  '' as ReferGroupName,'' as ReferGroupId
+	
+END
+
+go
+
+ALTER PROC [dbo].[SP_CU_Tbl_CU_Referral_History_Insert]
+@WFID INT
+AS
+BEGIN
+	DECLARE @UserID INT
+	DECLARE @ReferrerGroupID INT
+	DECLARE @Description NVARCHAR(1000)
+	DECLARE @GUID NVARCHAR(50)
+
+
+
+	SELECT TOP 1
+		@GUID = GUID,
+		@Description = MailRoomDesc,
+		@UserID = ISNULL(CurrentUserID , 0),
+		@ReferrerGroupID = ReffererID
+	FROM Tbl_CU_HR_RequestLog
+	WHERE WFID = @WFID
+
+	if @ReferrerGroupID != 1
+	begin
+		INSERT INTO Tbl_CU_Referral_History_HR (
+			ReferralDate
+			,ReferralTime
+			,UserID
+			,ReferrerGroupID
+			,Description
+			,WFID
+			,GUID
+			)
+		SELECT dbo.MiladiToShamsi(GETDATE())
+			,CAST(CONVERT(time , GETDATE()) AS NVARCHAR(5))
+			,@UserID
+			,@ReferrerGroupID
+			,@Description
+			,@WFID
+			,@GUID
+	end
+	else
+	begin
+		declare @RegUserID int  = (select top 1 t.UserID
+							from task.TblTask t join task.TblWorkflowActivityInstance a on t.WorkflowActivityInstaceID = a.WorkflowActivityInstanceID
+							where a.WokflowInstanceID = @WFID and a.ActivityID = 5033508932275506362); --کاربر ثبت کننده میز خدمت 
+
+		INSERT INTO Tbl_CU_Referral_History_HR (
+			ReferralDate
+			,ReferralTime
+			,UserID
+			,ReferrerGroupID
+			,Description
+			,WFID
+			,GUID
+			)
+		SELECT dbo.MiladiToShamsi(GETDATE())
+			,CAST(CONVERT(time , GETDATE()) AS NVARCHAR(5))
+			,@RegUserID
+			,@ReferrerGroupID
+			,@Description
+			,@WFID
+			,@GUID
+	end
+END
+
+go
+
+ALTER proc [dbo].[SP_CU_Get_RefferalID] @WFID BIGINT
+AS
+BEGIN
+select
+	top 1 ReferrerGroupID, UserID
+	from Tbl_CU_Referral_History_HR
+	WHERE WFID = @WFID ORDER BY ID DESC
+END
+
+go
