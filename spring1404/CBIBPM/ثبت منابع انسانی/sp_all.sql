@@ -63,21 +63,23 @@ create table Tbl_CU_Base_4thLevel_HR
 --------Created Sps----------
 go
 
---create proc sp_cu_chkIsChildAvailable
---	@ThirdLevelMapID int
---as
---begin
---	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
---	DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
---	DECLARE @ThirdLevelCount INT = (SELECT max(ThirdLevelID) FROM Tbl_CU_Base_3rdLevel_HR);
+create proc sp_cu_chkIsChildAvailable
+	@ThirdLevelMapID int
+as
+begin
+	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
+	DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
+	DECLARE @ThirdLevelCount INT = (SELECT max(ThirdLevelID) FROM Tbl_CU_Base_3rdLevel_HR);
 
 
---	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_3rdLevel_HR where ThirdLevelID  = @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in			
---		(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR where IsActive = 1)
-					
---end
+	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in	(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR where IsActive = 1)		
+		select 1 as res
+	else
+		select 0 as res
+									
+end
 
---go
+go
 
 create or alter proc sp_cu_TreeView_frm31328
 as
