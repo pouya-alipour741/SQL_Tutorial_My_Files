@@ -16,6 +16,22 @@ add RequestSource int
 
 go
 
+--create or alter proc sp_cu_GetIVRGroup
+--	@IVR int
+--as
+--begin
+--	if @IVR = 1
+--		select 56 as GroupID
+--	else if @IVR = 2
+--		select 6 as GroupID
+--	else if @IVR = 3
+--		select 6 as GroupID
+--	else
+--		select 6 as GroupID
+--end
+
+--go
+
 create table Tbl_CU_Base_3rdLevel_HR
 (
 	ThirdLevelID int primary key identity(1,1),
@@ -25,8 +41,8 @@ create table Tbl_CU_Base_3rdLevel_HR
 	SubSubjectMapID int,
 	ShowPortal bit,
 	SortOrder int,
-	IsActive bit
-
+	IsActive bit,
+	MapThirdLevelID int
 )
 
 go
@@ -47,9 +63,29 @@ create table Tbl_CU_Base_4thLevel_HR
 --------Created Sps----------
 go
 
+--create proc sp_cu_chkIsChildAvailable
+--	@ThirdLevelMapID int
+--as
+--begin
+--	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
+--	DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
+--	DECLARE @ThirdLevelCount INT = (SELECT max(ThirdLevelID) FROM Tbl_CU_Base_3rdLevel_HR);
+
+
+--	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_3rdLevel_HR where ThirdLevelID  = @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in			
+--		(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR where IsActive = 1)
+					
+--end
+
+--go
+
 create or alter proc sp_cu_TreeView_frm31328
 as
 begin
+	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
+    DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
+    DECLARE @ThirdLevelCount INT = (SELECT max(ThirdLevelID) FROM Tbl_CU_Base_3rdLevel_HR);
+
 	(
 		SELECT 
 			'شاخه اصلی' as MainSubjectTitle,		
@@ -63,7 +99,7 @@ begin
 				MainSubjectID + 1 as MainBranch,
 				1 as ParentID
 		FROM Tbl_CU_Base_MainSubject_HR
-		where MainSubjectStatus = 1
+		where MainSubjectStatus = 1 
 		)
 	union all
 	(
@@ -72,11 +108,29 @@ begin
 					r.RelationOfMainSubjectTitle as MainSubjectTitle ,
 				   --(select MainSubjectTitle 
 				   --from Tbl_CU_Base_MainSubject_HR where MainSubjectID = r.MainSubjectMapID) as MainSubjectTitle,
-				   RelationOfMainSubjectID + (select count(1) cnt from Tbl_CU_Base_MainSubject_HR) + 1 as MainBranch,
+				   RelationOfMainSubjectID + @MainCount + 1 as MainBranch,
 				   MainSubjectMapID + 1 as ParentID
 	
 		from Tbl_CU_Base_RelationOfMainSubject_HR   as  r 
-		where RelationOfMainSubjectStatus = 1
+		where RelationOfMainSubjectStatus = 1 
+	)
+	union all
+	(
+		select
+			ThirdLevelTitle,
+			ThirdLevelID + @MainCount + @RelationCount + 1 as MainBranch,
+			SubSubjectMapID + @MainCount + 1 as ParentID
+		from Tbl_CU_Base_3rdLevel_HR
+		where IsActive = 1
+	)
+	union all
+	(
+		select
+			FourthLevelTitle,
+			FourthLevelID + @MainCount + @RelationCount  + @ThirdLevelCount + 1 as MainBranch,
+			ThirdLevelMapID + @MainCount + @RelationCount + 1 as ParentID
+		from Tbl_CU_Base_4thLevel_HR	
+		where IsActive = 1
 	)
 end
 
@@ -96,23 +150,112 @@ as
 begin
 	select
 	ThirdLevelID,
-	ROW_NUMBER() over(order by ThirdLevelID) rownumber,
+	ROW_NUMBER() over(order by SortOrder) rownumber,
 	(select MainSubjectTitle from Tbl_CU_Base_MainSubject_HR where MainSubjectID = third.MainSubjectID) MainSubjectTitle,
 	(select RelationOfMainSubjectTitle from Tbl_CU_Base_RelationOfMainSubject_HR where RelationOfMainSubjectID=third.SubSubjectID) SubSubjectTitle,
 	ThirdLevelTitle
-	--,CASE 
-	--		WHEN IsActive = 0
-	--			THEN N'غیرفعال'
-	--		WHEN IsActive = 1
-	--			THEN N'فعال'
-	--		ELSE N'نامشخص'
-	--		END AS [Status]
+	,CASE 
+			WHEN IsActive = 0
+				THEN N'غیرفعال'
+			WHEN IsActive = 1
+				THEN N'فعال'
+			ELSE N'نامشخص'
+			END AS [Status]
 from Tbl_CU_Base_3rdLevel_HR third
 where 
 	(MainSubjectID = @MainSubjectID or @MainSubjectID in('',-1) )
 	and (SubSubjectID = @SubSubjectID or @SubSubjectID in('',-1) )
+order by SortOrder
 end
 
+go
+
+create or alter PROCEDURE [dbo].[Sp_CU_RelationOfMainSubjectWithID_HR]		
+	@ID int 
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+ select *
+ from Tbl_CU_Base_RelationOfMainSubject_HR
+ where RelationOfMainSubjectID = @ID
+END
+
+go
+
+create or alter proc sp_cu_chkIfSubjectsEmpty_frm581
+	@MainSubject int, @SubSubject int
+as
+begin
+	if (@MainSubject in('',-1) or @SubSubject in('',-1))
+		select 1 as res
+	else
+		select 0 as res
+		
+end
+
+go
+
+create or alter proc Sp_CU_Base_3rdLevel_HR
+	@ID int
+as
+begin
+	select * from Tbl_CU_Base_3rdLevel_HR where ThirdLevelID = 	@ID
+end
+
+go
+
+create or alter proc Sp_CU_ThirdLevel_HR_frm581
+	@SubSubjectID int
+as
+begin
+	select *
+	from Tbl_CU_Base_3rdLevel_HR
+	where IsActive = 1
+	and SubSubjectID = @SubSubjectID
+	order by SortOrder
+end
+
+go
+
+create or alter proc sp_cu_FourthLevelSearch_frm581
+	@MainSubjectID int, @SubSubjectID int, @ThirdLevelID int
+as
+begin
+	select
+		FourthLevelID,
+		ROW_NUMBER() over(order by SortOrder) rownumber,
+		(select MainSubjectTitle from Tbl_CU_Base_MainSubject_HR where MainSubjectID = fourth.MainSubjectID) MainSubjectTitle,
+		(select RelationOfMainSubjectTitle from Tbl_CU_Base_RelationOfMainSubject_HR where RelationOfMainSubjectID=fourth.SubSubjectID) SubSubjectTitle,
+		(select ThirdLevelTitle from Tbl_CU_Base_3rdLevel_HR where ThirdLevelID = fourth.ThirdLevelID) ThirdLevelTitle,
+		FourthLevelTitle
+		,CASE 
+				WHEN IsActive = 0
+					THEN N'غیرفعال'
+				WHEN IsActive = 1
+					THEN N'فعال'
+				ELSE N'نامشخص'
+				END AS [Status]
+from Tbl_CU_Base_4thLevel_HR fourth
+where 
+	(MainSubjectID = @MainSubjectID or @MainSubjectID in('',-1) )
+	and (SubSubjectID = @SubSubjectID or @SubSubjectID in('',-1) )
+	and (ThirdLevelID = @ThirdLevelID or @ThirdLevelID in('',-1) )
+order by SortOrder
+end
+
+go
+
+create or alter proc sp_cu_chkIfSubjectsEmpty4thLevel_frm581
+	@MainSubject int, @SubSubject int, @ThirdLevel int
+as
+begin
+	if (@MainSubject in('',-1) or @SubSubject in('',-1) or @ThirdLevel in('',-1))
+		select 1 as res
+	else
+		select 0 as res
+		
+end
 
 --------Modified Sps----------
 go
@@ -664,6 +807,22 @@ select
 	top 1 ReferrerGroupID, UserID
 	from Tbl_CU_Referral_History_HR
 	WHERE WFID = @WFID ORDER BY ID DESC
+END
+
+go
+
+ALTER PROCEDURE [dbo].[Sp_CU_Base_RelationOfMainSubject_HR]
+	@MainSubject int 
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    select * from Tbl_CU_Base_RelationOfMainSubject_HR
+	 where MainSubjectMapID = @MainSubject
+	 and RelationOfMainSubjectStatus = 1
+	 order by SortOrder 
 END
 
 go
