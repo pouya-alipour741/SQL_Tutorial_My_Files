@@ -7,7 +7,7 @@
 go
 
 insert into tbl_cu_base_IncomingSource
-values('سلامت'), ('منابع انسانی'), ('امور رفاهی'), ('سایر')
+values ('منابع انسانی'),('سلامت'),('امور رفاهی'), ('سایر')
 
 go
 
@@ -63,7 +63,7 @@ create table Tbl_CU_Base_4thLevel_HR
 --------Created Sps----------
 go
 
-create proc sp_cu_chkIsChildAvailable
+create or alter proc sp_cu_chkIsChildAvailableIn4thLevel
 	@ThirdLevelMapID int
 as
 begin
@@ -72,11 +72,11 @@ begin
 	DECLARE @ThirdLevelCount INT = (SELECT max(ThirdLevelID) FROM Tbl_CU_Base_3rdLevel_HR);
 
 
-	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in	(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR where IsActive = 1)		
+	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
+	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in	(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR )		
 		select 1 as res
 	else
-		select 0 as res
-									
+		select 0 as res								
 end
 
 go
@@ -258,6 +258,70 @@ begin
 		select 0 as res
 		
 end
+
+go
+
+create proc sp_cu_DeleteFrom_Tbl_CU_Base_4thLevel_HR_frm581
+	@GV4thLevelPrimaryID int
+as
+begin
+	delete from Tbl_CU_Base_4thLevel_HR
+	where FourthLevelID = @GV4thLevelPrimaryID									
+end
+
+go
+
+create proc sp_cu_DeleteFrom_Tbl_CU_Base_3rdLevel_HR_frm581
+	@GV3rdLevelPrimaryID int
+as
+begin
+	delete from Tbl_CU_Base_3rdLevel_HR
+	where ThirdLevelID = @GV3rdLevelPrimaryID									
+end
+
+go
+
+create or alter proc sp_cu_GetCallDataForRequestSource_frm580
+	@json nvarchar(max)
+as
+begin
+
+	declare
+		@RequestSource nvarchar(500),
+		@Mob nvarchar(11),
+		@WebServiceResult bit
+
+	IF (@json <> '')
+
+    BEGIN
+		create TABLE #tb_TblWorkflowCall
+
+			(
+
+				Tazarv_ID INT
+
+			);
+
+			EXEC dbo.Sp_GenerateJsonTable '#tb_TblWorkflowCall', @json;
+
+			SELECT @RequestSource = RequestSource,
+
+				  @Mob=Mob,
+
+				  @WebServiceResult=WebServiceResult
+
+			FROM #tb_TblWorkflowCall;
+
+			select * from tbl_cu_base_IncomingSource
+			where IncomingSource_ID = cast(@RequestSource as int)
+
+	end
+	else
+		select 
+			0 as IncomingSource_ID,
+			'' as IncomingSource
+end
+
 
 --------Modified Sps----------
 go
@@ -827,4 +891,3 @@ BEGIN
 	 order by SortOrder 
 END
 
-go
