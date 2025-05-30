@@ -18,7 +18,7 @@ begin
 		FROM SplitOU
 		WHERE rn = 2
 		)
-		select @ParentID = ParentID
+		select @ParentID = OUID
 		from Tbl_CU_ActiveDirectoryOUList_test
 		where OUName = cast((select SecondOU from t2) as nvarchar(1000));
 		print @ParentID
@@ -42,7 +42,7 @@ begin
 			  ,[adsPath]
 			  ,[GUID]
 			  ,[Tbl_CU_ActiveDirectoryOUListID]
-			FROM [SamanCRM].[dbo].[Tbl_CU_ActiveDirectoryOUList]
+			FROM [SamanCRM].[dbo].[Tbl_CU_ActiveDirectoryOUList_test]
 		  )	
 		  insert into  Tbl_CU_ActiveDirectoryOUList_test([OUID], [OUName], [ParentID], [OUGUID], [adsPath], [GUID])
 		  select 
