@@ -41,8 +41,7 @@ create table Tbl_CU_Base_3rdLevel_HR
 	SubSubjectMapID int,
 	ShowPortal bit,
 	SortOrder int,
-	IsActive bit,
-	MapThirdLevelID int
+	IsActive bit
 )
 
 go
@@ -75,6 +74,66 @@ begin
 	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
 	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in	(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR )		
 		select 1 as res
+	else
+		select 0 as res								
+end
+
+go
+
+create or alter proc sp_cu_chkIsChildAvailableIn4thLevel_InactiveStatus_frm31329
+	@ThirdLevelMapID int,
+	@IsActive bit
+as
+begin
+	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
+	DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
+
+
+	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
+	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in	(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR )
+		and @IsActive = 0
+	begin
+		select 1 as res
+	end
+	else
+		select 0 as res								
+end
+
+go
+
+create or alter proc sp_cu_chkIsChildAvailableIn3rdLevel_InactiveStatus_frm592
+	@SubSubjectMapID int,
+	@IsActive bit
+as
+begin
+	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
+
+
+	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
+	if (select @SubSubjectMapID + @MainCount + 1 ) in	(select SubSubjectMapID + @MainCount  + 1 from Tbl_CU_Base_3rdLevel_HR )
+		and @IsActive = 0
+	begin
+		select 1 as res
+	end
+	else
+		select 0 as res								
+end
+
+go
+
+create or alter proc sp_cu_chkIsChildAvailableIn2ndLevel_InactiveStatus_frm591
+	@MainSubjectMapID int,
+	@IsActive bit
+as
+begin
+
+
+	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
+	if (select @MainSubjectMapID + 1 ) in	(select MainSubjectMapID  + 1 from Tbl_CU_Base_RelationOfMainSubject_HR )
+		and @IsActive = 0
+	begin
+		select 1 as res
+	end
 	else
 		select 0 as res								
 end
@@ -891,3 +950,29 @@ BEGIN
 	 order by SortOrder 
 END
 
+go
+
+ALTER PROC [dbo].[SP_CU_Tbl_CU_Referral_History]
+    @WFID INT
+AS
+BEGIN
+    SELECT 
+        ROW_NUMBER() OVER (ORDER BY ID, ReferralTime) AS RowNumber,
+        RH.ID,
+        RH.ReferralDate,
+        RH.ReferralTime,
+        (SELECT TU.UserName 
+         FROM users.TblUsers TU 
+         WHERE TU.UserId = RH.UserID) AS UserName,
+		 case
+			when RH.ReferrerGroupID = 1 then 'میز خدمت'
+			else UG.GroupName
+		end GroupName,
+        RH.Description
+    FROM 
+        Tbl_CU_Referral_History_HR RH
+    INNER JOIN 
+        Users.TblGroups UG ON UG.GroupId = RH.ReferrerGroupID
+    WHERE 
+        RH.WFID = @WFID;
+END

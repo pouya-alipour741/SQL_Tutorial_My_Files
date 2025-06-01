@@ -27,8 +27,6 @@ BEGIN
 	FROM [Tbl_CU_ActiveDirectoryOUList_FromWebService]
 	where
 		[Name] not in(select OUName FROM Tbl_CU_ActiveDirectoryOUList)
-		--or exists(select 1 from Tbl_CU_ActiveDirectoryOUList where OUName = [Name]
-		--and 'LDAP://saman.com/' + DistinguishedName != adsPath)
 
 	OPEN ou_cursor;
 	FETCH NEXT FROM ou_cursor INTO @hierarchical_stringID, @hierarchical_string;
@@ -125,9 +123,9 @@ BEGIN
 	SELECT
 		[ID],
 		[DistinguishedName]				  
-	FROM [Tbl_CU_ActiveDirectoryOUList_FromWebService]
+	FROM [Tbl_CU_ActiveDirectoryOUList_FromWebService] w
 	where
-		exists(select 1 from Tbl_CU_ActiveDirectoryOUList where OUName = [Name]
+		exists(select 1 from Tbl_CU_ActiveDirectoryOUList where OUGUID = w.[GUID]
 		and 'LDAP://saman.com/' + DistinguishedName != adsPath)
 
 	OPEN ou_cursor;
@@ -173,10 +171,10 @@ BEGIN
 			set
 				ParentID = @ParentID_update,
 				adsPath = 'LDAP://saman.com/' + DistinguishedName
-			from Tbl_CU_ActiveDirectoryOUList_FromWebService
+			from Tbl_CU_ActiveDirectoryOUList_FromWebService w
 			where
 				ID = @hierarchical_stringID_update	
-				and OUName = [Name]
+				and OUGUID = w.GUID
 		end
 		else
 		begin
