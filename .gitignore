@@ -2,7 +2,7 @@ sample_database_backup/*.MDF
 sample_database_backup/*.lDF
 sample_database_backup/KCC Sample Database.bak
 blacklist_test_db.sql
-spring1404/CBIBPM/ثبت منابع انسانی/DB_StoredProcedure_backup
-spring1404/CBIBPM/ثبت منابع انسانی/DB_Table_backup
+/spring1404/CBIBPM/ثبت منابع انسانی/DB_StoredProcedure_backup/
+/spring1404/CBIBPM/ثبت منابع انسانی/DB_Table_backup/
 *.docxx
 !New EmplymentSqlQuestions.docx
