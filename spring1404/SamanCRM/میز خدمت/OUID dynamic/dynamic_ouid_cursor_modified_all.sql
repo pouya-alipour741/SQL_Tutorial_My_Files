@@ -26,32 +26,14 @@ BEGIN
 		[DistinguishedName]				  
 	FROM [Tbl_CU_ActiveDirectoryOUList_FromWebService]
 	where
-		[Name] not in(select OUName FROM Tbl_CU_ActiveDirectoryOUList)
+		[GUID] not in(select OUGUID FROM Tbl_CU_ActiveDirectoryOUList)
 
 	OPEN ou_cursor;
 	FETCH NEXT FROM ou_cursor INTO @hierarchical_stringID, @hierarchical_string;
 
 	WHILE @@FETCH_STATUS = 0
 	BEGIN
-		--	WITH SplitOU AS (
-		--	SELECT 
-		--		value,
-		--		ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS rn
-		--	FROM STRING_SPLIT(@hierarchical_string, 'OU=')  
-		--	),
-		--	CleanedOU as(
-		--	SELECT 
-		--		dbo.Fn_CU_FixPersianString((substring(value, 4, len(Value)))) AS SecondOU  
-		--	FROM SplitOU
-		--	WHERE rn = 2
-		--	)
-		--	select @ParentID = OUID
-		--	from Tbl_CU_ActiveDirectoryOUList
-		--	where OUName = (select SecondOU from CleanedOU);
-		--print @ParentID;
-
-		 --Clean OU= prefix
-		
+				
 		SET @hierarchical_string = REPLACE(@hierarchical_string, 'OU=', '');
 
 		--get ParentID
@@ -61,24 +43,30 @@ BEGIN
 				ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS rn
 			FROM STRING_SPLIT(@hierarchical_string, ',')  
 			),
-			CleanedOU as(
-			SELECT 
-				dbo.Fn_CU_FixPersianString(value) AS SecondOU  
-			FROM SplitOU
-			WHERE rn = 2
-			)
-			SELECT @ParentID =
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 FROM CleanedOU WHERE SecondOU LIKE '%DC=saman%'
-                )
-                THEN  1
-                ELSE (
-                    SELECT TOP 1 OUID
-                    FROM Tbl_CU_ActiveDirectoryOUList
-                    WHERE dbo.Fn_CU_FixPersianString(OUName) = (SELECT TOP 1 SecondOU FROM CleanedOU)
-                )
-            END;		
+			CleanedSecondOU as(
+					SELECT 
+						dbo.Fn_CU_FixPersianString(value) AS SecondOU  
+					FROM SplitOU
+					WHERE rn = 2
+					),
+			CleanedNonFirstOU as(
+				SELECT 
+					string_agg(dbo.Fn_CU_FixPersianString(value), ',') AS NonFirstOU  
+				FROM SplitOU
+				WHERE rn >= 2
+				)
+				SELECT @ParentID =
+				CASE 
+					WHEN EXISTS (
+						SELECT 1 FROM CleanedSecondOU WHERE SecondOU LIKE '%DC=saman%'
+					)
+					THEN  1
+					ELSE (
+						SELECT TOP 1 OUID
+						FROM Tbl_CU_ActiveDirectoryOUList
+						WHERE replace(dbo.Fn_CU_FixPersianString(adsPath), 'OU=','') = (SELECT TOP 1 N'LDAP://saman.com/' + NonFirstOU FROM CleanedNonFirstOU)
+					)
+			end;		
 		
 		--insert records individually and skip if it could not find ParentID with a warning message	
 		if isnull(@ParentID, 0) != 0
@@ -126,7 +114,8 @@ BEGIN
 	FROM [Tbl_CU_ActiveDirectoryOUList_FromWebService] w
 	where
 		exists(select 1 from Tbl_CU_ActiveDirectoryOUList where OUGUID = w.[GUID]
-		and 'LDAP://saman.com/' + DistinguishedName != adsPath)
+		and dbo.Fn_CU_FixPersianString('LDAP://saman.com/' + DistinguishedName) != dbo.Fn_CU_FixPersianString(adsPath)
+			)
 
 	OPEN ou_cursor;
 	FETCH NEXT FROM ou_cursor INTO @hierarchical_stringID_update, @hierarchical_string_update;
@@ -144,24 +133,30 @@ BEGIN
 				ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS rn
 			FROM STRING_SPLIT(@hierarchical_string_update, ',')  
 			),
-			CleanedOU as(
-			SELECT 
-				dbo.Fn_CU_FixPersianString(value) AS SecondOU  
-			FROM SplitOU
-			WHERE rn = 2
-			)
-			SELECT @ParentID_update =
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 FROM CleanedOU WHERE SecondOU LIKE '%DC=saman%'
-                )
-                THEN  1
-                ELSE (
-                    SELECT TOP 1 OUID
-                    FROM Tbl_CU_ActiveDirectoryOUList
-                    WHERE dbo.Fn_CU_FixPersianString(OUName) = (SELECT TOP 1 SecondOU FROM CleanedOU)
-                )
-            END;		
+			CleanedSecondOU as(
+					SELECT 
+						dbo.Fn_CU_FixPersianString(value) AS SecondOU  
+					FROM SplitOU
+					WHERE rn = 2
+					),
+			CleanedNonFirstOU as(
+				SELECT 
+					string_agg(dbo.Fn_CU_FixPersianString(value), ',') AS NonFirstOU  
+				FROM SplitOU
+				WHERE rn >= 2
+				)
+				SELECT @ParentID_update =
+				CASE 
+					WHEN EXISTS (
+						SELECT 1 FROM CleanedSecondOU WHERE SecondOU LIKE '%DC=saman%'
+					)
+					THEN  1
+					ELSE (
+						SELECT TOP 1 OUID
+						FROM Tbl_CU_ActiveDirectoryOUList
+						WHERE replace(dbo.Fn_CU_FixPersianString(adsPath), 'OU=','') = (SELECT TOP 1 N'LDAP://saman.com/' + NonFirstOU FROM CleanedNonFirstOU)
+					)
+			end;		
 		
 		--update records that have a different path in Tbl_CU_ActiveDirectoryOUList
 		if isnull(@ParentID_update, 0) != 0

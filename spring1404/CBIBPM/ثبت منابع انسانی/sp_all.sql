@@ -381,6 +381,17 @@ begin
 			'' as IncomingSource
 end
 
+go
+
+create proc sp_cu_chkMessageCondition
+	@txtMessageResult nvarchar(50)
+as
+begin
+	if @txtMessageResult = N'پیام با موفقیت ارسال شد'
+		select 1 as Condition
+	else 
+		select 0 as Condition
+end
 
 --------Modified Sps----------
 go
