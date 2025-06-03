@@ -1,5 +1,5 @@
 ﻿alter table Tbl_CU_Base_FieldValue_FRM167
-add FieldManager int, NeedManagerConfirmation bit
+add FieldManager int  --, NeedManagerConfirmation bit
 
 go
 
