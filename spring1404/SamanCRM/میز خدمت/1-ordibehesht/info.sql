@@ -1,6 +1,15 @@
 ﻿
---changed form and wf  --  141,167,243, 61368 - فرآیند میز خدمت فناوری اطلاعات فاز دوم
+--changed form and wf  --  141,167,243, 61368, 157 - فرآیند میز خدمت فناوری اطلاعات فاز دوم
+--change status id  to 358 for lower middle path
 
+--if needed forfrm 141 onvan field
+
+--begin tran
+--update Tbl_CU_Base_FieldSubject_FRM157
+--set NeedManagerConfirmation = 0
+--where NeedManagerConfirmation is null
+
+--commit
 
 --گرفتن کاربران مجاز ثبت کننده میز خدمت
 SELECT TOP 1000      

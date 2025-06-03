@@ -13,6 +13,12 @@ add rbnManagerConfirmation bit
 
 go
 
+alter table Tbl_CU_Base_FieldSubject_FRM157
+add NeedManagerConfirmation bit
+
+go
+
+--dar server asli ejra shod --statusid 358
 --insert into Tbl_Cu_Base_LogStatus(LogStatusTitle, wid, Descriptions)
 --values('تایید مدیر',38,'')
 
