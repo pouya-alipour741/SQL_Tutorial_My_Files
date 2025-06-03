@@ -383,11 +383,25 @@ end
 
 go
 
-create proc sp_cu_chkMessageCondition
+create or alter proc sp_cu_chkMessageConditionSuccess
 	@txtMessageResult nvarchar(50)
 as
 begin
-	if @txtMessageResult = N'پیام با موفقیت ارسال شد'
+	set @txtMessageResult = dbo.Fn_CU_FixPersianString(@txtMessageResult)
+	if @txtMessageResult = dbo.Fn_CU_FixPersianString(N'پیام با موفقیت ارسال شد')
+		select 1 as Condition
+	else 
+		select 0 as Condition
+end
+
+go
+
+create or alter proc sp_cu_chkMessageConditionFail
+	@txtMessageResult nvarchar(50)
+as
+begin
+	set @txtMessageResult = dbo.Fn_CU_FixPersianString(@txtMessageResult)
+	if @txtMessageResult = dbo.Fn_CU_FixPersianString(N'پیام تکراری می‌باشد')
 		select 1 as Condition
 	else 
 		select 0 as Condition
