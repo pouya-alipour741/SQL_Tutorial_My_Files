@@ -149,7 +149,7 @@ BEGIN
                FROM dbo.Tbl_Cu_Base_Location X
                WHERE X.LocationID = DE.cmbLocation
            ) AS LocationTitle,
-           CAST(HierarchyOnlyLevel AS nvarchar(10))
+           CAST(HierarchyOnlyLevel AS nvarchar(10)) HierarchyOnlyLevel
 
     FROM [dbo].[Tbl_CU_Base_DetermineRequestAcc_FRM141] DE
     WHERE (

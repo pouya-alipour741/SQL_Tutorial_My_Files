@@ -18,9 +18,15 @@ add NeedManagerConfirmation bit
 
 go
 
---dar server asli ejra shod --statusid 358
+--dar server asli ejra shod --statusid 358, 360
 --insert into Tbl_Cu_Base_LogStatus(LogStatusTitle, wid, Descriptions)
 --values('تایید مدیر',38,'')
+
+--go
+
+--insert into Tbl_Cu_Base_LogStatus(WID, LogStatusTitle)
+--values
+--	(38, 'ارجاع توسط مدیر تایید کننده')
 
 --go
 
@@ -330,7 +336,7 @@ begin
 			rbnPersonAcc as rbnPersonAccChosen,
 			rbnHierarchy as rbnHierarchyChosen,
 			isnull((select cast(1 as bit) from cte where rownumber = @rownumber + 1), 0) as IsRecordsRemained,
-			rownumber + 1 as rownumber
+			@rownumber + 1 as rownumber
 		from cte
 		where rownumber = @rownumber
 	end
@@ -349,7 +355,7 @@ begin
 			rbnPersonAcc as rbnPersonAccChosen,
 			rbnHierarchy as rbnHierarchyChosen,
 			cast(0 as bit) as IsRecordsRemained,
-			rownumber + 1 as rownumber
+			@rownumber + 1 as rownumber
 		from cte		
 	end
 end
