@@ -66,13 +66,8 @@ create or alter proc sp_cu_chkIsChildAvailableIn4thLevel
 	@ThirdLevelMapID int
 as
 begin
-	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
-	DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
-	DECLARE @ThirdLevelCount INT = (SELECT max(ThirdLevelID) FROM Tbl_CU_Base_3rdLevel_HR);
-
-
 	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
-	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in	(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR )		
+	if @ThirdLevelMapID  in	(select ThirdLevelMapID from Tbl_CU_Base_4thLevel_HR )		
 		select 1 as res
 	else
 		select 0 as res								
@@ -85,12 +80,8 @@ create or alter proc sp_cu_chkIsChildAvailableIn4thLevel_InactiveStatus_frm31329
 	@IsActive bit
 as
 begin
-	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
-	DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
-
-
-	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
-	if (select @ThirdLevelMapID + @MainCount + @RelationCount + 1 ) in	(select ThirdLevelMapID + @MainCount + @RelationCount + 1 from Tbl_CU_Base_4thLevel_HR )
+	
+	if @ThirdLevelMapID  in	(select ThirdLevelMapID from Tbl_CU_Base_4thLevel_HR )
 		and @IsActive = 0
 	begin
 		select 1 as res
@@ -106,11 +97,8 @@ create or alter proc sp_cu_chkIsChildAvailableIn3rdLevel_InactiveStatus_frm592
 	@IsActive bit
 as
 begin
-	DECLARE @MainCount INT = (SELECT max(MainSubjectID) FROM Tbl_CU_Base_MainSubject_HR);
 
-
-	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
-	if (select @SubSubjectMapID + @MainCount + 1 ) in	(select SubSubjectMapID + @MainCount  + 1 from Tbl_CU_Base_3rdLevel_HR )
+	if @SubSubjectMapID in	(select SubSubjectMapID from Tbl_CU_Base_3rdLevel_HR )
 		and @IsActive = 0
 	begin
 		select 1 as res
@@ -129,7 +117,7 @@ begin
 
 
 	--اگر در سطح چهارم رکورد زیرمجموعه ای از سطح سوم داشته باشیم امکان حذف آن والد در سطح سوم وجود نداشته باشد
-	if (select @MainSubjectMapID + 1 ) in	(select MainSubjectMapID  + 1 from Tbl_CU_Base_RelationOfMainSubject_HR )
+	if @MainSubjectMapID in	(select MainSubjectMapID from Tbl_CU_Base_RelationOfMainSubject_HR )
 		and @IsActive = 0
 	begin
 		select 1 as res
@@ -197,7 +185,7 @@ with cte as(
 	)
 	select *
 	from cte
-	--فقط عضوهایی که والد دارند را نشان بده برای جلوگیری از باگ احتمالی و نشان ندادن کامل درخت سلسله مراتب فقط به خاطر یک عضو بدون والد
+	--فقط عضوهایی که والد دارند را نشان بده برای جلوگیری از باگ احتمالی نشان ندادن درخت سلسله مراتب فقط به خاطر یک عضو بدون والد
 	where ParentID in((select MainBranch from cte union select -1))
 
 end
