@@ -1,7 +1,6 @@
 ﻿
 --changed forms and wfs : 580, 581, 591, 592, 31328, 31329, 31331 - wf: فرآیند ثبت درخواست منابع انسانی 
 
---deleted dsCustomerInfo - exec Sp_CU_GetCustomerInfo {@txtContactKey} ,  {@lupCaller},{@txtCallId},(@WorkflowInstanceID)
 
 ---debug tools
 

@@ -147,52 +147,59 @@ begin
     DECLARE @RelationCount INT = (SELECT max(RelationOfMainSubjectID) FROM Tbl_CU_Base_RelationOfMainSubject_HR);
     DECLARE @ThirdLevelCount INT = (SELECT max(ThirdLevelID) FROM Tbl_CU_Base_3rdLevel_HR);
 
-	(
-		SELECT 
-			'شاخه اصلی' as MainSubjectTitle,		
-				1 as MainBranch,
-				-1 as ParentID
-		)
-	union all
-	(
-		SELECT 
-			MainSubjectTitle,		
-				MainSubjectID + 1 as MainBranch,
-				1 as ParentID
-		FROM Tbl_CU_Base_MainSubject_HR
-		where MainSubjectStatus = 1 
-		)
-	union all
-	(
-		select 
-	 
-					r.RelationOfMainSubjectTitle as MainSubjectTitle ,
-				   --(select MainSubjectTitle 
-				   --from Tbl_CU_Base_MainSubject_HR where MainSubjectID = r.MainSubjectMapID) as MainSubjectTitle,
-				   RelationOfMainSubjectID + @MainCount + 1 as MainBranch,
-				   MainSubjectMapID + 1 as ParentID
+with cte as(
 	
-		from Tbl_CU_Base_RelationOfMainSubject_HR   as  r 
-		where RelationOfMainSubjectStatus = 1 
-	)
+	SELECT 
+		'شاخه اصلی' as MainSubjectTitle,		
+			1 as MainBranch,
+			-1 as ParentID
+		
 	union all
-	(
-		select
-			ThirdLevelTitle,
-			ThirdLevelID + @MainCount + @RelationCount + 1 as MainBranch,
-			SubSubjectMapID + @MainCount + 1 as ParentID
-		from Tbl_CU_Base_3rdLevel_HR
-		where IsActive = 1
-	)
+	
+	SELECT 
+		MainSubjectTitle,		
+			MainSubjectID + 1 as MainBranch,
+			1 as ParentID
+	FROM Tbl_CU_Base_MainSubject_HR
+	where MainSubjectStatus = 1 
+		
 	union all
-	(
-		select
-			FourthLevelTitle,
-			FourthLevelID + @MainCount + @RelationCount  + @ThirdLevelCount + 1 as MainBranch,
-			ThirdLevelMapID + @MainCount + @RelationCount + 1 as ParentID
-		from Tbl_CU_Base_4thLevel_HR	
-		where IsActive = 1
+	
+	select 
+	 
+				r.RelationOfMainSubjectTitle as MainSubjectTitle ,
+				--(select MainSubjectTitle 
+				--from Tbl_CU_Base_MainSubject_HR where MainSubjectID = r.MainSubjectMapID) as MainSubjectTitle,
+				RelationOfMainSubjectID + @MainCount + 1 as MainBranch,
+				MainSubjectMapID + 1 as ParentID
+	
+	from Tbl_CU_Base_RelationOfMainSubject_HR   as  r 
+	where RelationOfMainSubjectStatus = 1 
+	
+	union all
+	
+	select
+		ThirdLevelTitle,
+		ThirdLevelID + @MainCount + @RelationCount + 1 as MainBranch,
+		SubSubjectMapID + @MainCount + 1 as ParentID
+	from Tbl_CU_Base_3rdLevel_HR
+	where IsActive = 1
+	
+	union all
+	
+	select
+		FourthLevelTitle,
+		FourthLevelID + @MainCount + @RelationCount  + @ThirdLevelCount + 1 as MainBranch,
+		ThirdLevelMapID + @MainCount + @RelationCount + 1 as ParentID
+	from Tbl_CU_Base_4thLevel_HR	
+	where IsActive = 1
+	
 	)
+	select *
+	from cte
+	--فقط عضوهایی که والد دارند را نشان بده برای جلوگیری از باگ احتمالی و نشان ندادن کامل درخت سلسله مراتب فقط به خاطر یک عضو بدون والد
+	where ParentID in((select MainBranch from cte union select -1))
+
 end
 
 go
@@ -283,6 +290,7 @@ create or alter proc sp_cu_FourthLevelSearch_frm581
 	@MainSubjectID int, @SubSubjectID int, @ThirdLevelID int
 as
 begin
+	
 	select
 		FourthLevelID,
 		ROW_NUMBER() over(order by SortOrder) rownumber,
@@ -297,12 +305,12 @@ begin
 					THEN N'فعال'
 				ELSE N'نامشخص'
 				END AS [Status]
-from Tbl_CU_Base_4thLevel_HR fourth
-where 
-	(MainSubjectID = @MainSubjectID or @MainSubjectID in('',-1) )
-	and (SubSubjectID = @SubSubjectID or @SubSubjectID in('',-1) )
-	and (ThirdLevelID = @ThirdLevelID or @ThirdLevelID in('',-1) )
-order by SortOrder
+	from Tbl_CU_Base_4thLevel_HR fourth
+	where 
+		(MainSubjectID = @MainSubjectID or @MainSubjectID in('',-1) )
+		and (SubSubjectID = @SubSubjectID or @SubSubjectID in('',-1) )
+		and (ThirdLevelID = @ThirdLevelID or @ThirdLevelID in('',-1) )
+	order by SortOrder
 end
 
 go
